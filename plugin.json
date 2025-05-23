@@ -1,0 +1,47 @@
+{
+  "slug": "ProducerPack",
+  "name": "ProducerPack",
+  "version": "2.0.0",
+  "license": "proprietary",
+  "brand": "4ms",
+  "author": "4ms",
+  "authorEmail": "",
+  "authorUrl": "",
+  "pluginUrl": "",
+  "manualUrl": "",
+  "sourceUrl": "",
+  "donateUrl": "",
+  "changelogUrl": "",
+  "modules": [
+{
+  "slug": "DJFilter",
+  "name": "DJFilter",
+  "description": "A continous lowpass to highpass effect in the spirit of DJ mixers",
+  "tags": []
+},
+{
+  "slug": "Monobass",
+  "name": "Monobass",
+  "description": "A simple and compact bass voice",
+  "tags": []
+},
+{
+  "slug": "Multipole",
+  "name": "Multipole",
+  "description": "Bandpass and notch filterbank with macro control",
+  "tags": []
+},
+{
+  "slug": "Spatializer",
+  "name": "Spatializer",
+  "description": "Exploitation of the Haas effect + mid/side processing techniques",
+  "tags": []
+},
+{
+  "slug": "StereoWidth",
+  "name": "StereoWidth",
+  "description": "Shrink or expand the stereo image of a stereo track",
+  "tags": []
+}
+  ]
+}
