@@ -42,6 +42,12 @@
   "name": "StereoWidth",
   "description": "Shrink or expand the stereo image of a stereo track",
   "tags": []
+},
+{
+  "slug": "StereoCrossfader",
+  "name": "StereoCrossfader",
+  "description": "Crossfade between two stereo audio sources",
+  "tags": []
 }
   ]
 }
