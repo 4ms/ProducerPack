@@ -26,7 +26,7 @@ struct StereoCrossfader : Module {
 
 	StereoCrossfader() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(MIX_PARAM, 0.f, 1.f, 0.f, "Mix", "%", 0.f, 100.f);
+		configParam(MIX_PARAM, 0.f, 1.f, 0.5f, "Mix", "%", 0.f, 100.f);
 		configParam(SHAPE_PARAM, 0.f, 1.f, 0.f, "Shape", "%", 0.f, 100.f);
 		configInput(MIXCV_INPUT, "Mix CV");
 		configInput(INAL_INPUT, "Left A");
