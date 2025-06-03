@@ -90,9 +90,12 @@ struct Monobass : Module {
 		return lowpassState[3]; // Output from last stage
 	}
 	
-	inline float crossfade(float a, float b, float t) {
-		return a + (b - a) * t;
+	inline float equalPowerCrossfade(float a, float b, float t) {
+		t = clamp(t, 0.f, 1.f);
+		float angle = t * (float)M_PI / 2.f;
+		return a * std::cos(angle) + b * std::sin(angle);
 	}
+	
 
 	float phase = 0.f;
 float phaseDetuned = 0.f;
@@ -109,6 +112,11 @@ bool trigAttackPhase = false;  // true = currently in attack ramp on trigger
 
 float filterEnvelope = 0.f;
 bool filterTrigAttackPhase = false;
+
+float sum1 = 0; 
+float sum2 = 0; 
+
+float agcEnvelope = 1.f;
 
 void process(const ProcessArgs& args) override {
 
@@ -240,11 +248,34 @@ gateState = currentGateHigh;
 	// === Waveshape and Timbre ===
 	float waveshapeParam = params[WAVESHAPE_PARAM].getValue();
 	float waveshapeCV = inputs[WAVESHAPECV_INPUT].isConnected() ? clamp(inputs[WAVESHAPECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+	
+
 	float shape = clamp(waveshapeParam + waveshapeCV, 0.f, 1.f);
+
+	// Automatic Gain Compensation calculation
+	float shapeGain = 1.f;
+	
+	// Morph triangle -> saw
+	if (shape < 0.5f) {
+		float t = shape / 0.5f;
+		float trianglePeak = 0.8f; // example approximation
+		float sawPeak = 1.0f;
+		float currentPeak = (1.f - t) * trianglePeak + t * sawPeak;
+		shapeGain = 1.f / currentPeak;
+	} else {
+		float t = (shape - 0.5f) / 0.5f;
+		float sawPeak = 1.0f;
+		float squarePeak = 1.0f;	
+		float currentPeak = (1.f - t) * sawPeak + t * squarePeak;
+		shapeGain = 1.f / currentPeak;
+	}
 
 	float phaseParam = params[PHASE_PARAM].getValue();
 	float phaseCV = inputs[PHASECV_INPUT].isConnected() ? clamp(inputs[PHASECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
 	float timbre = clamp(phaseParam + phaseCV, 0.f, 1.f);
+
+	// Compensation curve (nonlinear for better perception)
+	float phaseAGC = 1.f / (0.12f + 0.88f * std::pow(1.f - timbre, 2.f));
 
 	// === Frequencies ===
 	float freq1 = 261.626f * std::pow(2.f, basePitch);
@@ -263,32 +294,46 @@ gateState = currentGateHigh;
 	if (phaseSaw >= 1.f) phaseSaw -= 1.f;
 
 	// === Generate voices ===
-	float sum1 = 0.f;
-	float sum2 = 0.f;
+	sum1 = 0.f;
+	sum2 = 0.f;
+	
+for (int i = 0; i < numVoices; ++i) {
+    float offset = timbre * (float)i / (float)numVoices;
 
-	for (int i = 0; i < numVoices; ++i) {
-		float offset = timbre * (float)i / (float)numVoices;
+    float p1 = phase + offset;
+    p1 -= floorf(p1);
+    float triangle1 = (p1 < 0.5f) ? (4.f * p1 - 1.f) : (3.f - 4.f * p1);
+    float saw1 = 2.f * p1 - 1.f;
+    float square1 = (p1 < 0.5f) ? 1.f : -1.f;
 
-		// Voice 1
-		float p1 = phase + offset;
-		p1 -= floorf(p1);
-		float triangle1 = (p1 < 0.5f) ? (4.f * p1 - 1.f) : (3.f - 4.f * p1);
-		float saw1 = 2.f * p1 - 1.f;
-		float square1 = (p1 < 0.5f) ? 1.f : -1.f;
-		float out1 = (shape < 0.5f) ? crossfade(triangle1, saw1, shape / 0.5f) :
-									   crossfade(saw1, square1, (shape - 0.5f) / 0.5f);
-		sum1 += out1;
+	// Normalize amplitudes for perceptual consistency
+	triangle1 *= 0.7f;  // triangle has peak amplitude of 1, but perceived quieter
+	saw1 *= 0.8f;       // saw is brighter but slightly quieter than square
+	square1 *= 0.6f;    // square tends to sound louder due to more harmonic content
 
-		// Voice 2 (detuned)
-		float p2 = phaseDetuned + offset;
-		p2 -= floorf(p2);
-		float triangle2 = (p2 < 0.5f) ? (4.f * p2 - 1.f) : (3.f - 4.f * p2);
-		float saw2 = 2.f * p2 - 1.f;
-		float square2 = (p2 < 0.5f) ? 1.f : -1.f;
-		float out2 = (shape < 0.5f) ? crossfade(triangle2, saw2, shape / 0.5f) :
-									   crossfade(saw2, square2, (shape - 0.5f) / 0.5f);
-		sum2 += out2;
-	}
+
+    float raw1 = (shape < 0.5f) ? equalPowerCrossfade(triangle1, saw1, shape / 0.5f)
+                                : equalPowerCrossfade(saw1, square1, (shape - 0.5f) / 0.5f);
+    raw1 *= shapeGain;  // Apply gain compensation
+    sum1 += raw1;
+
+    float p2 = phaseDetuned + offset;
+    p2 -= floorf(p2);
+    float triangle2 = (p2 < 0.5f) ? (4.f * p2 - 1.f) : (3.f - 4.f * p2);
+    float saw2 = 2.f * p2 - 1.f;
+    float square2 = (p2 < 0.5f) ? 1.f : -1.f;
+
+	// Normalize amplitudes for perceptual consistency
+	triangle2 *= 0.7f;  // triangle has peak amplitude of 1, but perceived quieter
+	saw2 *= 0.8f;       // saw is brighter but slightly quieter than square
+	square2 *= 0.6f;    // square tends to sound louder due to more harmonic content
+
+
+    float raw2 = (shape < 0.5f) ? equalPowerCrossfade(triangle2, saw2, shape / 0.5f)
+                                : equalPowerCrossfade(saw2, square2, (shape - 0.5f) / 0.5f);
+    raw2 *= shapeGain;  // Apply gain compensation
+    sum2 += raw2;
+}
 
 	sum1 /= (float)numVoices;
 	sum2 /= (float)numVoices;
@@ -313,8 +358,29 @@ vol1 /= sumVol;
 vol2 /= sumVol;
 vol3 /= sumVol;
 
-// Compose final output
+// Combine voices
 float finalOutput = vol1 * sum1 + vol2 * sum2 + vol3 * saw3;
+
+// === AGC: Normalize to ~4Vpp ===
+// Simple peak-following envelope
+float targetVpp = 4.f;  // Desired peak-to-peak
+float targetPeak = targetVpp / 2.f;  // ±2V
+
+// Fast attack, slow release
+float agcAttack = 1.f - std::exp(-1.f / (0.001f * args.sampleRate));   // 1ms attack
+float agcRelease = 1.f - std::exp(-1.f / (0.1f * args.sampleRate));    // 100ms release
+
+float absSample = std::fabs(finalOutput);
+if (absSample > agcEnvelope)
+	agcEnvelope += agcAttack * (absSample - agcEnvelope);
+else
+	agcEnvelope += agcRelease * (absSample - agcEnvelope);
+
+// Prevent divide by 0
+float gain = (agcEnvelope > 1e-6f) ? (targetPeak / agcEnvelope) : 1.f;
+gain = clamp(gain, 0.1f, 10.f);  // Prevent wild gain swings
+
+finalOutput *= (gain * 0.5); 
 
 // Get base cutoff knob (0–1) mapped to -5V to +5V
 float cutoffParam = params[CUTOFF_PARAM].getValue();
@@ -371,6 +437,7 @@ struct MonobassWidget : ModuleWidget {
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(25.049, 15.362)), module, Monobass::OCTAVE_PARAM));
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(51.551, 15.362)), module, Monobass::FMAMOUNT_PARAM));
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(80.499, 15.362)), module, Monobass::WAVESHAPE_PARAM));
+
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(25.049, 34.146)), module, Monobass::PHASE_PARAM));
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(51.551, 34.351)), module, Monobass::MIXER_PARAM));
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(80.47, 34.124)), module, Monobass::DETUNE_PARAM));
