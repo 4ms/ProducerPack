@@ -1,34 +1,6 @@
 #include "plugin.hpp"
 #include <cmath> // for std::round
 
-// Custom ParamQuantity that maps 0..1 to -100..100% with sign and label
-struct AttenuverterQuantity : rack::engine::ParamQuantity {
-	std::string label;
-
-	AttenuverterQuantity(const std::string& label = "") : label(label) {}
-
-	std::string getDisplayValueString() override {
-		float val = getValue();  // 0..1
-		float percent = (val * 2.f - 1.f) * 100.f;
-		int rounded = static_cast<int>(std::round(percent));
-		std::string sign = (rounded > 0) ? "+" : "";
-		if (label.empty())
-			return sign + std::to_string(rounded) + "%";
-		else
-			return label + ": " + sign + std::to_string(rounded) + "%";
-	}
-
-	void setDisplayValue(float display) override {
-		display = clamp(display, -100.f, 100.f);
-		setValue((display / 100.f + 1.f) * 0.5f);
-	}
-
-	float getDisplayValue() override {
-		float val = getValue();
-		return (val * 2.f - 1.f) * 100.f;
-	}
-};
-
 struct Monobass : Module {
 	enum ParamId {
 		OCTAVE_PARAM,
@@ -109,40 +81,17 @@ struct Monobass : Module {
 		configParam(LFO_DEPTH_PARAM, 0.f, 1.f, 0.f, "LFO Depth", "%", 0.f, 100.f);
 		configSwitch(LFO_SHAPE_PARAM, 0.f, 5.f, 0.f, "LFO Shape", {"Sine", "Triangle", "Saw Up", "Saw Down", "Square", "Random"});
 
-		configParam(LFOFREQATT_PARAM, 0.f, 1.f, 0.f, "LFO Frequency Attenuverter");
-		configParam(FMATT_PARAM, 0.f, 1.f, 0.f, "FM Amount", "%", 0.f, 100.f);
-		configParam(PHASEATT_PARAM, 0.f, 1.f, 0.f, "Phase Attenuverter");
-		configParam(DETUNEATT_PARAM, 0.f, 1.f, 0.f, "Detune Attenuverter");
-		configParam(RESONANCEATT_PARAM, 0.f, 1.f, 0.f, "Resonance Attenuverter");
-		configParam(ENVDEPTHATT_PARAM, 0.f, 1.f, 0.f, "Envelope Depth Attenuverter");
-		configParam(WAVESHAPEATT_PARAM, 0.f, 1.f, 0.f, "Waveshape Attenuverter");
-		configParam(MIXERATT_PARAM, 0.f, 1.f, 0.f, "Mixer Attenuverter");
-		configParam(CUTOFFATT_PARAM, 0.f, 1.f, 0.f, "Cutoff Frequency Attenuverter");
-		configParam(FILTERDECAYATT_PARAM, 0.f, 1.f, 0.f, "Filter Decay Attenuverter");
-		configParam(AMPDECAYATT_PARAM, 0.f, 1.f, 0.f, "Amplitude Decay Attenuverter");
-
-		// Helper to assign custom AttenuverterQuantity with label
-		auto setAttenuverterDisplay = [&](int paramId, const std::string& label) {
-			// Delete old quantity pointer to avoid leaks if needed
-			if (paramQuantities[paramId]) {
-				delete paramQuantities[paramId];
-			}
-			auto* q = new AttenuverterQuantity(label);
-			q->module = this;
-			q->paramId = paramId;
-			paramQuantities[paramId] = q;
-		};
-
-		setAttenuverterDisplay(LFOFREQATT_PARAM, "LFO Frequency Attenuverter");
-		setAttenuverterDisplay(PHASEATT_PARAM, "Phase Attenuverter");
-		setAttenuverterDisplay(DETUNEATT_PARAM, "Detune Attenuverter");
-		setAttenuverterDisplay(RESONANCEATT_PARAM, "Resonance Attenuverter");
-		setAttenuverterDisplay(ENVDEPTHATT_PARAM, "Envelope Depth Attenuverter");
-		setAttenuverterDisplay(WAVESHAPEATT_PARAM, "Waveshape Attenuverter");
-		setAttenuverterDisplay(MIXERATT_PARAM, "Mixer Attenuverter");
-		setAttenuverterDisplay(CUTOFFATT_PARAM, "Cutoff Frequency Attenuverter");
-		setAttenuverterDisplay(FILTERDECAYATT_PARAM, "Filter Decay Attenuverter");
-		setAttenuverterDisplay(AMPDECAYATT_PARAM, "Amplitude Decay Attenuverter");
+		configParam(LFOFREQATT_PARAM, -100.f, 100.f, 0.f, "LFO Frequency Attenuverter", "%");
+		configParam(FMATT_PARAM, 0.f, 1.f, 0.5f, "FM Amount", "%", 0.f, 100.f);
+		configParam(PHASEATT_PARAM, -100.f, 100.f, 0.f, "Phase Attenuverter", "%");
+		configParam(DETUNEATT_PARAM, -100.f, 100.f, 0.f, "Detune Attenuverter", "%");
+		configParam(RESONANCEATT_PARAM, -100.f, 100.f, 0.f, "Resonance Attenuverter", "%");
+		configParam(ENVDEPTHATT_PARAM, -100.f, 100.f, 0.f, "Envelope Depth Attenuverter", "%");
+		configParam(WAVESHAPEATT_PARAM, -100.f, 100.f, 0.f, "Waveshape Attenuverter", "%");
+		configParam(MIXERATT_PARAM, -100.f, 100.f, 0.f, "Mixer Attenuverter", "%");
+		configParam(CUTOFFATT_PARAM, -100.f, 100.f, 0.f, "Cutoff Frequency Attenuverter", "%");
+		configParam(FILTERDECAYATT_PARAM, -100.f, 100.f, 0.f, "Filter Decay Attenuverter", "%");
+		configParam(AMPDECAYATT_PARAM, -100.f, 100.f, 0.f, "Amplitude Decay Attenuverter", "%");
 
 		configInput(GATE_INPUT, "Gate");
 		configInput(LFOCV_INPUT, "LFO Frequency CV");
@@ -161,6 +110,7 @@ struct Monobass : Module {
 		configOutput(LFO_OUT_OUTPUT, "LFO");
 		configOutput(AUDIO_OUTPUT, "Audio");
 	}
+	
 
 	float lowpassState[4] = {}; // 4-pole filter stages
 
