@@ -76,7 +76,7 @@ struct Monobass : Module {
 
 		configSwitch(GATETRIG_PARAM, 0.f, 2.f, 0.f, "Gate Behavior", {"Gate", "Trig", "Drone"});
 
-		configParam(LFOFREQ_PARAM, 0.f, 1.f, 0.f, "LFO Frequency", "hz", 0.01f, 20.f);
+		configParam(LFOFREQ_PARAM, 0.f, 1.f, 0.f, "LFO Frequency", "%", 0.f, 100.f);
 		configSwitch(LFO_RANGE_PARAM, 0.f, 1.f, 0.f, "LFO Range", {"Slow", "Fast"});
 		configSwitch(LFO_RESET_PARAM, 0.f, 1.f, 0.f, "LFO Reset", {"Off", "On"});
 		configParam(LFO_DEPTH_PARAM, 0.f, 1.f, 0.f, "LFO Depth", "%", 0.f, 100.f);
