@@ -634,7 +634,7 @@ struct MonobassWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(170.976, 96.058)), module, Monobass::LFO_OUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(170.868, 114.499)), module, Monobass::AUDIO_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(22.734, 73.691)), module, Monobass::LFOLED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(mm2px(Vec(22.734, 73.691)), module, Monobass::LFOLED_LIGHT));
 	}
 };
 
