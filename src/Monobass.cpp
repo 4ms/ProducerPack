@@ -251,18 +251,32 @@ switch (LFOshape) {
 }
 
 // === Final Output Voltage ===
-lfoValue = out * amp;
-outputs[LFO_OUT_OUTPUT].setVoltage(clamp(lfoValue, -5.f, 5.f));
+bool LFOoffsetSwitch = params[UNIPOLARBIPOLAR_PARAM].getValue() > 0.5f;
+
+float rawLFO = out * amp;
+
+float outputValue;
+if (LFOoffsetSwitch) {
+    // Unipolar: shift to 0–5V
+    outputValue = clamp(rawLFO * 0.5f + 2.5f, 0.f, 5.f);
+} else {
+    // Bipolar: no shift
+    outputValue = clamp(rawLFO, -5.f, 5.f);
+}
+
+// Send to output
+outputs[LFO_OUT_OUTPUT].setVoltage(outputValue);
 
 float maxVoltage = 5.f;
-float positiveHalf = std::max(lfoValue, 0.f) / maxVoltage; // 0..1 for green LED
-float negativeHalf = std::max(-lfoValue, 0.f) / maxVoltage; // 0..1 for red LED
+float positiveHalf = std::max(outputValue, 0.f) / maxVoltage;
+float negativeHalf = std::max(-outputValue, 0.f) / maxVoltage;
+
 positiveHalf = clamp(positiveHalf, 0.f, 1.f);
 negativeHalf = clamp(negativeHalf, 0.f, 1.f);
-lights[LFOLED_LIGHT].setBrightnessSmooth(negativeHalf, args.sampleTime);
-lights[LFOLED_LIGHT + 1].setBrightnessSmooth(positiveHalf, args.sampleTime);
-lights[LFOLED_LIGHT + 2].setBrightnessSmooth(0.f, args.sampleTime); // Blue off
 
+lights[LFOLED_LIGHT + 0].setBrightnessSmooth(negativeHalf, args.sampleTime); // Red
+lights[LFOLED_LIGHT + 1].setBrightnessSmooth(positiveHalf, args.sampleTime); // Green
+lights[LFOLED_LIGHT + 2].setBrightnessSmooth(0.f, args.sampleTime);          // Blue (unused)
 
 	// === AMPLITUDE ENVELOPE ===
 // Attack and decay times (in seconds)
