@@ -55,7 +55,7 @@ struct Monobass : Module {
 		OUTPUTS_LEN
 	};
 	enum LightId {
-		LFOLED_LIGHT,
+		ENUMS(LFO_LED_LIGHT, 3), // This reserves 3 "enum slots" rather than just 1
 		LIGHTS_LEN
 	};
 
@@ -166,8 +166,13 @@ float lfoValue = 0.f;
 float lfoRandomValue = 0.f;
 float lfoFreq = 0.f; 
 
-void process(const ProcessArgs& args) override {
+bool lfoResetEnabled;     // From the UI or a physical switch
+bool prevGateState = false; // To detect rising edge
 
+void process(const ProcessArgs& args) override {
+	float gateIn = inputs[GATE_INPUT].getVoltage();
+	bool currentGateHigh = gateIn >= 1.f;
+	
 	// === LFO Frequency Computation ===
 float freqParam = params[LFOFREQ_PARAM].getValue(); // 0–1
 float freqCV = inputs[LFOCV_INPUT].isConnected() ? clamp(inputs[LFOCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
@@ -183,6 +188,14 @@ if (LFORange) {
     // Slow range: 0.01 Hz to 5 Hz
     lfoFreq = 0.01f + freqMod * (5.f - 0.01f); // 0.01–5 Hz
 }
+
+lfoResetEnabled = params[LFO_RESET_PARAM].getValue() > 0.5f; 
+
+bool currentGateState = gateIn >= 1.f;  // Gate HIGH when voltage >= 1V (your threshold)
+if (lfoResetEnabled && !prevGateState && currentGateState) {
+    lfoPhase = 0.f; // Rising edge detected, reset phase
+}
+prevGateState = currentGateState;
 
 // === Advance LFO Phase ===
 lfoPhase += lfoFreq / args.sampleRate;
@@ -239,10 +252,17 @@ switch (LFOshape) {
 lfoValue = out * amp;
 outputs[LFO_OUT_OUTPUT].setVoltage(clamp(lfoValue, -5.f, 5.f));
 
-	// === GATE & AMPLITUDE ENVELOPE ===
-float gateIn = inputs[GATE_INPUT].getVoltage();
-bool currentGateHigh = gateIn >= 1.f;
+float maxVoltage = 5.f;
+float positiveHalf = std::max(lfoValue, 0.f) / maxVoltage; // 0..1 for green LED
+float negativeHalf = std::max(-lfoValue, 0.f) / maxVoltage; // 0..1 for red LED
+positiveHalf = clamp(positiveHalf, 0.f, 1.f);
+negativeHalf = clamp(negativeHalf, 0.f, 1.f);
+lights[LFO_LED_LIGHT].setBrightnessSmooth(negativeHalf, args.sampleTime);
+lights[LFO_LED_LIGHT + 1].setBrightnessSmooth(positiveHalf, args.sampleTime);
+lights[LFO_LED_LIGHT + 2].setBrightnessSmooth(0.f, args.sampleTime); // Blue off
 
+
+	// === AMPLITUDE ENVELOPE ===
 // Attack and decay times (in seconds)
 float attackTime = 0.001f; // fixed 1ms attack 
 
@@ -609,7 +629,7 @@ struct MonobassWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(170.976, 96.058)), module, Monobass::LFO_OUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(170.868, 114.499)), module, Monobass::AUDIO_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(34.905, 73.691)), module, Monobass::LFOLED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(mm2px(Vec(34.905, 73.691)), module, Monobass::LFO_LED_LIGHT));
 	}
 };
 
