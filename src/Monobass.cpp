@@ -140,7 +140,7 @@ struct Monobass : Module {
 	}
 	
 
-	float phase = 0.f;
+float phase = 0.f;
 float phaseDetuned = 0.f;
 float phaseSaw = 0.f;  // New phase for the third sawtooth oscillator
 
@@ -161,7 +161,83 @@ float sum2 = 0;
 
 float agcEnvelope = 1.f;
 
+float lfoPhase = 0.f;
+float lfoValue = 0.f;
+float lfoRandomValue = 0.f;
+float lfoFreq = 0.f; 
+
 void process(const ProcessArgs& args) override {
+
+	// === LFO Frequency Computation ===
+float freqParam = params[LFOFREQ_PARAM].getValue(); // 0–1
+float freqCV = inputs[LFOCV_INPUT].isConnected() ? clamp(inputs[LFOCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+float freqAtt = params[LFOFREQATT_PARAM].getValue() / 100.f;
+float freqMod = clamp(freqParam + freqCV * freqAtt, 0.f, 1.f);
+
+bool LFORange = (params[LFO_RANGE_PARAM].getValue() > 0.5f);
+
+if (LFORange) {
+    // Fast range: 5 Hz to 20 Hz
+    lfoFreq = 5.f + freqMod * (20.f - 5.f); // 5–20 Hz
+} else {
+    // Slow range: 0.01 Hz to 5 Hz
+    lfoFreq = 0.01f + freqMod * (5.f - 0.01f); // 0.01–5 Hz
+}
+
+// === Advance LFO Phase ===
+lfoPhase += lfoFreq / args.sampleRate;
+if (lfoPhase >= 1.f) {
+	lfoPhase -= 1.f;
+	// Step new random value when shape = 5 (stepped random)
+	if ((int)params[LFO_SHAPE_PARAM].getValue() == 5) {
+		lfoRandomValue = 2.f * ((float)rand() / (float)RAND_MAX) - 1.f; // -1 to +1
+	}
+}
+
+// === LFO Depth Control ===
+float depthParam = params[LFO_DEPTH_PARAM].getValue(); // 0–1
+float depthCV = inputs[LFOCV_INPUT].isConnected() ? clamp(inputs[LFOCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+float depth = clamp(depthParam + depthCV, 0.f, 1.f);
+float amp = depth * 5.f; // Convert 0–1 to 0–5V amplitude (so output is ±5V = 10Vpp)
+
+// === LFO Shape ===
+int LFOshape = (int)params[LFO_SHAPE_PARAM].getValue();
+float t = lfoPhase;
+float out = 0.f;
+
+switch (LFOshape) {
+	case 0: { // Basic sine approximation, no libraries
+		float phase = t;  // t in [0, 1)
+		float x = 2.0f * phase - 1.0f;
+		float abs_x = x < 0.0f ? -x : x;
+		float y = 4.0f * x * (1.0f - abs_x);
+		out = y;
+		break;
+	}
+	
+	case 1: // Triangle
+		if (t < 0.5f)
+			out = 4.f * t - 1.f;
+		else
+			out = 3.f - 4.f * t;
+		break;
+	case 2: // Ramp Up (Saw)
+		out = 2.f * t - 1.f;
+		break;
+	case 3: // Ramp Down
+		out = 1.f - 2.f * t;
+		break;
+	case 4: // Square
+		out = (t < 0.5f) ? 1.f : -1.f;
+		break;
+	case 5: // Stepped Random
+		out = lfoRandomValue;
+		break;
+}
+
+// === Final Output Voltage ===
+lfoValue = out * amp;
+outputs[LFO_OUT_OUTPUT].setVoltage(clamp(lfoValue, -5.f, 5.f));
 
 	// === GATE & AMPLITUDE ENVELOPE ===
 float gateIn = inputs[GATE_INPUT].getVoltage();
@@ -319,9 +395,6 @@ gateState = currentGateHigh;
 	float phaseCV = inputs[TIMBRECV_INPUT].isConnected() ? clamp(inputs[TIMBRECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
 	float phaseAtt = params[PHASEATT_PARAM].getValue() / 100.f; 
 	float timbre = clamp(phaseParam + phaseCV * phaseAtt, 0.f, 1.f);
-
-	// Compensation curve (nonlinear for better perception)
-	float phaseAGC = 1.f / (0.12f + 0.88f * std::pow(1.f - timbre, 2.f));
 
 	// === Frequencies ===
 	float freq1 = 261.626f * std::pow(2.f, basePitch);
