@@ -63,7 +63,7 @@ struct Monobass : Module {
 	Monobass() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		configSwitch(OCTAVE_PARAM, 0.f, 3.f, 1.f, "Octave", {"-3", "-2", "-1", "0"});
-		configParam(FINETUNE_PARAM, -20.f, 2.f, 0.f, "Fine Tune", "hz");
+		configParam(FINETUNE_PARAM, -0.1f, 0.1f, 0.f, "Fine Tune", "v");
 		configParam(WAVESHAPE_PARAM, 0.f, 1.f, 0.5f, "Waveshape", "%", 0.f, 100.f);
 		configParam(TIMBRE_PARAM, 0.f, 1.f, 0.f, "Phase", "%", 0.f, 100.f);
 		configParam(MIXER_PARAM, 0.f, 1.f, 0.f, "Mixer", "%", 0.f, 100.f);
@@ -394,7 +394,9 @@ gateState = currentGateHigh;
 	const float maxFMDepth = 0.1f;
 	float fmPitchOffset = fmCV * fmAmount * maxFMDepth;
 	
-	float basePitch = pitchCV + freqOffset + fmPitchOffset;
+	float fineTune = params[FINETUNE_PARAM].getValue(); 
+
+	float basePitch = pitchCV + fineTune + freqOffset + fmPitchOffset;
 
 	float detuneKnob = params[DETUNE_PARAM].getValue();
 	float detuneCV = inputs[DETUNECV_INPUT].isConnected() ? clamp(inputs[DETUNECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : outputValue;
