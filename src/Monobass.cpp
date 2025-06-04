@@ -84,7 +84,7 @@ struct Monobass : Module {
 		configSwitch(UNIPOLARBIPOLAR_PARAM, 0.f, 1.f, 0.f, "Bipolar/Unipolar", {"Bipolar", "Unipolar"});
 
 		configParam(LFOFREQATT_PARAM, -100.f, 100.f, 0.f, "LFO Frequency Attenuverter", "%");
-		configParam(FMATT_PARAM, 0.f, 1.f, 0.5f, "FM Amount", "%", 0.f, 100.f);
+		configParam(FMATT_PARAM, 0.f, 1.f, 0.f, "FM Amount", "%", 0.f, 100.f);
 		configParam(TIMBREATT_PARAM, -100.f, 100.f, 0.f, "Phase Attenuverter", "%");
 		configParam(DETUNEATT_PARAM, -100.f, 100.f, 0.f, "Detune Attenuverter", "%");
 		configParam(RESONANCEATT_PARAM, -100.f, 100.f, 0.f, "Resonance Attenuverter", "%");
@@ -185,10 +185,10 @@ bool LFORange = (params[LFO_RANGE_PARAM].getValue() > 0.5f);
 
 if (LFORange) {
     // Fast range: 5 Hz to 20 Hz
-    lfoFreq = 5.f + freqMod * (20.f - 5.f); // 5–20 Hz
+    lfoFreq = 5.f + freqMod * (20.f - 1.f); // 5–20 Hz
 } else {
     // Slow range: 0.01 Hz to 5 Hz
-    lfoFreq = 0.01f + freqMod * (5.f - 0.01f); // 0.01–5 Hz
+    lfoFreq = 0.01f + freqMod * (1.f - 0.01f); // 0.01–5 Hz
 }
 
 lfoResetEnabled = params[LFO_RESET_PARAM].getValue() > 0.5f; 
@@ -283,7 +283,7 @@ lights[LFOLED_LIGHT + 2].setBrightnessSmooth(0.f, args.sampleTime);          // 
 float attackTime = 0.001f; // fixed 1ms attack 
 
 float ampDecayParam = params[AMPDECAY_PARAM].getValue();
-float ampDecayCV = inputs[AMPDECAYCV_INPUT].isConnected() ? clamp(inputs[AMPDECAYCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+float ampDecayCV = inputs[AMPDECAYCV_INPUT].isConnected() ? clamp(inputs[AMPDECAYCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : outputValue;
 float ampDecayAtt = params[AMPDECAYATT_PARAM].getValue() / 100.f;
 float decayCombined = clamp(ampDecayParam + (ampDecayCV * ampDecayAtt), 0.f, 1.f);
 float decayTime = 0.01f + decayCombined * 0.49f; // decayTime from 10ms to 500ms
@@ -294,7 +294,7 @@ float decayCoeff = std::exp(-1.f / (decayTime * args.sampleRate));
 
 // === FILTER ENVELOPE DECAY ===
 float filterDecayParam = params[FILTERDECAY_PARAM].getValue();
-float filterDecayCV = inputs[FILTERDECAYCV_INPUT].isConnected() ? clamp(inputs[FILTERDECAYCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+float filterDecayCV = inputs[FILTERDECAYCV_INPUT].isConnected() ? clamp(inputs[FILTERDECAYCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : outputValue;
 float filterDecayAtt = params[FILTERDECAYATT_PARAM].getValue() / 100.f; 
 float filterDecayCombined = clamp(filterDecayParam + (filterDecayCV * filterDecayAtt), 0.f, 1.f);
 float filterDecayTime = 0.01f + filterDecayCombined * 0.49f; // 10ms to 500ms
@@ -385,19 +385,19 @@ gateState = currentGateHigh;
 
 	const int numVoices = 3;
 
-	// === Base pitch and frequency ===
 	float pitchCV = inputs[VOCT_INPUT].getVoltage();
 	float octaveParam = params[OCTAVE_PARAM].getValue();
 	float freqOffset = octaveParam - 3.f;
-	float fmCV = inputs[FMCV_INPUT].getVoltage();
+	float fmCVRaw = inputs[FMCV_INPUT].isConnected() ? inputs[FMCV_INPUT].getVoltage() : outputValue;
+	float fmCV = clamp(fmCVRaw / 5.f, -1.f, 1.f);
 	float fmAmount = params[FMATT_PARAM].getValue();
 	const float maxFMDepth = 0.1f;
-	float fmPitchOffset = clamp(fmCV / 5.f, -1.f, 1.f) * fmAmount * maxFMDepth;
-
+	float fmPitchOffset = fmCV * fmAmount * maxFMDepth;
+	
 	float basePitch = pitchCV + freqOffset + fmPitchOffset;
 
 	float detuneKnob = params[DETUNE_PARAM].getValue();
-	float detuneCV = inputs[DETUNECV_INPUT].isConnected() ? clamp(inputs[DETUNECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+	float detuneCV = inputs[DETUNECV_INPUT].isConnected() ? clamp(inputs[DETUNECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : outputValue;
 	float detuneAtt = params[DETUNEATT_PARAM].getValue() / 100.f; 
 	float totalDetuneControl = clamp(detuneKnob + detuneCV * detuneAtt, 0.f, 1.f);
 	float detuneSemitones = totalDetuneControl * 0.5f;
@@ -405,7 +405,7 @@ gateState = currentGateHigh;
 
 	// === Waveshape and Timbre ===
 	float waveshapeParam = params[WAVESHAPE_PARAM].getValue();
-	float waveshapeCV = inputs[WAVESHAPECV_INPUT].isConnected() ? clamp(inputs[WAVESHAPECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+	float waveshapeCV = inputs[WAVESHAPECV_INPUT].isConnected() ? clamp(inputs[WAVESHAPECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : outputValue;
 	float waveshapeAtt = params[WAVESHAPEATT_PARAM].getValue() / 100.f;
 	float shape = clamp(waveshapeParam + waveshapeCV * waveshapeAtt, 0.f, 1.f);
 
@@ -428,7 +428,7 @@ gateState = currentGateHigh;
 	}
 
 	float phaseParam = params[TIMBRE_PARAM].getValue();
-	float phaseCV = inputs[TIMBRECV_INPUT].isConnected() ? clamp(inputs[TIMBRECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+	float phaseCV = inputs[TIMBRECV_INPUT].isConnected() ? clamp(inputs[TIMBRECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : outputValue;
 	float phaseAtt = params[TIMBREATT_PARAM].getValue() / 100.f; 
 	float timbre = clamp(phaseParam + phaseCV * phaseAtt, 0.f, 1.f);
 
@@ -497,7 +497,7 @@ for (int i = 0; i < numVoices; ++i) {
 
 // mixerAmount is 0..1 from knob + CV summed & clamped
 float mixerKnob = params[MIXER_PARAM].getValue();
-float mixerCV = inputs[MIXERCV_INPUT].isConnected() ? clamp(inputs[MIXERCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+float mixerCV = inputs[MIXERCV_INPUT].isConnected() ? clamp(inputs[MIXERCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : outputValue;
 float mixerAtt = params[MIXERATT_PARAM].getValue() / 100.f; 
 float mixerAmount = clamp(mixerKnob + (mixerCV * mixerAtt), 0.f, 1.f);
 
@@ -538,36 +538,29 @@ gain = clamp(gain, 0.1f, 10.f);  // Prevent wild gain swings
 
 finalOutput *= (gain * 0.5); 
 
-// Get base cutoff knob (0–1) mapped to -5V to +5V
-float cutoffParam = params[CUTOFF_PARAM].getValue();
-float cutoffOffsetV = rescale(cutoffParam, 0.f, 1.f, -5.f, 5.f);
-
-// External cutoff CV input (already ±5V)
-float cutoffCV = inputs[CUTOFFCV_INPUT].getVoltage();
-float cutoffAtt = params[CUTOFFATT_PARAM].getValue() / 100.f; 
-
 // Filter envelope as 0–10V (envelope 0–1 * depth 0–1 * 10V)
 float envDepthParam = params[ENVDEPTH_PARAM].getValue();
-float envDepthCV = inputs[ENVDEPTHCV_INPUT].isConnected() ? clamp(inputs[ENVDEPTHCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+float envDepthCV = inputs[ENVDEPTHCV_INPUT].isConnected() ? clamp(inputs[ENVDEPTHCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : outputValue;
 float envDepthAtt = params[ENVDEPTHATT_PARAM].getValue() / 100.f; 
 float envDepth = clamp(envDepthParam + (envDepthCV * envDepthAtt), 0.f, 1.f);
 float envelopeV = filterEnvelope * envDepth * 10.f;
 
-// Sum all voltages and clamp to ±5V
+float cutoffParam = params[CUTOFF_PARAM].getValue();
+float cutoffOffsetV = rescale(cutoffParam, 0.f, 1.f, -5.f, 5.f);
+float cutoffCVRaw = inputs[CUTOFFCV_INPUT].isConnected() ? inputs[CUTOFFCV_INPUT].getVoltage() : outputValue;
+float cutoffCV = cutoffCVRaw;
+float cutoffAtt = params[CUTOFFATT_PARAM].getValue() / 100.f;
 float cutoffControlV = clamp(cutoffOffsetV + (cutoffCV * cutoffAtt) + envelopeV, -5.f, 5.f);
-
-// Map -5V to +5V to cutoff frequency range (20 Hz to 7000 Hz)
 float cutoffNorm = rescale(cutoffControlV, -5.f, 5.f, 0.f, 1.f);
-float cutoffHz = 20.f * std::pow(350.f, cutoffNorm);  // exponential scale
-
-// Apply filter envelope modulation to cutoff
-float envelopeModHz = filterEnvelope * envDepth * 300.f; // up to 300 Hz boost
+float cutoffHz = 20.f * std::pow(350.f, cutoffNorm);
+float envelopeModHz = filterEnvelope * envDepth * 300.f;
 cutoffHz += envelopeModHz;
 cutoffHz = clamp(cutoffHz, 20.f, 7000.f);
 
+
 // Resonance
 float resonanceParam = params[RESONANCE_PARAM].getValue();
-float resonanceCV = inputs[RESONANCECV_INPUT].isConnected() ? clamp(inputs[RESONANCECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+float resonanceCV = inputs[RESONANCECV_INPUT].isConnected() ? clamp(inputs[RESONANCECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : outputValue;
 float resonanceAtt = params[RESONANCEATT_PARAM].getValue() / 100.f;
 float resonance = clamp(resonanceParam + resonanceCV * resonanceAtt, 0.f, 1.f);
 
