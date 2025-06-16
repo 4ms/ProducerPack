@@ -255,8 +255,8 @@ struct _70sEQ : Module {
 
     void process(const ProcessArgs& args) override {
         float inL = inputs[INL_INPUT].getVoltage();
-        float inR = inputs[INR_INPUT].getVoltage();
-    
+        float inR = inputs[INR_INPUT].isConnected() ? inputs[INR_INPUT].getVoltage() : inL;
+            
         float gain = params[GAIN_PARAM].getValue();          // 0..1 normalized
         float outputVol = params[OUTPUTVOL_PARAM].getValue(); // 0..2x
     
