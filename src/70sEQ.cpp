@@ -212,7 +212,7 @@ struct _70sEQ : Module {
             {"Off", "35hz", "60hz", "110hz", "220hz"});
         configSwitch(HIGHPASSFREQSELECT_PARAM, 0.f, 4.f, 0.f, "Highpass Freq Select",
             {"Off", "50hz", "80hz", "160hz", "300hz"});
-        configParam(OUTPUTVOL_PARAM, 0.f, 2.f, 1.f, "Output Level", "x");
+        configParam(OUTPUTVOL_PARAM, 0.f, 1.f, 0.25f, "Output Level", "x");
         configInput(INL_INPUT, "Audio Left");
         configInput(INR_INPUT, "Audio Right");
         configOutput(OUTL_OUTPUT, "Output Left");
@@ -266,8 +266,8 @@ struct _70sEQ : Module {
         inR *= inputGain;
     
         // Clip input signal to ±5V (10V peak-to-peak)
-        inL = std::fmax(std::fmin(inL, 5.f), -5.f);
-        inR = std::fmax(std::fmin(inR, 5.f), -5.f);
+        inL = clamp(inL, -5.f, 5.f);
+        inR = clamp(inR, -5.f, 5.f);
     
         // --- EQ Processing stages ---
     
@@ -317,11 +317,14 @@ struct _70sEQ : Module {
         }
     
         // Apply output volume
-        inL *= outputVol;
-        inR *= outputVol;
+        float outL = inL * outputVol;
+        float outR = inR * outputVol;
+
+        outL = clamp(outL, -5.f, 5.f); 
+        outR = clamp(outR, -5.f, 5.f);
     
-        outputs[OUTL_OUTPUT].setVoltage(inL);
-        outputs[OUTR_OUTPUT].setVoltage(inR);
+        outputs[OUTL_OUTPUT].setVoltage(outL);
+        outputs[OUTR_OUTPUT].setVoltage(outR);
     }
 };    
 
