@@ -188,8 +188,10 @@ struct _70sEQ : Module {
         OUTPUTS_LEN
     };
     enum LightId {
-        GAINLED_LIGHT,
-        OUTLED_LIGHT,
+        GAINLED_LIGHT_GREEN,
+        GAINLED_LIGHT_RED,
+        OUTLED_LIGHT_GREEN,
+        OUTLED_LIGHT_RED,
         LIGHTS_LEN
     };
 
@@ -217,8 +219,11 @@ struct _70sEQ : Module {
         configInput(INR_INPUT, "Audio Right");
         configOutput(OUTL_OUTPUT, "Output Left");
         configOutput(OUTR_OUTPUT, "Output Right");
-        configLight(GAINLED_LIGHT, "Gain LED");
-        configLight(OUTLED_LIGHT, "Output LED");
+        configLight(GAINLED_LIGHT_GREEN, "Gain LED Green");
+        configLight(GAINLED_LIGHT_RED, "Gain LED Red");
+        configLight(OUTLED_LIGHT_GREEN, "Output LED Green");
+        configLight(OUTLED_LIGHT_RED, "Output LED Red");
+        
     }
 
     float freqSelectToFreq(int sel, bool isMid) {
@@ -256,17 +261,27 @@ struct _70sEQ : Module {
     void process(const ProcessArgs& args) override {
         float inL = inputs[INL_INPUT].getVoltage();
         float inR = inputs[INR_INPUT].isConnected() ? inputs[INR_INPUT].getVoltage() : inL;
-            
+        
         float gain = params[GAIN_PARAM].getValue();          // 0..1 normalized
-        float outputVol = params[OUTPUTVOL_PARAM].getValue(); // 0..2x
+        float outputVol = params[OUTPUTVOL_PARAM].getValue(); // 0..1
     
-        float inputGain = 5.f * gain;  // maps 0..1 -> 0..5
+        // Apply input gain boost from 1x to 5x
+        float inputGain = 5.f * gain;  // maps 0..1 -> 1..5
         inL *= inputGain;
         inR *= inputGain;
+    
+        // Monitor signal after input gain, before clipping
+        float gainPostAmpLevel = std::max(std::fabs(inL), std::fabs(inR));
+        bool gainClipping = gainPostAmpLevel >= 5.f;
+        float gainBrightness = gainPostAmpLevel / 5.f;
     
         // Clip input signal to ±5V (10V peak-to-peak)
         inL = clamp(inL, -5.f, 5.f);
         inR = clamp(inR, -5.f, 5.f);
+    
+        // GAIN LED: Green if below clip, Red if clipped
+        lights[GAINLED_LIGHT_GREEN].setBrightnessSmooth(gainClipping ? 0.f : gainBrightness, args.sampleTime);
+        lights[GAINLED_LIGHT_RED].setBrightnessSmooth(gainClipping ? gainBrightness : 0.f, args.sampleTime);
     
         // --- EQ Processing stages ---
     
@@ -318,12 +333,21 @@ struct _70sEQ : Module {
         // Apply output volume
         float outL = inL * outputVol;
         float outR = inR * outputVol;
-
+    
+        // Output clipping
+        float outLevel = std::max(std::fabs(outL), std::fabs(outR));
+        bool outClipping = outLevel >= 5.f;
+        float outBrightness = outLevel / 5.f;
+    
         outL = clamp(outL, -5.f, 5.f); 
         outR = clamp(outR, -5.f, 5.f);
     
         outputs[OUTL_OUTPUT].setVoltage(outL);
         outputs[OUTR_OUTPUT].setVoltage(outR);
+    
+        // OUTPUT LED: Green if below clip, Red if clipped
+        lights[OUTLED_LIGHT_GREEN].setBrightnessSmooth(outClipping ? 0.f : outBrightness, args.sampleTime);
+        lights[OUTLED_LIGHT_RED].setBrightnessSmooth(outClipping ? outBrightness : 0.f, args.sampleTime);
     }
 };    
 
@@ -351,10 +375,15 @@ struct _70sEQWidget : ModuleWidget {
 
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(25.275, 103.75)), module, _70sEQ::OUTL_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(25.275, 116.722)), module, _70sEQ::OUTR_OUTPUT));
+        // Gain LED (same position, red and green stacked)
+        addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(23.688, 16.659)), module, _70sEQ::GAINLED_LIGHT_GREEN));
+        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(23.688, 16.659)), module, _70sEQ::GAINLED_LIGHT_RED));
 
-        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(23.688, 16.659)), module, _70sEQ::GAINLED_LIGHT));
-        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(23.688, 88.753)), module, _70sEQ::OUTLED_LIGHT));
-    }
+        // Output LED
+        addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(23.688, 88.753)), module, _70sEQ::OUTLED_LIGHT_GREEN));
+        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(23.688, 88.753)), module, _70sEQ::OUTLED_LIGHT_RED));
+
+   }
 };
 
 Model* model_70sEQ = createModel<_70sEQ, _70sEQWidget>("70sEQ");
