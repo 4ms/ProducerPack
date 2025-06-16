@@ -175,6 +175,7 @@ struct _70sEQ : Module {
         LOWFREQSELECT_PARAM,
         HIGHPASSFREQSELECT_PARAM,
         OUTPUTVOL_PARAM,
+        BYPASS_PARAM,
         PARAMS_LEN
     };
     enum InputId {
@@ -192,6 +193,8 @@ struct _70sEQ : Module {
         GAINLED_LIGHT_RED,
         OUTLED_LIGHT_GREEN,
         OUTLED_LIGHT_RED,
+        EQLED_LIGHT_GREEN,
+        EQLED_LIGHT_RED,
         LIGHTS_LEN
     };
 
@@ -207,6 +210,7 @@ struct _70sEQ : Module {
         configParam(GAIN_PARAM, 0.f, 1.f, 0.2f, "Gain", "x", 0.f, 5.f);
         configParam(HIGH_SHELF_PARAM, -15.f, 15.f, 0.f, "High Shelf Gain", "dB");
         configParam(MID_PARAM, -15.f, 15.f, 0.f, "Mid Gain", "dB");
+        configSwitch(BYPASS_PARAM, 0.f, 1.f, 0.f, "Bypass", {"Off", "On"}),
         configSwitch(MIDFREQSELECT_PARAM, 0.f, 6.f, 0.f, "Mid Freq Select",
             {"Off", "360hz", "700hz", "1.6khz", "3.2khz", "4.8khz", "7.2khz"});
         configParam(LOW_SHELF_PARAM, -15.f, 15.f, 0.f, "Low Shelf Gain", "dB");
@@ -264,6 +268,7 @@ struct _70sEQ : Module {
         
         float gain = params[GAIN_PARAM].getValue();          // 0..1 normalized
         float outputVol = params[OUTPUTVOL_PARAM].getValue(); // 0..1
+        bool bypass = params[BYPASS_PARAM].getValue() > 0.5f;
     
         // Apply input gain boost from 1x to 5x
         float inputGain = 5.f * gain;  // maps 0..1 -> 1..5
@@ -283,9 +288,7 @@ struct _70sEQ : Module {
         lights[GAINLED_LIGHT_GREEN].setBrightnessSmooth(gainClipping ? 0.f : gainBrightness, args.sampleTime);
         lights[GAINLED_LIGHT_RED].setBrightnessSmooth(gainClipping ? gainBrightness : 0.f, args.sampleTime);
     
-        // --- EQ Processing stages ---
-    
-        // Highpass processing (3 stages)
+        // --- Highpass processing (3 stages) ---
         float hpFreq = highpassFreqSelectToFreq((int)params[HIGHPASSFREQSELECT_PARAM].getValue());
         float alpha = 0.f;
         if (hpFreq > 0.f) {
@@ -300,46 +303,60 @@ struct _70sEQ : Module {
             inR = highpassR3.process(inR, alpha);
         }
     
-        // Mid band
-        int midFreqSel = (int)params[MIDFREQSELECT_PARAM].getValue();
-        float midFreq = freqSelectToFreq(midFreqSel, true);
-        float midGainDB = params[MID_PARAM].getValue();
-        if (midFreq > 0.f) {
-            midBandL.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
-            midBandR.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
-            inL = midBandL.process(inL);
-            inR = midBandR.process(inR);
+        // EQ processing or bypass
+        float eqOutL = inL;
+        float eqOutR = inR;
+    
+        if (!bypass) {
+            // Mid band
+            int midFreqSel = (int)params[MIDFREQSELECT_PARAM].getValue();
+            float midFreq = freqSelectToFreq(midFreqSel, true);
+            float midGainDB = params[MID_PARAM].getValue();
+            if (midFreq > 0.f) {
+                midBandL.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
+                midBandR.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
+                eqOutL = midBandL.process(eqOutL);
+                eqOutR = midBandR.process(eqOutR);
+            }
+    
+            // High shelf
+            float highShelfFreq = 10000.f;
+            float highShelfGainDB = params[HIGH_SHELF_PARAM].getValue();
+            highShelfL.calcTargetCoeffs(args.sampleRate, highShelfFreq, highShelfGainDB);
+            highShelfR.calcTargetCoeffs(args.sampleRate, highShelfFreq, highShelfGainDB);
+            eqOutL = highShelfL.process(eqOutL);
+            eqOutR = highShelfR.process(eqOutR);
+    
+            // Low shelf
+            int lowFreqSel = (int)params[LOWFREQSELECT_PARAM].getValue();
+            float lowFreq = freqSelectToFreq(lowFreqSel, false);
+            float lowGainDB = params[LOW_SHELF_PARAM].getValue();
+            if (lowFreq > 0.f) {
+                lowShelfL.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
+                lowShelfR.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
+                eqOutL = lowShelfL.process(eqOutL);
+                eqOutR = lowShelfR.process(eqOutR);
+            }
         }
     
-        // High shelf
-        float highShelfFreq = 10000.f;
-        float highShelfGainDB = params[HIGH_SHELF_PARAM].getValue();
-        highShelfL.calcTargetCoeffs(args.sampleRate, highShelfFreq, highShelfGainDB);
-        highShelfR.calcTargetCoeffs(args.sampleRate, highShelfFreq, highShelfGainDB);
-        inL = highShelfL.process(inL);
-        inR = highShelfR.process(inR);
+        // --- EQ LED (pre-output volume) ---
+        float eqLevel = std::max(std::fabs(eqOutL), std::fabs(eqOutR));
+        bool eqClipping = eqLevel >= 5.f;
+        float eqBrightness = eqLevel / 5.f;
     
-        // Low shelf
-        int lowFreqSel = (int)params[LOWFREQSELECT_PARAM].getValue();
-        float lowFreq = freqSelectToFreq(lowFreqSel, false);
-        float lowGainDB = params[LOW_SHELF_PARAM].getValue();
-        if (lowFreq > 0.f) {
-            lowShelfL.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
-            lowShelfR.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
-            inL = lowShelfL.process(inL);
-            inR = lowShelfR.process(inR);
-        }
+        lights[EQLED_LIGHT_GREEN].setBrightnessSmooth(eqClipping ? 0.f : eqBrightness, args.sampleTime);
+        lights[EQLED_LIGHT_RED].setBrightnessSmooth(eqClipping ? eqBrightness : 0.f, args.sampleTime);
     
         // Apply output volume
-        float outL = inL * outputVol;
-        float outR = inR * outputVol;
+        float outL = eqOutL * outputVol;
+        float outR = eqOutR * outputVol;
     
         // Output clipping
         float outLevel = std::max(std::fabs(outL), std::fabs(outR));
         bool outClipping = outLevel >= 5.f;
         float outBrightness = outLevel / 5.f;
     
-        outL = clamp(outL, -5.f, 5.f); 
+        outL = clamp(outL, -5.f, 5.f);
         outR = clamp(outR, -5.f, 5.f);
     
         outputs[OUTL_OUTPUT].setVoltage(outL);
@@ -352,38 +369,42 @@ struct _70sEQ : Module {
 };    
 
 struct _70sEQWidget : ModuleWidget {
-    _70sEQWidget(_70sEQ* module) {
-        setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/70sEQ.svg")));
+	_70sEQWidget(_70sEQ* module) {
+		setModule(module);
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/70sEQ.svg")));
 
-        addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-        addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-        addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-        addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(7.661, 16.659)), module, _70sEQ::GAIN_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 30.105)), module, _70sEQ::HIGH_SHELF_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(7.661, 43.796)), module, _70sEQ::MID_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(23.688, 43.796)), module, _70sEQ::MIDFREQSELECT_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(7.661, 60.16)), module, _70sEQ::LOW_SHELF_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(23.688, 60.16)), module, _70sEQ::LOWFREQSELECT_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 73.559)), module, _70sEQ::HIGHPASSFREQSELECT_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(7.661, 88.753)), module, _70sEQ::OUTPUTVOL_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(7.661, 16.659)), module, _70sEQ::GAIN_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(15.24, 30.105)), module, _70sEQ::HIGH_SHELF_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(7.661, 43.796)), module, _70sEQ::MID_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(23.158, 43.796)), module, _70sEQ::MIDFREQSELECT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(7.661, 60.16)), module, _70sEQ::LOW_SHELF_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(23.158, 60.16)), module, _70sEQ::LOWFREQSELECT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(7.661, 73.332)), module, _70sEQ::HIGHPASSFREQSELECT_PARAM));
 
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(5.544, 103.75)), module, _70sEQ::INL_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(5.544, 116.722)), module, _70sEQ::INR_INPUT));
+		addParam(createParamCentered<CKSS>(mm2px(Vec(23.158, 73.332)), module, _70sEQ::BYPASS_PARAM));
 
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(25.275, 103.75)), module, _70sEQ::OUTL_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(25.275, 116.722)), module, _70sEQ::OUTR_OUTPUT));
-        // Gain LED (same position, red and green stacked)
-        addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(23.688, 16.659)), module, _70sEQ::GAINLED_LIGHT_GREEN));
-        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(23.688, 16.659)), module, _70sEQ::GAINLED_LIGHT_RED));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(7.661, 88.753)), module, _70sEQ::OUTPUTVOL_PARAM));
 
-        // Output LED
-        addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(23.688, 88.753)), module, _70sEQ::OUTLED_LIGHT_GREEN));
-        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(23.688, 88.753)), module, _70sEQ::OUTLED_LIGHT_RED));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.661, 103.75)), module, _70sEQ::INL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.661, 116.722)), module, _70sEQ::INR_INPUT));
 
-   }
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.158, 103.75)), module, _70sEQ::OUTL_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.158, 116.722)), module, _70sEQ::OUTR_OUTPUT));
+
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(23.158, 16.659)), module, _70sEQ::GAINLED_LIGHT_RED));
+        addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(23.158, 16.659)), module, _70sEQ::GAINLED_LIGHT_GREEN));
+
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(15.24, 60.16)), module, _70sEQ::EQLED_LIGHT_RED));
+        addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(15.24, 60.16)), module, _70sEQ::EQLED_LIGHT_GREEN));
+
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(23.158, 88.753)), module, _70sEQ::OUTLED_LIGHT_RED));
+        addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(23.158, 88.753)), module, _70sEQ::OUTLED_LIGHT_GREEN));
+	}
 };
 
 Model* model_70sEQ = createModel<_70sEQ, _70sEQWidget>("70sEQ");
