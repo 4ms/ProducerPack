@@ -260,8 +260,7 @@ struct _70sEQ : Module {
         float gain = params[GAIN_PARAM].getValue();          // 0..1 normalized
         float outputVol = params[OUTPUTVOL_PARAM].getValue(); // 0..2x
     
-        // Apply input gain boost from 1x to 5x
-        float inputGain = 1.f + 4.f * gain;  // maps 0..1 -> 1..5
+        float inputGain = 5.f * gain;  // maps 0..1 -> 0..5
         inL *= inputGain;
         inR *= inputGain;
     
