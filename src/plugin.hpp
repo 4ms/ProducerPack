@@ -14,3 +14,4 @@ extern Model* modelSpatializer;
 extern Model* modelStereoWidth;
 extern Model* modelMultipole;
 extern Model* modelStereoCrossfader;
+extern Model* model_70sEQ;

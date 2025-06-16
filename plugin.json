@@ -48,6 +48,12 @@
   "name": "StereoCrossfader",
   "description": "Crossfade between two stereo audio sources",
   "tags": []
+},
+{
+  "slug": "70sEQ",
+  "name": "70sEQ",
+  "description": "Neve 1073 style stereo EQ",
+  "tags": []
 }
   ]
 }
