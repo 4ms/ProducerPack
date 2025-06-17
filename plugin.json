@@ -54,6 +54,12 @@
   "name": "70sEQ",
   "description": "Neve 1073 style stereo EQ",
   "tags": []
+},
+{
+  "slug": "70sComp",
+  "name": "70sComp",
+  "description": "LA2A style optical compressor",
+  "tags": []
 }
   ]
 }
