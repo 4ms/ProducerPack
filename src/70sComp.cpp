@@ -36,7 +36,73 @@ struct _70sComp : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-	}
+		// === Audio inputs ===
+		float inL = inputs[AUDIO_L_INPUT].getVoltage();
+		float inR = inputs[AUDIO_R_INPUT].isConnected() ? inputs[AUDIO_R_INPUT].getVoltage() : inL;
+	
+		// === Parameters ===
+		float peakReduction = params[PEAK_REDUCTION_PARAM].getValue(); // 0.0 - 1.0
+		float gainParam = params[GAIN_PARAM].getValue();               // 0.0 - 1.0 (mapped to 1x–2x)
+		bool isLimiter = params[RATIO_PARAM].getValue() > 0.5f;
+		bool bypass = params[BYPASS_PARAM].getValue() > 0.5f;
+	
+		// === Compression ratio ===
+		float ratio = isLimiter ? 10.f : 3.f;
+	
+		// === Mono signal for gain detection ===
+		float inputMono = 0.5f * (inL + inR);
+	
+		// === Envelope follower ===
+		static float env = 0.f;
+		float rectified = std::fabs(inputMono);
+	
+		float sampleRate = args.sampleRate;
+		float attackTime = 0.01f;
+		float releaseFast = 0.06f;
+		float releaseSlow = 1.5f;
+	
+		float coeffAtk = std::exp(-1.f / (attackTime * sampleRate));
+		float coeffRelFast = std::exp(-1.f / (releaseFast * sampleRate));
+		float coeffRelSlow = std::exp(-1.f / (releaseSlow * sampleRate));
+	
+		if (rectified > env) {
+			env = coeffAtk * env + (1.f - coeffAtk) * rectified;
+		} else {
+			float relCoeff = (env > 0.1f) ? coeffRelFast : coeffRelSlow;
+			env = relCoeff * env + (1.f - relCoeff) * rectified;
+		}
+	
+		// === Gain reduction ===
+		float threshold = 1.f - peakReduction;
+		float gainReduction = 1.f;
+		if (env > threshold) {
+			float over = env - threshold;
+			gainReduction = 1.f / (1.f + over * (ratio - 1.f));
+		}
+	
+		// === Apply gain reduction ===
+		float compressedL = inL * gainReduction;
+		float compressedR = inR * gainReduction;
+	
+		// === Gain knob: 1x–2x, unity at 0.5
+		float gain = 1.f + gainParam; // 1.0 to 2.0
+		compressedL *= gain;
+		compressedR *= gain;
+	
+		// === Bypass ===
+		if (bypass) {
+			compressedL = inL;
+			compressedR = inR;
+		}
+	
+		// === Clamp to ±5V ===
+		compressedL = clamp(compressedL, -5.f, 5.f);
+		compressedR = clamp(compressedR, -5.f, 5.f);
+	
+		// === Outputs ===
+		outputs[AUDIO_L_OUTPUT].setVoltage(compressedL);
+		outputs[AUDIO_R_OUTPUT].setVoltage(compressedR);
+	}	
 };
 
 
