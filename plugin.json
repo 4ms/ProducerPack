@@ -26,9 +26,9 @@
   "tags": []
 },
 {
-  "slug": "Multipole",
-  "name": "Multipole",
-  "description": "Bandpass and notch filterbank with macro control",
+  "slug": "Boost",
+  "name": "Boost",
+  "description": "Audio gain + distortion module",
   "tags": []
 },
 {
