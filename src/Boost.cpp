@@ -19,8 +19,10 @@ struct Boost : Module {
 		OUTPUTS_LEN
 	};
 	enum LightId {
-		LEFTLED_LIGHT,
-		RIGHTLED_LIGHT,
+		LEFTLEDRED_LIGHT,
+		LEFTLEDGREEN_LIGHT,
+		RIGHTLEDRED_LIGHT,
+		RIGHTLEDGREEN_LIGHT,
 		LIGHTS_LEN
 	};
 
@@ -36,7 +38,68 @@ struct Boost : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-	}
+		int rangeSelection = (int)params[RANGE_PARAM].getValue();
+		float rangeMultiplier = 1.f;
+		switch (rangeSelection) {
+			case 0: rangeMultiplier = 1.f; break;
+			case 1: rangeMultiplier = 5.f; break;
+			case 2: rangeMultiplier = 100.f; break;
+		}
+	
+		float gainAmount = params[GAIN_PARAM].getValue();
+		float volumeAmount = params[VOLUME_PARAM].getValue();
+		float preVolumeGain = gainAmount * rangeMultiplier;
+	
+		bool leftConnected = inputs[LEFTIN_INPUT].isConnected();
+		bool rightConnected = inputs[RIGHTIN_INPUT].isConnected();
+	
+		if (leftConnected) {
+			float in = inputs[LEFTIN_INPUT].getVoltage();
+			float boosted = in * preVolumeGain;
+			bool clipping = (boosted < -5.f || boosted > 5.f);
+			float clipped = clamp(boosted, -5.f, 5.f);
+			float out = clipped * volumeAmount;
+			outputs[LEFTOUT_OUTPUT].setVoltage(out);
+	
+			float brightness = clamp(fabs(out) / 5.f, 0.f, 1.f);
+			lights[LEFTLEDRED_LIGHT].setBrightnessSmooth(clipping ? brightness : 0.f, args.sampleTime);
+			lights[LEFTLEDGREEN_LIGHT].setBrightnessSmooth(clipping ? 0.f : brightness, args.sampleTime);
+	
+			if (!rightConnected) {
+				float boostedR = in * preVolumeGain;
+				bool clippingR = (boostedR < -5.f || boostedR > 5.f);
+				float clippedR = clamp(boostedR, -5.f, 5.f);
+				float outR = clippedR * volumeAmount;
+				outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
+	
+				float brightnessR = clamp(fabs(outR) / 5.f, 0.f, 1.f);
+				lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clippingR ? brightnessR : 0.f, args.sampleTime);
+				lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clippingR ? 0.f : brightnessR, args.sampleTime);
+			}
+		} else {
+			outputs[LEFTOUT_OUTPUT].setVoltage(0.f);
+			lights[LEFTLEDRED_LIGHT].setBrightnessSmooth(0.f, args.sampleTime);
+			lights[LEFTLEDGREEN_LIGHT].setBrightnessSmooth(0.f, args.sampleTime);
+			if (!rightConnected) {
+				outputs[RIGHTOUT_OUTPUT].setVoltage(0.f);
+				lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(0.f, args.sampleTime);
+				lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(0.f, args.sampleTime);
+			}
+		}
+	
+		if (rightConnected) {
+			float in = inputs[RIGHTIN_INPUT].getVoltage();
+			float boosted = in * preVolumeGain;
+			bool clipping = (boosted < -5.f || boosted > 5.f);
+			float clipped = clamp(boosted, -5.f, 5.f);
+			float out = clipped * volumeAmount;
+			outputs[RIGHTOUT_OUTPUT].setVoltage(out);
+	
+			float brightness = clamp(fabs(out) / 5.f, 0.f, 1.f);
+			lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clipping ? brightness : 0.f, args.sampleTime);
+			lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clipping ? 0.f : brightness, args.sampleTime);
+		}
+	}	
 };
 
 
@@ -58,8 +121,11 @@ struct BoostWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.402, 95.881)), module, Boost::LEFTOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.402, 109.61)), module, Boost::RIGHTOUT_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(4.273, 89.152)), module, Boost::LEFTLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(15.402, 89.152)), module, Boost::RIGHTLED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(4.273, 88)), module, Boost::LEFTLEDRED_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(4.273, 88)), module, Boost::LEFTLEDGREEN_LIGHT));
+
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(15.402, 88)), module, Boost::RIGHTLEDRED_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(15.402, 88)), module, Boost::RIGHTLEDGREEN_LIGHT));
 	}
 };
 
