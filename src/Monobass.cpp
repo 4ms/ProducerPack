@@ -173,7 +173,7 @@ bool lfoResetEnabled;     // From the UI or a physical switch
 bool prevGateState = false; // To detect rising edge
 
 void process(const ProcessArgs& args) override {
-	float gateIn = inputs[GATE_INPUT].getVoltage();
+	float gateIn = inputs[LFORESET_INPUT].getVoltage();
 	bool currentGateHigh = gateIn >= 1.f;
 	
 	// === LFO Frequency Computation ===
