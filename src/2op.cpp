@@ -26,10 +26,10 @@ struct _2op : Module {
 
 	_2op() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(PITCH_PARAM, 0.f, 1.f, 0.f, "Pitch", "hz", 0.f, 100.f);
+		configParam(PITCH_PARAM, 0.f, 1.f, 0.5f, "Pitch", "hz", 1000.f, 20.f);
 		configParam(FMAMT_PARAM, 0.f, 1.f, 0.f, "FM Amount", "%", 0.f, 100.f);
-		configParam(RATIO_PARAM, 0.f, 1.f, 0.f, "Ratio", "%", 0.f, 100.f);
-		configParam(DECAY_PARAM, 0.f, 1.f, 0.f, "Decay", "ms", 0.f, 100.f);
+		configParam(RATIO_PARAM, 0.f, 1.f, 0.f, "Ratio", "x", 80.f, 0.1f);
+		configParam(DECAY_PARAM, 0.f, 1.f, 0.5f, "Decay", "ms", 0.f, 500.f);
 		configInput(VOCTIN_INPUT, "1v/Oct");
 		configInput(FMAMTCVIN_INPUT, "FM Amount CV");
 		configInput(RATIOCVIN_INPUT, "Ratio CV");
