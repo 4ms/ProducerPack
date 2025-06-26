@@ -211,10 +211,7 @@ if (lfoPhase >= 1.f) {
 }
 
 // === LFO Depth Control ===
-float depthParam = params[LFO_DEPTH_PARAM].getValue(); // 0–1
-float depthCV = inputs[LFOCV_INPUT].isConnected() ? clamp(inputs[LFOCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
-float depth = clamp(depthParam + depthCV, 0.f, 1.f);
-float amp = depth * 5.f; // Convert 0–1 to 0–5V amplitude (so output is ±5V = 10Vpp)
+float amp = params[LFO_DEPTH_PARAM].getValue() * 5.f; // 0–1
 
 // === LFO Shape ===
 int LFOshape = (int)params[LFO_SHAPE_PARAM].getValue();
