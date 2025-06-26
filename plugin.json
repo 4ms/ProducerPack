@@ -60,6 +60,12 @@
   "name": "70sComp",
   "description": "LA2A style optical compressor",
   "tags": []
+},
+{
+  "slug": "2op",
+  "name": "2op",
+  "description": "Simple 2 operator FM voice",
+  "tags": []
 }
   ]
 }

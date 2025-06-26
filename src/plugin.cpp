@@ -16,6 +16,7 @@ void init(Plugin* p) {
 	p->addModel(model_70sEQ);
 	p->addModel(model_70sComp);
 	p->addModel(modelBoost);
+	p->addModel(model_2op);
 	// Any other plugin initialization may go here.
 	// As an alternative, consider lazy-loading assets and lookup tables when your module is created to reduce startup times of Rack.
 }
