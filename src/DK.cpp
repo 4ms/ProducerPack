@@ -24,18 +24,51 @@ struct DK : Module {
 
 	DK() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(DECAY_PARAM, 0.f, 1.f, 0.f, "");
-		configInput(DECAYCVIN_INPUT, "");
-		configInput(TRIGIN_INPUT, "");
-		configInput(AUDIOIN_INPUT, "");
-		configOutput(DECAYOUT_OUTPUT, "");
-		configOutput(AUDIOOUT_OUTPUT, "");
+		configParam(DECAY_PARAM, 0.f, 1.f, 0.f, "Decay", "ms", 0.f, 500.f);
+		configInput(DECAYCVIN_INPUT, "Decay CV");
+		configInput(TRIGIN_INPUT, "Trig");
+		configInput(AUDIOIN_INPUT, "Audio");
+		configOutput(DECAYOUT_OUTPUT, "Decay");
+		configOutput(AUDIOOUT_OUTPUT, "Audio");
 	}
 
 	void process(const ProcessArgs& args) override {
-	}
+		const float maxDecayMs = 500.0f;
+		const float sampleRate = args.sampleRate;
+		static float lastTrig = 0.0f;
+		static float envelope = 0.0f;
+	
+		float trig = inputs[TRIGIN_INPUT].getVoltage();
+		float decayParam = params[DECAY_PARAM].getValue();
+		float decayCV = inputs[DECAYCVIN_INPUT].isConnected() ? inputs[DECAYCVIN_INPUT].getVoltage() / 5.0f : 0.0f;
+		float decayControl = clamp(decayParam + decayCV, 0.0f, 1.0f);
+	
+		float decayTimeSec = (decayControl * maxDecayMs) / 1000.0f;
+		if (decayTimeSec < 0.001f) decayTimeSec = 0.001f;  // avoid zero decay time
+	
+		bool trigRising = (trig >= 1.0f) && (lastTrig < 1.0f);
+		lastTrig = trig;
+	
+		float decayCoeff = expf(-1.0f / (decayTimeSec * sampleRate));
+	
+		if (trigRising) {
+			envelope = 5.0f;
+		} else {
+			envelope *= decayCoeff;
+			if (envelope < 0.001f) envelope = 0.0f;
+		}
+	
+		outputs[DECAYOUT_OUTPUT].setVoltage(envelope);
+	
+		float audioIn = inputs[AUDIOIN_INPUT].getVoltage();
+		float audioOut = audioIn * (envelope / 5.0f);
+		audioOut = clamp(audioOut, -5.0f, 5.0f);
+	
+		outputs[AUDIOOUT_OUTPUT].setVoltage(audioOut);
+	
+		lights[LED_LIGHT].setBrightnessSmooth(envelope, args.sampleTime);
+	}	
 };
-
 
 struct DKWidget : ModuleWidget {
 	DKWidget(DK* module) {
