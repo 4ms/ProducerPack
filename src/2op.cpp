@@ -100,7 +100,6 @@ void process(const ProcessArgs& args) override {
 
 	outputs[AUDIO_OUTPUT].setVoltage(clamp(carrierOutput * 5.f * env, -5.f, 5.f));
 }
-
 };
 
 

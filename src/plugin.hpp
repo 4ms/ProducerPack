@@ -17,3 +17,4 @@ extern Model* model_70sEQ;
 extern Model* model_70sComp;
 extern Model* modelBoost;
 extern Model* model_2op;
+extern Model* modelDK;

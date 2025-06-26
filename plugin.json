@@ -13,59 +13,65 @@
   "donateUrl": "",
   "changelogUrl": "",
   "modules": [
-{
-  "slug": "DJFilter",
-  "name": "DJFilter",
-  "description": "A continous lowpass to highpass effect in the spirit of DJ mixers",
-  "tags": []
-},
-{
-  "slug": "Monobass",
-  "name": "Monobass",
-  "description": "A simple and compact bass voice",
-  "tags": []
-},
-{
-  "slug": "Boost",
-  "name": "Boost",
-  "description": "Audio gain + distortion module",
-  "tags": []
-},
-{
-  "slug": "Spatializer",
-  "name": "Spatializer",
-  "description": "Exploitation of the Haas effect + mid/side processing techniques",
-  "tags": []
-},
-{
-  "slug": "StereoWidth",
-  "name": "StereoWidth",
-  "description": "Shrink or expand the stereo image of a stereo track",
-  "tags": []
-},
-{
-  "slug": "StereoCrossfader",
-  "name": "StereoCrossfader",
-  "description": "Crossfade between two stereo audio sources",
-  "tags": []
-},
-{
-  "slug": "70sEQ",
-  "name": "70sEQ",
-  "description": "Neve 1073 style stereo EQ",
-  "tags": []
-},
-{
-  "slug": "70sComp",
-  "name": "70sComp",
-  "description": "LA2A style optical compressor",
-  "tags": []
-},
-{
-  "slug": "2op",
-  "name": "2op",
-  "description": "Simple 2 operator FM voice",
-  "tags": []
-}
+    {
+      "slug": "DJFilter",
+      "name": "DJFilter",
+      "description": "A continous lowpass to highpass effect in the spirit of DJ mixers",
+      "tags": []
+    },
+    {
+      "slug": "Monobass",
+      "name": "Monobass",
+      "description": "A simple and compact bass voice",
+      "tags": []
+    },
+    {
+      "slug": "Boost",
+      "name": "Boost",
+      "description": "Audio gain + distortion module",
+      "tags": []
+    },
+    {
+      "slug": "Spatializer",
+      "name": "Spatializer",
+      "description": "Exploitation of the Haas effect + mid/side processing techniques",
+      "tags": []
+    },
+    {
+      "slug": "StereoWidth",
+      "name": "StereoWidth",
+      "description": "Shrink or expand the stereo image of a stereo track",
+      "tags": []
+    },
+    {
+      "slug": "StereoCrossfader",
+      "name": "StereoCrossfader",
+      "description": "Crossfade between two stereo audio sources",
+      "tags": []
+    },
+    {
+      "slug": "70sEQ",
+      "name": "70sEQ",
+      "description": "Neve 1073 style stereo EQ",
+      "tags": []
+    },
+    {
+      "slug": "70sComp",
+      "name": "70sComp",
+      "description": "LA2A style optical compressor",
+      "tags": []
+    },
+    {
+      "slug": "2op",
+      "name": "2op",
+      "description": "Simple 2 operator FM voice",
+      "tags": []
+    },
+    {
+      "slug": "DK",
+      "name": "DK",
+      "description": "Decay envelope with built in VCA",
+      "tags": []
+    }
   ]
 }
