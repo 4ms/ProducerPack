@@ -31,7 +31,7 @@ struct _2op : Module {
 		configParam(FMAMT_PARAM, 0.f, 1.f, 0.f, "FM Amount", "%", 0.f, 100.f);
 		configParam(RATIO_PARAM, 0.f, 1.f, 0.f, "Ratio", "x", 80.f, 0.1f);
 		configParam(DECAY_PARAM, 0.f, 1.f, 0.5f, "Decay", "ms", 0.f, 500.f);
-		configSwitch(RANGE_PARAM, 0.f, 2.f, 0.f, "Range", {"Slow", "Med", "Fast"});
+		configSwitch(RANGE_PARAM, 0.f, 2.f, 0.f, "Range", {"Short", "Med", "Long"});
 		configInput(VOCTIN_INPUT, "1v/Oct");
 		configInput(FMAMTCVIN_INPUT, "FM Amount CV");
 		configInput(RATIOCVIN_INPUT, "Ratio CV");
@@ -75,11 +75,24 @@ void process(const ProcessArgs& args) override {
 
 		float decayParam = params[DECAY_PARAM].getValue();
 		float decayCV = inputs[DECAYCVIN_INPUT].isConnected() ? inputs[DECAYCVIN_INPUT].getVoltage() / 5.f : 0.f;
-		float decayTimeMs = 1.f + (499.f * clamp(decayParam + decayCV, 0.f, 1.f)); // max 500 ms
+		float decayControl = clamp(decayParam + decayCV, 0.f, 1.f);
+
+		// Determine decay range from switch
+		int range = static_cast<int>(params[RANGE_PARAM].getValue());
+		float maxDecayMs = 200.f;  // Default: Medium
+
+		switch (range) {
+			case 0: maxDecayMs = 30.f; break;    // Fast
+			case 1: maxDecayMs = 200.f; break;   // Medium
+			case 2: maxDecayMs = 5000.f; break;  // Slow
+		}
+
+		float decayTimeMs = 1.f + (maxDecayMs - 1.f) * decayControl;
 		float decayTimeSec = decayTimeMs / 1000.f;
 
 		float decayCoeff = std::exp(-1.f / (decayTimeSec * sampleRate));
 		env *= decayCoeff;
+
 	} else {
 		env = 1.f;
 		lastGate = false;
