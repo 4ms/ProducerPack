@@ -117,21 +117,23 @@ struct StereoWidth : Module {
 struct StereoWidthWidget : ModuleWidget {
 	StereoWidthWidget(StereoWidth* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/StereoWidth.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/StereoWidth_info.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(9.959, 19.316)), module, StereoWidth::WIDTH_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(9.959, 50.435)), module, StereoWidth::PAN_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 18.803)), module, StereoWidth::WIDTH_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 56.762)), module, StereoWidth::PAN_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.959, 36.276)), module, StereoWidth::WIDTHCV_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.959, 67.395)), module, StereoWidth::PANCV_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(5.172, 85.708)), module, StereoWidth::INL_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.003, 85.708)), module, StereoWidth::INR_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 38.805)), module, StereoWidth::WIDTHCV_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 76.747)), module, StereoWidth::PANCV_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.303, 97.014)), module, StereoWidth::INL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.001, 97.014)), module, StereoWidth::INR_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(5.172, 98.936)), module, StereoWidth::OUTL_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.003, 98.936)), module, StereoWidth::OUTR_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.303, 111.001)), module, StereoWidth::OUTL_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.001, 111.001)), module, StereoWidth::OUTR_OUTPUT));
 	}
 };
 
