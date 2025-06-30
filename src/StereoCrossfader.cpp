@@ -90,24 +90,25 @@ struct StereoCrossfader : Module {
 struct StereoCrossfaderWidget : ModuleWidget {
 	StereoCrossfaderWidget(StereoCrossfader* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/StereoCrossfader.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/StereoCrossfader_info.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(9.998, 27.297)), module, StereoCrossfader::MIX_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(9.998, 54.284)), module, StereoCrossfader::SHAPE_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 18.803)), module, StereoCrossfader::MIX_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 60.748)), module, StereoCrossfader::SHAPE_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.998, 43.966)), module, StereoCrossfader::MIXCV_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(5.705, 83.693)), module, StereoCrossfader::INAL_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.13, 83.693)), module, StereoCrossfader::INAR_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(5.705, 96.132)), module, StereoCrossfader::INBL_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.13, 96.132)), module, StereoCrossfader::INBR_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 38.798)), module, StereoCrossfader::MIXCV_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.303, 82.991)), module, StereoCrossfader::INAL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.001, 82.991)), module, StereoCrossfader::INAR_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.303, 97.014)), module, StereoCrossfader::INBL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.001, 97.014)), module, StereoCrossfader::INBR_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(5.705, 108.82)), module, StereoCrossfader::OUTL_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.13, 108.82)), module, StereoCrossfader::OUTR_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.303, 111.001)), module, StereoCrossfader::OUTL_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.001, 111.001)), module, StereoCrossfader::OUTR_OUTPUT));
 	}
 };
-
 
 Model* modelStereoCrossfader = createModel<StereoCrossfader, StereoCrossfaderWidget>("StereoCrossfader");
