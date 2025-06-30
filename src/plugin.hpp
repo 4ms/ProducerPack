@@ -18,3 +18,9 @@ extern Model* model_70sComp;
 extern Model* modelBoost;
 extern Model* model_2op;
 extern Model* modelDK;
+
+struct _9mmKnob : RoundKnob {
+    _9mmKnob() {
+        setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/9mm_knob.svg")));
+    }
+};

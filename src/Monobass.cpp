@@ -600,17 +600,17 @@ struct MonobassWidget : ModuleWidget {
 		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(156.499, 41.0)), module, Monobass::LFOFREQ_PARAM));
 
 		
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(33.599, 63.299)), module, Monobass::TIMBREATT_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(50.56, 63.299)), module, Monobass::WAVESHAPEATT_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(67.599, 63.299)), module, Monobass::FMATT_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(94.901, 63.299)), module, Monobass::CUTOFFATT_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(111.901, 63.299)), module, Monobass::FILTERDECAYATT_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(134.902, 63.289)), module, Monobass::LFOFREQATT_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(41.981, 79.001)), module, Monobass::DETUNEATT_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(58.984, 79.001)), module, Monobass::MIXERATT_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(86.395, 79.001)), module, Monobass::RESONANCEATT_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(103.364, 79.001)), module, Monobass::ENVDEPTHATT_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(120.403, 79.001)), module, Monobass::AMPDECAYATT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(33.599, 63.299)), module, Monobass::TIMBREATT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(50.56, 63.299)), module, Monobass::WAVESHAPEATT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(67.599, 63.299)), module, Monobass::FMATT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(94.901, 63.299)), module, Monobass::CUTOFFATT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(111.901, 63.299)), module, Monobass::FILTERDECAYATT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(134.902, 63.289)), module, Monobass::LFOFREQATT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(41.981, 79.001)), module, Monobass::DETUNEATT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(58.984, 79.001)), module, Monobass::MIXERATT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(86.395, 79.001)), module, Monobass::RESONANCEATT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(103.364, 79.001)), module, Monobass::ENVDEPTHATT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(120.403, 79.001)), module, Monobass::AMPDECAYATT_PARAM));
 
 		addParam(createParam<CKSSThreeHorizontal>(mm2px(Vec(11.994, 57.009)), module, Monobass::GATETRIG_PARAM));
 
