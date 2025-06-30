@@ -17,7 +17,6 @@ struct Monobass : Module {
 		GATETRIG_PARAM,
 		LFOFREQ_PARAM,
 		LFO_RANGE_PARAM,
-		LFO_RESET_PARAM,
 		LFO_DEPTH_PARAM,
 		UNIPOLARBIPOLAR_PARAM,
 		LFO_SHAPE_PARAM,
@@ -57,7 +56,8 @@ struct Monobass : Module {
 		OUTPUTS_LEN
 	};
 	enum LightId {
-		LFOLED_LIGHT, 
+		LFOLEDRED_LIGHT, 
+		LFOLEDGREEN_LIGHT, 
 		LIGHTS_LEN
 	};
 
@@ -79,7 +79,6 @@ struct Monobass : Module {
 
 		configParam(LFOFREQ_PARAM, 0.f, 1.f, 0.f, "LFO Frequency", "%", 0.f, 100.f);
 		configSwitch(LFO_RANGE_PARAM, 0.f, 1.f, 0.f, "LFO Range", {"Slow", "Fast"});
-		configSwitch(LFO_RESET_PARAM, 0.f, 1.f, 0.f, "LFO Reset", {"Off", "On"});
 		configParam(LFO_DEPTH_PARAM, 0.f, 1.f, 0.f, "LFO Depth", "%", 0.f, 100.f);
 		configSwitch(LFO_SHAPE_PARAM, 0.f, 5.f, 0.f, "LFO Shape", {"Sine", "Triangle", "Saw Up", "Saw Down", "Square", "Random"});
 		configSwitch(UNIPOLARBIPOLAR_PARAM, 0.f, 1.f, 0.f, "Bipolar/Unipolar", {"Bipolar", "Unipolar"});
@@ -109,6 +108,7 @@ struct Monobass : Module {
 		configInput(FILTERDECAYCV_INPUT, "Filter Decay CV");
 		configInput(AMPDECAYCV_INPUT, "Amplitude Decay CV");
 		configInput(VOCT_INPUT, "1v/Octave");
+		configInput(LFORESET_INPUT, "LFO Reset");
 
 		configOutput(LFO_OUT_OUTPUT, "LFO");
 		configOutput(AUDIO_OUTPUT, "Audio");
@@ -192,10 +192,9 @@ if (LFORange) {
     lfoFreq = 0.01f + freqMod * (1.f - 0.01f); // 0.01–5 Hz
 }
 
-lfoResetEnabled = params[LFO_RESET_PARAM].getValue() > 0.5f; 
 
 bool currentGateState = gateIn >= 1.f;  // Gate HIGH when voltage >= 1V (your threshold)
-if (lfoResetEnabled && !prevGateState && currentGateState) {
+if (!prevGateState && currentGateState) {
     lfoPhase = 0.f; // Rising edge detected, reset phase
 }
 prevGateState = currentGateState;
@@ -272,9 +271,8 @@ float negativeHalf = std::max(-outputValue, 0.f) / maxVoltage;
 positiveHalf = clamp(positiveHalf, 0.f, 1.f);
 negativeHalf = clamp(negativeHalf, 0.f, 1.f);
 
-lights[LFOLED_LIGHT + 0].setBrightnessSmooth(negativeHalf, args.sampleTime); // Red
-lights[LFOLED_LIGHT + 1].setBrightnessSmooth(positiveHalf, args.sampleTime); // Green
-lights[LFOLED_LIGHT + 2].setBrightnessSmooth(0.f, args.sampleTime);          // Blue (unused)
+lights[LFOLEDRED_LIGHT].setBrightnessSmooth(negativeHalf, args.sampleTime); // Red
+lights[LFOLEDGREEN_LIGHT].setBrightnessSmooth(positiveHalf, args.sampleTime); // Green
 
 	// === AMPLITUDE ENVELOPE ===
 // Attack and decay times (in seconds)
@@ -572,7 +570,6 @@ float boostedOutput = ((filteredOutput * resonanceGain) * 2.f) * ampEnvelope;
 float outputVoltage = clamp(boostedOutput * 5.f, -10.f, 10.f);
 
 outputs[AUDIO_OUTPUT].setVoltage(outputVoltage);
-
 }
 };
 
@@ -586,35 +583,39 @@ struct MonobassWidget : ModuleWidget {
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(16.358, 15.999)), module, Monobass::OCTAVE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(39.359, 15.999)), module, Monobass::DETUNE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(62.361, 15.999)), module, Monobass::FINETUNE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(87.859, 15.999)), module, Monobass::CUTOFF_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(110.501, 15.999)), module, Monobass::ENVDEPTH_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(133.502, 15.999)), module, Monobass::FILTERDECAY_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(156.499, 15.999)), module, Monobass::AMPDECAY_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(16.358, 41.0)), module, Monobass::TIMBRE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(39.359, 41.0)), module, Monobass::WAVESHAPE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(62.361, 41.0)), module, Monobass::MIXER_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(87.859, 41.0)), module, Monobass::RESONANCE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(110.501, 41.0)), module, Monobass::LFO_DEPTH_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(133.502, 41.0)), module, Monobass::LFO_SHAPE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(156.499, 41.0)), module, Monobass::LFOFREQ_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(16.358, 15.999)), module, Monobass::OCTAVE_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(39.359, 15.999)), module, Monobass::DETUNE_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(62.361, 15.999)), module, Monobass::FINETUNE_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(87.859, 15.999)), module, Monobass::CUTOFF_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(110.501, 15.999)), module, Monobass::ENVDEPTH_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(133.502, 15.999)), module, Monobass::FILTERDECAY_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(156.499, 15.999)), module, Monobass::AMPDECAY_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(16.358, 41.0)), module, Monobass::TIMBRE_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(39.359, 41.0)), module, Monobass::WAVESHAPE_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(62.361, 41.0)), module, Monobass::MIXER_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(87.859, 41.0)), module, Monobass::RESONANCE_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(110.501, 41.0)), module, Monobass::LFO_DEPTH_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(133.502, 41.0)), module, Monobass::LFO_SHAPE_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(156.499, 41.0)), module, Monobass::LFOFREQ_PARAM));
+
+		
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(33.599, 63.299)), module, Monobass::TIMBREATT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(50.56, 63.299)), module, Monobass::WAVESHAPEATT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(67.599, 63.299)), module, Monobass::FMATT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(94.901, 63.299)), module, Monobass::CUTOFFATT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(111.901, 63.299)), module, Monobass::FILTERDECAYATT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(134.902, 63.289)), module, Monobass::LFOFREQATT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(41.981, 79.001)), module, Monobass::DETUNEATT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(58.984, 79.001)), module, Monobass::MIXERATT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(86.395, 79.001)), module, Monobass::RESONANCEATT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(103.364, 79.001)), module, Monobass::ENVDEPTHATT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(120.403, 79.001)), module, Monobass::AMPDECAYATT_PARAM));
+
 		addParam(createParam<CKSSThreeHorizontal>(mm2px(Vec(11.994, 57.009)), module, Monobass::GATETRIG_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(33.599, 63.299)), module, Monobass::TIMBREATT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(50.56, 63.299)), module, Monobass::WAVESHAPEATT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(67.599, 63.299)), module, Monobass::FMATT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(94.901, 63.299)), module, Monobass::CUTOFFATT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(111.901, 63.299)), module, Monobass::FILTERDECAYATT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(134.902, 63.289)), module, Monobass::LFOFREQATT_PARAM));
+
+
 		addParam(createParam<CKSS>(mm2px(Vec(142.981, 74.789)), module, Monobass::LFO_RANGE_PARAM));
-		addParam(createParam<CKSS>(mm2px(Vec(155.998, 74.789)), module, Monobass::LFO_RESET_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(41.981, 79.001)), module, Monobass::DETUNEATT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(58.984, 79.001)), module, Monobass::MIXERATT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(86.395, 79.001)), module, Monobass::RESONANCEATT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(103.364, 79.001)), module, Monobass::ENVDEPTHATT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(120.403, 79.001)), module, Monobass::AMPDECAYATT_PARAM));
-		addParam(createParam<CKSS>(mm2px(Vec(142.981, 96.485)), module, Monobass::UNIPOLARBIPOLAR_PARAM));
+		addParam(createParam<CKSS>(mm2px(Vec(155.998, 74.789)), module, Monobass::UNIPOLARBIPOLAR_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(14.005, 77.964)), module, Monobass::LFORESET_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(14.005, 95.501)), module, Monobass::GATE_INPUT));
@@ -634,7 +635,8 @@ struct MonobassWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(158.009, 95.497)), module, Monobass::LFO_OUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(157.999, 111.002)), module, Monobass::AUDIO_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(156.492, 54.998)), module, Monobass::LFOLED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(156.492, 54.998)), module, Monobass::LFOLEDRED_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(156.492, 54.998)), module, Monobass::LFOLEDGREEN_LIGHT));
 	}
 };
 
