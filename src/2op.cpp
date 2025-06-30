@@ -30,7 +30,7 @@ struct _2op : Module {
 		configParam(PITCH_PARAM, 0.f, 1.f, 0.5f, "Pitch", "hz", 1000.f, 20.f);
 		configParam(FMAMT_PARAM, 0.f, 1.f, 0.f, "FM Amount", "%", 0.f, 100.f);
 		configParam(RATIO_PARAM, 0.f, 1.f, 0.f, "Ratio", "x", 80.f, 0.1f);
-		configParam(DECAY_PARAM, 0.f, 1.f, 0.5f, "Decay", "ms", 0.f, 500.f);
+		configParam(DECAY_PARAM, 0.f, 1.f, 0.5f, "Decay", "%", 0.f, 100.f);
 		configSwitch(RANGE_PARAM, 0.f, 2.f, 0.f, "Range", {"Short", "Med", "Long"});
 		configInput(VOCTIN_INPUT, "1v/Oct");
 		configInput(FMAMTCVIN_INPUT, "FM Amount CV");
