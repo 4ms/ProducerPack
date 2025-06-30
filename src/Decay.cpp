@@ -1,9 +1,10 @@
 #include "plugin.hpp"
 
 
-struct DK : Module {
+struct Decay : Module {
 	enum ParamId {
 		DECAY_PARAM,
+		RANGE_PARAM,
 		PARAMS_LEN
 	};
 	enum InputId {
@@ -22,9 +23,10 @@ struct DK : Module {
 		LIGHTS_LEN
 	};
 
-	DK() {
+	Decay() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(DECAY_PARAM, 0.f, 1.f, 0.f, "Decay", "ms", 0.f, 500.f);
+		configParam(DECAY_PARAM, 0.f, 1.f, 0.f, "Decay", "%", 0.f, 100.f);
+		configSwitch(RANGE_PARAM, 0.f, 2.f, 0.f, "Range", {"Short", "Med", "Long"});
 		configInput(DECAYCVIN_INPUT, "Decay CV");
 		configInput(TRIGIN_INPUT, "Trig");
 		configInput(AUDIOIN_INPUT, "Audio");
@@ -33,10 +35,17 @@ struct DK : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-		const float maxDecayMs = 500.0f;
-		const float sampleRate = args.sampleRate;
 		static float lastTrig = 0.0f;
 		static float envelope = 0.0f;
+	
+		const float sampleRate = args.sampleRate;
+	
+		float maxDecayMs = 200.0f;
+		switch ((int)params[RANGE_PARAM].getValue()) {
+			case 0: maxDecayMs = 30.0f; break;
+			case 1: maxDecayMs = 200.0f; break;
+			case 2: maxDecayMs = 5000.0f; break;
+		}
 	
 		float trig = inputs[TRIGIN_INPUT].getVoltage();
 		float decayParam = params[DECAY_PARAM].getValue();
@@ -44,7 +53,7 @@ struct DK : Module {
 		float decayControl = clamp(decayParam + decayCV, 0.0f, 1.0f);
 	
 		float decayTimeSec = (decayControl * maxDecayMs) / 1000.0f;
-		if (decayTimeSec < 0.001f) decayTimeSec = 0.001f;  // avoid zero decay time
+		if (decayTimeSec < 0.001f) decayTimeSec = 0.001f;
 	
 		bool trigRising = (trig >= 1.0f) && (lastTrig < 1.0f);
 		lastTrig = trig;
@@ -67,29 +76,29 @@ struct DK : Module {
 		outputs[AUDIOOUT_OUTPUT].setVoltage(audioOut);
 	
 		lights[LED_LIGHT].setBrightnessSmooth(envelope, args.sampleTime);
-	}	
-};
+	}
+};	
 
-struct DKWidget : ModuleWidget {
-	DKWidget(DK* module) {
+struct DecayWidget : ModuleWidget {
+	DecayWidget(Decay* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/DK.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/Decay.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.426, 23.569)), module, DK::DECAY_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.16, 27.298)), module, Decay::DECAY_PARAM));
+		addParam(createParamCentered<CKSSThreeHorizontal>(mm2px(Vec(10.16, 45.869)), module, Decay::RANGE_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.426, 44.255)), module, DK::DECAYCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(4.891, 82.795)), module, DK::TRIGIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(4.891, 100.173)), module, DK::AUDIOIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 63.087)), module, Decay::DECAYCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(4.891, 94.966)), module, Decay::TRIGIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(4.891, 112.344)), module, Decay::AUDIOIN_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.191, 82.795)), module, DK::DECAYOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.191, 100.173)), module, DK::AUDIOOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.191, 94.966)), module, Decay::DECAYOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.191, 112.344)), module, Decay::AUDIOOUT_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(10.426, 60.653)), module, DK::LED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(10.16, 16.206)), module, Decay::LED_LIGHT));
 	}
 };
 
-
-Model* modelDK = createModel<DK, DKWidget>("DK");
+Model* modelDecay = createModel<Decay, DecayWidget>("Decay");
