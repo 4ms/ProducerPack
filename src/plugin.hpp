@@ -24,3 +24,11 @@ struct _9mmKnob : RoundKnob {
         setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/9mm_knob.svg")));
     }
 };
+
+struct _2Pos : SvgSwitch {
+    _2Pos() {
+        momentary = false; // true for momentary behavior
+        addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggle_0.svg")));
+        addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggle_2.svg")));
+    }
+};

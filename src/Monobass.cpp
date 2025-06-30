@@ -614,9 +614,8 @@ struct MonobassWidget : ModuleWidget {
 
 		addParam(createParam<CKSSThreeHorizontal>(mm2px(Vec(11.994, 57.009)), module, Monobass::GATETRIG_PARAM));
 
-
-		addParam(createParam<CKSS>(mm2px(Vec(142.981, 74.789)), module, Monobass::LFO_RANGE_PARAM));
-		addParam(createParam<CKSS>(mm2px(Vec(155.998, 74.789)), module, Monobass::UNIPOLARBIPOLAR_PARAM));
+		addParam(createParam<_2Pos>(mm2px(Vec(142.981, 74.789)), module, Monobass::LFO_RANGE_PARAM));
+		addParam(createParam<_2Pos>(mm2px(Vec(155.998, 74.789)), module, Monobass::UNIPOLARBIPOLAR_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(14.005, 77.964)), module, Monobass::LFORESET_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(14.005, 95.501)), module, Monobass::GATE_INPUT));
