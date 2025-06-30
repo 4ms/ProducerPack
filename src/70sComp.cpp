@@ -101,8 +101,7 @@ struct _70sComp : Module {
 	
 		float clipThreshold = 4.9f;
 		bool clipping = !bypass && (std::fabs(outL) >= clipThreshold || std::fabs(outR) >= clipThreshold);
-		lights[CLIPLED_LIGHT].setBrightnessSmooth(clipping ? 1.f : 0.f, args.sampleTime);
-		
+		lights[CLIPLED_LIGHT].setBrightnessSmooth(clipping ? 1.f : 0.f, args.sampleTime);		
 	}	
 };	
 
