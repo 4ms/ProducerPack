@@ -160,25 +160,24 @@ struct DJFilterCutoffQuantity : ParamQuantity {
 struct DJFilterWidget : ModuleWidget {
 	DJFilterWidget(DJFilter* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/DJFilter.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/DJFilter_info.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		// Standard knob (we now use the custom ParamQuantity instead)
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(20.849, 17.967)), module, DJFilter::CUTOFF_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(20.849, 38.825)), module, DJFilter::RESONANCE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(20.849, 62.526)), module, DJFilter::SLOPE_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 18.803)), module, DJFilter::CUTOFF_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 41.501)), module, DJFilter::RESONANCE_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 63.747)), module, DJFilter::SLOPE_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.726, 85.075)), module, DJFilter::INL_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(20.849, 85.075)), module, DJFilter::CUTOFFCV_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.726, 103.098)), module, DJFilter::INR_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(20.849, 103.098)), module, DJFilter::RESONANCECV_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.303, 82.991)), module, DJFilter::CUTOFFCV_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.001, 83.001)), module, DJFilter::RESONANCECV_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.303, 97.014)), module, DJFilter::INL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.001, 97.014)), module, DJFilter::INR_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(34.302, 85.075)), module, DJFilter::OUT_L_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(34.302, 103.098)), module, DJFilter::OUT_R_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.303, 111.001)), module, DJFilter::OUT_L_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.001, 111.001)), module, DJFilter::OUT_R_OUTPUT));
 	}
 };
 
