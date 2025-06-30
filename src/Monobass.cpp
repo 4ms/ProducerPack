@@ -210,7 +210,7 @@ if (lfoPhase >= 1.f) {
 }
 
 // === LFO Depth Control ===
-float amp = params[LFO_DEPTH_PARAM].getValue() * 5.f; // 0–1
+float amp = params[LFO_DEPTH_PARAM].getValue(); // 0–1
 
 // === LFO Shape ===
 int LFOshape = (int)params[LFO_SHAPE_PARAM].getValue();
@@ -250,15 +250,16 @@ switch (LFOshape) {
 // === Final Output Voltage ===
 bool LFOoffsetSwitch = params[UNIPOLARBIPOLAR_PARAM].getValue() > 0.5f;
 
-float rawLFO = out * amp;
+float bipolarLFO = (out * amp) * 5.f;
+float unipolarLFO = ((out * 2.5f) + 2.5f) * amp;
 
 float outputValue;
 if (LFOoffsetSwitch) {
     // Unipolar: shift to 0–5V
-    outputValue = clamp(rawLFO * 0.5f + 2.5f, 0.f, 5.f);
+    outputValue = clamp(unipolarLFO, 0.f, 5.f);
 } else {
     // Bipolar: no shift
-    outputValue = clamp(rawLFO, -5.f, 5.f);
+    outputValue = clamp(bipolarLFO, -5.f, 5.f);
 }
 
 // Send to output
