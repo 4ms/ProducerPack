@@ -97,8 +97,8 @@ struct StereoCrossfaderWidget : ModuleWidget {
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 18.803)), module, StereoCrossfader::MIX_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 60.748)), module, StereoCrossfader::SHAPE_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(15.24, 18.803)), module, StereoCrossfader::MIX_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(15.24, 60.748)), module, StereoCrossfader::SHAPE_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 38.798)), module, StereoCrossfader::MIXCV_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.303, 82.991)), module, StereoCrossfader::INAL_INPUT));
