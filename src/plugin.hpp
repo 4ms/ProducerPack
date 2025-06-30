@@ -32,3 +32,12 @@ struct _2Pos : SvgSwitch {
         addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggle_2.svg")));
     }
 };
+
+struct _3PosHorizontal : SvgSwitch {
+    _3PosHorizontal() {
+        momentary = false; // true for momentary behavior
+        addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggleH_0.svg")));
+        addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggleH_1.svg")));
+        addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggleH_2.svg")));
+    }
+};

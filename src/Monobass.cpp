@@ -612,7 +612,7 @@ struct MonobassWidget : ModuleWidget {
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(103.364, 79.001)), module, Monobass::ENVDEPTHATT_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(120.403, 79.001)), module, Monobass::AMPDECAYATT_PARAM));
 
-		addParam(createParam<CKSSThreeHorizontal>(mm2px(Vec(11.994, 57.009)), module, Monobass::GATETRIG_PARAM));
+		addParam(createParam<_3PosHorizontal>(mm2px(Vec(11.994, 57.009)), module, Monobass::GATETRIG_PARAM));
 
 		addParam(createParam<_2Pos>(mm2px(Vec(142.981, 74.789)), module, Monobass::LFO_RANGE_PARAM));
 		addParam(createParam<_2Pos>(mm2px(Vec(155.998, 74.789)), module, Monobass::UNIPOLARBIPOLAR_PARAM));
