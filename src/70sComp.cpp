@@ -21,6 +21,7 @@ struct _70sComp : Module {
 		OUTPUTS_LEN
 	};
 	enum LightId {
+		CLIPLED_LIGHT,
 		LIGHTS_LEN
 	};
 
@@ -48,7 +49,6 @@ struct _70sComp : Module {
 		bool bypass = params[BYPASS_PARAM].getValue() > 0.5f;
 	
 		float ratio = isLimiter ? 10.f : 3.f;
-	
 		float inputMono = 0.5f * (inL + inR);
 	
 		static float env = 0.f;
@@ -98,7 +98,12 @@ struct _70sComp : Module {
 	
 		outputs[AUDIO_L_OUTPUT].setVoltage(outL);
 		outputs[AUDIO_R_OUTPUT].setVoltage(outR);
-	}
+	
+		float clipThreshold = 4.9f;
+		bool clipping = !bypass && (std::fabs(outL) >= clipThreshold || std::fabs(outR) >= clipThreshold);
+		lights[CLIPLED_LIGHT].setBrightnessSmooth(clipping ? 1.f : 0.f, args.sampleTime);
+		
+	}	
 };	
 
 
@@ -123,6 +128,8 @@ struct _70sCompWidget : ModuleWidget {
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.662, 98.845)), module, _70sComp::AUDIO_L_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.662, 115.624)), module, _70sComp::AUDIO_R_OUTPUT));
+
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(16.101, 45.372)), module, _70sComp::CLIPLED_LIGHT));
 	}
 };
 
