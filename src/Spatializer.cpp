@@ -200,36 +200,36 @@ struct Spatializer : Module {
 struct SpatializerWidget : ModuleWidget {
 	SpatializerWidget(Spatializer* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/Spatializer.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/Spatializer_info.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(25.973, 19.886)), module, Spatializer::TIME_PARAM));
-		addParam(createParamCentered<CKSS>(mm2px(Vec(42.186, 19.748)), module, Spatializer::RANGE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(36.027, 38.875)), module, Spatializer::WIDTH_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(36.027, 60.211)), module, Spatializer::MIDSIDE_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(9.206, 19.076)), module, Spatializer::RANGE_PARAM));
+		addParam(createParamCentered<Davies1900hLargeBlackKnob>(mm2px(Vec(30.514, 19.757)), module, Spatializer::MIDSIDE_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(13.507, 41.317)), module, Spatializer::TIME_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(47.522, 41.317)), module, Spatializer::WIDTH_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.63, 19.886)), module, Spatializer::TIMECV_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(16.039, 38.875)), module, Spatializer::WIDTHCV_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(16.039, 60.211)), module, Spatializer::MIDSIDECV_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(6.497, 91.066)), module, Spatializer::INL_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(6.497, 107.019)), module, Spatializer::INR_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.489, 107.019)), module, Spatializer::RETURNL_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(25.862, 107.019)), module, Spatializer::RETURNM_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(34.953, 107.019)), module, Spatializer::RETURNR_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(13.507, 60.475)), module, Spatializer::TIMECV_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.514, 60.475)), module, Spatializer::MIDSIDECV_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(47.522, 60.475)), module, Spatializer::WIDTHCV_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.103, 97.056)), module, Spatializer::RETURNL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.514, 97.056)), module, Spatializer::RETURNM_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(53.024, 97.056)), module, Spatializer::RETURNR_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.103, 111.049)), module, Spatializer::INL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(22.99, 111.049)), module, Spatializer::INR_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.489, 91.066)), module, Spatializer::SENDL_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(25.862, 91.066)), module, Spatializer::SENDM_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(34.953, 91.066)), module, Spatializer::SENDR_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(44.275, 91.066)), module, Spatializer::OUTL_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(44.275, 107.019)), module, Spatializer::OUTR_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(8.103, 82.035)), module, Spatializer::SENDL_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(30.514, 82.035)), module, Spatializer::SENDM_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(53.024, 82.035)), module, Spatializer::SENDR_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(38.176, 111.049)), module, Spatializer::OUTL_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(53.024, 111.049)), module, Spatializer::OUTR_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(16.039, 73.563)), module, Spatializer::LEDL_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(25.862, 73.563)), module, Spatializer::LEDM_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(36.027, 73.563)), module, Spatializer::LEDR_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(8.103, 70.529)), module, Spatializer::LEDL_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(30.514, 70.529)), module, Spatializer::LEDM_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(53.024, 70.529)), module, Spatializer::LEDR_LIGHT));
 	}
 };
 
