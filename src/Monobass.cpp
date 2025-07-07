@@ -173,7 +173,8 @@ bool lfoResetEnabled;     // From the UI or a physical switch
 bool prevGateState = false; // To detect rising edge
 
 void process(const ProcessArgs& args) override {
-	float gateIn = inputs[LFORESET_INPUT].getVoltage();
+	float gateIn = inputs[GATE_INPUT].getVoltage();
+	float lfoReset = inputs[LFORESET_INPUT].getVoltage();
 	bool currentGateHigh = gateIn >= 1.f;
 	
 	// === LFO Frequency Computation ===
@@ -193,7 +194,7 @@ if (LFORange) {
 }
 
 
-bool currentGateState = gateIn >= 1.f;  // Gate HIGH when voltage >= 1V (your threshold)
+bool currentGateState = lfoReset >= 1.f;  // Gate HIGH when voltage >= 1V (your threshold)
 if (!prevGateState && currentGateState) {
     lfoPhase = 0.f; // Rising edge detected, reset phase
 }
