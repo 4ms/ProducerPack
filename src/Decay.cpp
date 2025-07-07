@@ -34,10 +34,10 @@ struct Decay : Module {
 		configOutput(AUDIOOUT_OUTPUT, "Audio");
 	}
 
+	float lastTrig = 0.0f;
+	float envelope = 0.0f;
+
 	void process(const ProcessArgs& args) override {
-		static float lastTrig = 0.0f;
-		static float envelope = 0.0f;
-	
 		const float sampleRate = args.sampleRate;
 	
 		float maxDecayMs = 200.0f;
