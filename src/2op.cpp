@@ -117,32 +117,31 @@ void process(const ProcessArgs& args) override {
 }
 };
 
-
-
 struct _2opWidget : ModuleWidget {
 	_2opWidget(_2op* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/2op.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/2op_info.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(22.086, 13.338)), module, _2op::PITCH_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(22.086, 36.148)), module, _2op::FMAMT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(22.086, 58.958)), module, _2op::RATIO_PARAM));
-		addParam(createParamCentered<CKSSThree>(mm2px(Vec(8.394, 81.769)), module, _2op::RANGE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(22.086, 81.769)), module, _2op::DECAY_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 19.502)), module, _2op::PITCH_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 38.499)), module, _2op::FMAMT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 57.5)), module, _2op::RATIO_PARAM));
+		addParam(createParam<_2Pos>(mm2px(Vec(6.999, 73.502)), module, _2op::RANGE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 76.501)), module, _2op::DECAY_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.394, 13.338)), module, _2op::VOCTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.394, 36.148)), module, _2op::FMAMTCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.394, 58.958)), module, _2op::RATIOCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 98.841)), module, _2op::DECAYCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.394, 109.871)), module, _2op::GATEIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 19.502)), module, _2op::VOCTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 38.499)), module, _2op::FMAMTCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 57.504)), module, _2op::RATIOCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 97.001)), module, _2op::DECAYCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.299, 111.003)), module, _2op::GATEIN_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(22.086, 109.871)), module, _2op::AUDIO_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.001, 111.003)), module, _2op::AUDIO_OUTPUT));
 	}
 };
+
 
 Model* model_2op = createModel<_2op, _2opWidget>("2op");
