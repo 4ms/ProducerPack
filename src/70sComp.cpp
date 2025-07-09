@@ -27,10 +27,10 @@ struct _70sComp : Module {
 
 	_70sComp() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-        configParam(PEAK_REDUCTION_PARAM, 0.f, 1.f, 0.f, "Peak Reduction", "%", 0.f, 100.f);
+        configParam(PEAK_REDUCTION_PARAM, 0.f, 1.f, 0.5f, "Peak Reduction", "%", 0.f, 100.f);
         configSwitch(RATIO_PARAM, 0.f, 1.f, 0.f, "Comp/Limit", {"Compressor", "Limiter"}); // 3:1 or 10:1
-        configParam(GAIN_PARAM, 0.f, 1.f, 0.f, "Gain", "db", 0.f, 40.f);
-		configParam(DRY_WET_PARAM, 0.f, 1.f, 0.f, "Dry/Wet", "%", 0.f, 100.f);
+        configParam(GAIN_PARAM, 0.f, 1.f, 0.25f, "Gain", "db", 0.f, 40.f);
+		configParam(DRY_WET_PARAM, 0.f, 1.f, 1.f, "Dry/Wet", "%", 0.f, 100.f);
         configSwitch(BYPASS_PARAM, 0.f, 1.f, 0.f, "Bypass", {"Off", "On"});
         configInput(AUDIO_L_INPUT, "Audio Left In");
         configInput(AUDIO_R_INPUT, "Audio Right In");
@@ -109,27 +109,26 @@ struct _70sComp : Module {
 struct _70sCompWidget : ModuleWidget {
 	_70sCompWidget(_70sComp* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/70sComp.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/70sComp_info.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.16, 18.161)), module, _70sComp::PEAK_REDUCTION_PARAM));
-		
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.16, 51.009)), module, _70sComp::GAIN_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.16, 66.209)), module, _70sComp::DRY_WET_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(15.262, 18.804)), module, _70sComp::PEAK_REDUCTION_PARAM));
+		addParam(createParam<_2Pos>(mm2px(Vec(5.25, 35.77)), module, _70sComp::RATIO_PARAM));
+		addParam(createParam<_2Pos>(mm2px(Vec(19.268, 35.77)), module, _70sComp::BYPASS_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(15.262, 56.014)), module, _70sComp::GAIN_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(15.262, 78.018)), module, _70sComp::DRY_WET_PARAM));
 
-		addParam(createParamCentered<CKSS>(mm2px(Vec(10.16, 83.21)), module, _70sComp::BYPASS_PARAM));
-		addParam(createParamCentered<CKSS>(mm2px(Vec(10.16, 36.562)), module, _70sComp::RATIO_PARAM));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.309, 97.023)), module, _70sComp::AUDIO_L_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.034, 97.023)), module, _70sComp::AUDIO_R_INPUT));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(4.513, 98.845)), module, _70sComp::AUDIO_L_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(4.513, 115.624)), module, _70sComp::AUDIO_R_INPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.309, 111.029)), module, _70sComp::AUDIO_L_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.034, 111.029)), module, _70sComp::AUDIO_R_OUTPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.662, 98.845)), module, _70sComp::AUDIO_L_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.662, 115.624)), module, _70sComp::AUDIO_R_OUTPUT));
-
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(16.101, 45.372)), module, _70sComp::CLIPLED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(25.772, 50.442)), module, _70sComp::CLIPLED_LIGHT));
 	}
 };
-
 Model* model_70sComp = createModel<_70sComp, _70sCompWidget>("70sComp");
