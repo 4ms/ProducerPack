@@ -130,7 +130,7 @@ struct _2opWidget : ModuleWidget {
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 19.502)), module, _2op::PITCH_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 38.499)), module, _2op::FMAMT_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 57.5)), module, _2op::RATIO_PARAM));
-		addParam(createParam<_2Pos>(mm2px(Vec(6.999, 73.502)), module, _2op::RANGE_PARAM));
+		addParam(createParam<_3Pos>(mm2px(Vec(6.999, 73.502)), module, _2op::RANGE_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 76.501)), module, _2op::DECAY_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 19.502)), module, _2op::VOCTIN_INPUT));
