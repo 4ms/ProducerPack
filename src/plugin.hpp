@@ -19,6 +19,7 @@ extern Model* modelBoost;
 extern Model* model_2op;
 extern Model* modelDecay;
 extern Model* modelAuxSends;
+extern Model* modelBitcrusher;
 
 struct _9mmKnob : RoundKnob {
     _9mmKnob() {
@@ -43,6 +44,14 @@ struct _2Pos : SvgSwitch {
         momentary = false; // true for momentary behavior
         addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggle_0.svg")));
         addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggle_2.svg")));
+    }
+};
+
+struct _2PosHorizontal : SvgSwitch {
+    _2PosHorizontal() {
+        momentary = false; // true for momentary behavior
+        addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggleH_0.svg")));
+        addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggleH_2.svg")));
     }
 };
 
