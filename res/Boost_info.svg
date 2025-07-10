@@ -25,13 +25,13 @@
      inkscape:document-units="mm"
      inkscape:zoom="2"
      inkscape:cx="31.5"
-     inkscape:cy="362.75"
+     inkscape:cy="202.75"
      inkscape:window-width="1200"
      inkscape:window-height="1186"
      inkscape:window-x="0"
      inkscape:window-y="25"
      inkscape:window-maximized="0"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="art" />
   <g
      inkscape:groupmode="layer"
      id="layer6"
@@ -71,14 +71,14 @@
            y1="104.85"
            x2="28.799999"
            y2="98.610001"
-           style="fill:none;stroke:#000000;stroke-width:2.83467;stroke-miterlimit:10"
+           style="fill:none;stroke:#000000;stroke-width:1.417339;stroke-miterlimit:10;stroke-dasharray:none"
            id="line3" />
         <line
            x1="28.799999"
            y1="90.099998"
            x2="28.799999"
            y2="82.660004"
-           style="fill:none;stroke:#000000;stroke-width:2.83467;stroke-miterlimit:10"
+           style="fill:none;stroke:#000000;stroke-width:1.417339;stroke-miterlimit:10;stroke-dasharray:none"
            id="line4" />
         <path
            d="m 19.78,55 1.31,-1.86 c -2.58,-2.2 -4.22,-5.48 -4.22,-9.15 0,-6.62 5.35,-12.01 11.92,-12.01 6.57,0 11.92,5.39 11.92,12.01 0,3.78 -1.75,7.15 -4.47,9.36 l 1.26,1.88 c 3.32,-2.61 5.46,-6.67 5.46,-11.24 0,-7.88 -6.35,-14.27 -14.17,-14.27 -7.82,0 -14.17,6.39 -14.17,14.27 0,4.43 2.01,8.39 5.15,11.01 z"
@@ -93,7 +93,7 @@
            y1="79.720001"
            x2="28.799999"
            y2="64.879997"
-           style="fill:none;stroke:#000000;stroke-width:2.83467;stroke-miterlimit:10"
+           style="fill:none;stroke:#000000;stroke-width:1.417339;stroke-miterlimit:10;stroke-dasharray:none"
            id="line5" />
       </g>
       <g
