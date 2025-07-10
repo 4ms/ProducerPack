@@ -201,15 +201,15 @@ struct SpatializerWidget : ModuleWidget {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/Spatializer_info.svg")));
 
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
 		addParam(createParamCentered<_2Pos>(mm2px(Vec(9.206, 19.076)), module, Spatializer::RANGE_PARAM));
-		addParam(createParamCentered<Davies1900hLargeBlackKnob>(mm2px(Vec(30.514, 19.757)), module, Spatializer::MIDSIDE_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(13.507, 41.317)), module, Spatializer::TIME_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(47.522, 41.317)), module, Spatializer::WIDTH_PARAM));
+		addParam(createParamCentered<Davies_large>(mm2px(Vec(30.514, 19.757)), module, Spatializer::MIDSIDE_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(13.507, 41.317)), module, Spatializer::TIME_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(47.522, 41.317)), module, Spatializer::WIDTH_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(13.525, 60.556)), module, Spatializer::TIMECV_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.556, 60.556)), module, Spatializer::MIDSIDECV_INPUT));
