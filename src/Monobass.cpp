@@ -580,25 +580,25 @@ struct MonobassWidget : ModuleWidget {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/Monobass_info.svg")));
 
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(16.358, 15.999)), module, Monobass::OCTAVE_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(39.359, 15.999)), module, Monobass::DETUNE_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(62.361, 15.999)), module, Monobass::FINETUNE_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(87.859, 15.999)), module, Monobass::CUTOFF_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(110.501, 15.999)), module, Monobass::ENVDEPTH_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(133.502, 15.999)), module, Monobass::FILTERDECAY_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(156.499, 15.999)), module, Monobass::AMPDECAY_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(16.358, 41.0)), module, Monobass::TIMBRE_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(39.359, 41.0)), module, Monobass::WAVESHAPE_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(62.361, 41.0)), module, Monobass::MIXER_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(87.859, 41.0)), module, Monobass::RESONANCE_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(110.501, 41.0)), module, Monobass::LFO_DEPTH_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(133.502, 41.0)), module, Monobass::LFO_SHAPE_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(156.499, 41.0)), module, Monobass::LFOFREQ_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(16.358, 15.999)), module, Monobass::OCTAVE_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(39.359, 15.999)), module, Monobass::DETUNE_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(62.361, 15.999)), module, Monobass::FINETUNE_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(87.859, 15.999)), module, Monobass::CUTOFF_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(110.501, 15.999)), module, Monobass::ENVDEPTH_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(133.502, 15.999)), module, Monobass::FILTERDECAY_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(156.499, 15.999)), module, Monobass::AMPDECAY_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(16.358, 41.0)), module, Monobass::TIMBRE_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(39.359, 41.0)), module, Monobass::WAVESHAPE_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(62.361, 41.0)), module, Monobass::MIXER_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(87.859, 41.0)), module, Monobass::RESONANCE_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(110.501, 41.0)), module, Monobass::LFO_DEPTH_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(133.502, 41.0)), module, Monobass::LFO_SHAPE_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(156.499, 41.0)), module, Monobass::LFOFREQ_PARAM));
 
 		
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(33.599, 63.299)), module, Monobass::TIMBREATT_PARAM));
