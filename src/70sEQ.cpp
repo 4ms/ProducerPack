@@ -373,12 +373,12 @@ struct _70sEQWidget : ModuleWidget {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/70sEQ_info.svg")));
 
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(15.286, 15.445)), module, _70sEQ::GAIN_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.286, 15.445)), module, _70sEQ::GAIN_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 31.53)), module, _70sEQ::HIGH_SHELF_PARAM));
 		addParam(createParam<_2Pos>(mm2px(Vec(20, 28.528)), module, _70sEQ::BYPASS_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 48.547)), module, _70sEQ::MID_PARAM));
