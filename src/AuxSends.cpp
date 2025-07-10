@@ -51,34 +51,34 @@ struct AuxSends : Module {
 
 	AuxSends() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(ASEND_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(BSEND_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(CSEND_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(ARETURN_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(BRETURN_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(CRETURN_PARAM, 0.f, 1.f, 0.f, "");
-		configInput(ASENDCVIN_INPUT, "");
-		configInput(BSENDCVIN_INPUT, "");
-		configInput(CSENDCVIN_INPUT, "");
-		configInput(ARETURNCVIN_INPUT, "");
-		configInput(BRETURNCVIN_INPUT, "");
-		configInput(CRETURNCVIN_INPUT, "");
-		configInput(ARETURNLEFTIN_INPUT, "");
-		configInput(ARETURNRIGHTIN_INPUT, "");
-		configInput(BRETURNLEFTIN_INPUT, "");
-		configInput(BRETURNRIGHTIN_INPUT, "");
-		configInput(CRETURNLEFTIN_INPUT, "");
-		configInput(CRETURNRIGHTIN_INPUT, "");
-		configInput(AUDIOLEFTIN_INPUT, "");
-		configInput(AUDIORIGHTIN_INPUT, "");
-		configOutput(ASENDLEFTOUT_OUTPUT, "");
-		configOutput(ASENDRIGHTOUT_OUTPUT, "");
-		configOutput(BSENDLEFTOUT_OUTPUT, "");
-		configOutput(BSENDRIGHTOUT_OUTPUT, "");
-		configOutput(CSENDLEFTOUT_OUTPUT, "");
-		configOutput(CSENDRIGHTOUT_OUTPUT, "");
-		configOutput(AUDIOLEFTOUT_OUTPUT, "");
-		configOutput(AUDIORIGHTOUT_OUTPUT, "");
+		configParam(ASEND_PARAM, 0.f, 1.f, 0.5f, "Send A", "%", 0.f, 100.f);
+		configParam(BSEND_PARAM, 0.f, 1.f, 0.5f, "Send B", "%", 0.f, 100.f);
+		configParam(CSEND_PARAM, 0.f, 1.f, 0.5f, "Send C", "%", 0.f, 100.f);
+		configParam(ARETURN_PARAM, 0.f, 1.f, 0.5f, "Return A", "%", 0.f, 100.f);
+		configParam(BRETURN_PARAM, 0.f, 1.f, 0.5f, "Return B", "%", 0.f, 100.f);
+		configParam(CRETURN_PARAM, 0.f, 1.f, 0.5f, "Return C", "%", 0.f, 100.f);
+		configInput(ASENDCVIN_INPUT, "Send A CV");
+		configInput(BSENDCVIN_INPUT, "Send B CV");
+		configInput(CSENDCVIN_INPUT, "Send C CV");
+		configInput(ARETURNCVIN_INPUT, "Return A CV");
+		configInput(BRETURNCVIN_INPUT, "Return B CV");
+		configInput(CRETURNCVIN_INPUT, "Return C CV");
+		configInput(ARETURNLEFTIN_INPUT, "Return A Left");
+		configInput(ARETURNRIGHTIN_INPUT, "Return A Right");
+		configInput(BRETURNLEFTIN_INPUT, "Return B Left");
+		configInput(BRETURNRIGHTIN_INPUT, "Return B Right");
+		configInput(CRETURNLEFTIN_INPUT, "Return C Left");
+		configInput(CRETURNRIGHTIN_INPUT, "Return C Right");
+		configInput(AUDIOLEFTIN_INPUT, "Audio Left");
+		configInput(AUDIORIGHTIN_INPUT, "Audio Right");
+		configOutput(ASENDLEFTOUT_OUTPUT, "Send A Left");
+		configOutput(ASENDRIGHTOUT_OUTPUT, "Send A Right");
+		configOutput(BSENDLEFTOUT_OUTPUT, "Send B Left");
+		configOutput(BSENDRIGHTOUT_OUTPUT, "Send B Right");
+		configOutput(CSENDLEFTOUT_OUTPUT, "Send C Left");
+		configOutput(CSENDRIGHTOUT_OUTPUT, "Send C Right");
+		configOutput(AUDIOLEFTOUT_OUTPUT, "Audio Left");
+		configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
 	}
 
 	void process(const ProcessArgs& args) override {
