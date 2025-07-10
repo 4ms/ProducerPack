@@ -24,14 +24,14 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="2"
-     inkscape:cx="48"
-     inkscape:cy="397.25"
+     inkscape:cx="34"
+     inkscape:cy="210.25"
      inkscape:window-width="1200"
      inkscape:window-height="1186"
      inkscape:window-x="301"
      inkscape:window-y="25"
      inkscape:window-maximized="0"
-     inkscape:current-layer="text" />
+     inkscape:current-layer="art-2" />
   <g
      inkscape:groupmode="layer"
      id="layer6"
@@ -65,7 +65,7 @@
          style="stroke-width:0.750019">
         <path
            d="M 20.995204,81.277432 C 19.77809,79.060149 17.88892,75.699829 16.576555,73.329081 15.737804,71.945265 15.367379,70.765184 14.240225,69.67771 12.015025,67.642996 8.6944223,68.653738 7.4746632,71.2732 6.694123,72.619975 4.0641001,77.205358 2.6644197,79.642252 c -0.6006189,1.092766 -1.1139232,1.703975 -1.3573459,2.86818 -0.43128141,2.055882 0.9948579,4.246705 3.0639505,4.773242 1.2541559,0.333387 2.1696365,0.156109 3.5058155,0.198446 2.2304922,0.0027 6.7443962,-0.0027 8.6123982,0 3.43967,0.293696 6.141131,-2.950204 4.521842,-6.170291 l -0.01588,-0.03176 z"
-           style="fill:none;stroke:#000000;stroke-width:0.750019;stroke-miterlimit:10"
+           style="fill:none;stroke:#000000;stroke-width:0.37500997;stroke-miterlimit:10;stroke-opacity:1;stroke-dasharray:none"
            id="path4" />
         <g
            id="art-2"
@@ -77,28 +77,28 @@
              y1="216.85001"
              x2="47.099998"
              y2="216.85001"
-             style="fill:none;stroke:#000000;stroke-width:2.83464;stroke-miterlimit:10"
+             style="fill:none;stroke:#000000;stroke-width:1.41732559;stroke-miterlimit:10;stroke-dasharray:none"
              id="line1" />
           <line
              x1="25.51"
              y1="162.99001"
              x2="47.099998"
              y2="162.99001"
-             style="fill:none;stroke:#000000;stroke-width:2.83464;stroke-miterlimit:10"
+             style="fill:none;stroke:#000000;stroke-width:1.41732559;stroke-miterlimit:10;stroke-dasharray:none"
              id="line2" />
           <line
              x1="25.51"
              y1="109.13"
              x2="47.099998"
              y2="109.13"
-             style="fill:none;stroke:#000000;stroke-width:2.83464;stroke-miterlimit:10"
+             style="fill:none;stroke:#000000;stroke-width:1.41732559;stroke-miterlimit:10;stroke-dasharray:none"
              id="line3" />
           <line
              x1="25.51"
              y1="55.279999"
              x2="47.099998"
              y2="55.279999"
-             style="fill:none;stroke:#000000;stroke-width:2.83464;stroke-miterlimit:10"
+             style="fill:none;stroke:#000000;stroke-width:1.41732559;stroke-miterlimit:10;stroke-dasharray:none"
              id="line4" />
           <circle
              cx="65.199997"
@@ -197,7 +197,7 @@
           <path
              d="m 55.44,66.38 1.31,-1.86 c -2.58,-2.2 -4.22,-5.48 -4.22,-9.15 0,-6.62 5.35,-12.01 11.92,-12.01 6.57,0 11.92,5.39 11.92,12.01 0,3.78 -1.75,7.15 -4.47,9.36 l 1.26,1.88 c 3.32,-2.61 5.46,-6.67 5.46,-11.24 0,-7.88 -6.35,-14.27 -14.17,-14.27 -7.82,0 -14.17,6.39 -14.17,14.27 0,4.43 2.01,8.39 5.15,11.01 z"
              id="path23"
-             style="stroke-width:2.83464" />
+             style="stroke-width:1.41732559;stroke-dasharray:none" />
           <path
              d="m 55.44,120.24 1.31,-1.86 c -2.58,-2.2 -4.22,-5.48 -4.22,-9.15 0,-6.62 5.35,-12.01 11.92,-12.01 6.57,0 11.92,5.39 11.92,12.01 0,3.78 -1.75,7.15 -4.47,9.36 l 1.26,1.88 c 3.32,-2.61 5.46,-6.67 5.46,-11.24 0,-7.88 -6.35,-14.27 -14.17,-14.27 -7.82,0 -14.17,6.39 -14.17,14.27 0,4.43 2.01,8.39 5.15,11.01 z"
              id="path24"
@@ -205,7 +205,7 @@
           <path
              d="m 55.44,174.1 1.31,-1.86 c -2.58,-2.2 -4.22,-5.48 -4.22,-9.15 0,-6.62 5.35,-12.01 11.92,-12.01 6.57,0 11.92,5.39 11.92,12.01 0,3.78 -1.75,7.15 -4.47,9.36 l 1.26,1.88 c 3.32,-2.61 5.46,-6.67 5.46,-11.24 0,-7.88 -6.35,-14.27 -14.17,-14.27 -7.82,0 -14.17,6.39 -14.17,14.27 0,4.43 2.01,8.39 5.15,11.01 z"
              id="path25"
-             style="stroke-width:2.83464" />
+             style="stroke-width:0;stroke-dasharray:none;stroke:#000000;stroke-opacity:1" />
           <path
              d="m 65.36,146.63 c 8.88,0 16.11,7.23 16.11,16.11 v 0.5 c 0,8.88 -7.23,16.11 -16.11,16.11 H 23.04 c -8.88,0 -16.11,-7.23 -16.11,-16.11 v -0.5 c 0,-8.88 7.23,-16.11 16.11,-16.11 h 42.32 m 0,-1 H 23.04 c -9.45,0 -17.11,7.66 -17.11,17.11 v 0.5 c 0,9.45 7.66,17.11 17.11,17.11 h 42.32 c 9.45,0 17.11,-7.66 17.11,-17.11 v -0.5 c 0,-9.45 -7.66,-17.11 -17.11,-17.11 z"
              id="path26"
@@ -361,18 +361,18 @@
              y1="55.342106"
              x2="3.9741395"
              y2="55.342106"
-             style="fill:none;stroke:#000000;stroke-width:0.750019;stroke-miterlimit:10"
+             style="fill:none;stroke:#000000;stroke-width:0.37500997;stroke-miterlimit:10;stroke-dasharray:none"
              id="line54" />
           <line
              x1="1.9791321"
              y1="59.562347"
              x2="3.9741395"
              y2="59.562347"
-             style="fill:none;stroke:#000000;stroke-width:0.750019;stroke-miterlimit:10"
+             style="fill:none;stroke:#000000;stroke-width:0.37500997;stroke-miterlimit:10;stroke-dasharray:none"
              id="line55" />
           <path
              d="M 11.319154,68.592882 V 57.937755 c 0,-0.309574 0.25136,-0.563582 0.563575,-0.563582 h 0.587391"
-             style="fill:none;stroke:#000000;stroke-width:0.750019;stroke-miterlimit:10"
+             style="fill:none;stroke:#000000;stroke-width:0.37500997;stroke-miterlimit:10;stroke-dasharray:none"
              id="path55" />
         </g>
       </g>
