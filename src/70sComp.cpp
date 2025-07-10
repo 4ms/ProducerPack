@@ -111,16 +111,16 @@ struct _70sCompWidget : ModuleWidget {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/70sComp_info.svg")));
 
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(15.262, 18.804)), module, _70sComp::PEAK_REDUCTION_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.262, 18.804)), module, _70sComp::PEAK_REDUCTION_PARAM));
 		addParam(createParam<_2Pos>(mm2px(Vec(5.25, 35.77)), module, _70sComp::RATIO_PARAM));
 		addParam(createParam<_2Pos>(mm2px(Vec(19.268, 35.77)), module, _70sComp::BYPASS_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(15.262, 56.014)), module, _70sComp::GAIN_PARAM));
-		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(15.262, 78.018)), module, _70sComp::DRY_WET_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.262, 56.014)), module, _70sComp::GAIN_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.262, 78.018)), module, _70sComp::DRY_WET_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.309, 97.023)), module, _70sComp::AUDIO_L_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.034, 97.023)), module, _70sComp::AUDIO_R_INPUT));
