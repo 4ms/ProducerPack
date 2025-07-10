@@ -19,8 +19,6 @@ struct Boost : Module {
 		OUTPUTS_LEN
 	};
 	enum LightId {
-		LEFTLEDRED_LIGHT,
-		LEFTLEDGREEN_LIGHT,
 		RIGHTLEDRED_LIGHT,
 		RIGHTLEDGREEN_LIGHT,
 		LIGHTS_LEN
@@ -62,8 +60,7 @@ struct Boost : Module {
 			outputs[LEFTOUT_OUTPUT].setVoltage(out);
 	
 			float brightness = clamp(fabs(out) / 5.f, 0.f, 1.f);
-			lights[LEFTLEDRED_LIGHT].setBrightnessSmooth(clipping ? brightness : 0.f, args.sampleTime);
-			lights[LEFTLEDGREEN_LIGHT].setBrightnessSmooth(clipping ? 0.f : brightness, args.sampleTime);
+
 	
 			if (!rightConnected) {
 				float boostedR = in * preVolumeGain;
@@ -78,8 +75,6 @@ struct Boost : Module {
 			}
 		} else {
 			outputs[LEFTOUT_OUTPUT].setVoltage(0.f);
-			lights[LEFTLEDRED_LIGHT].setBrightnessSmooth(0.f, args.sampleTime);
-			lights[LEFTLEDGREEN_LIGHT].setBrightnessSmooth(0.f, args.sampleTime);
 			if (!rightConnected) {
 				outputs[RIGHTOUT_OUTPUT].setVoltage(0.f);
 				lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(0.f, args.sampleTime);
@@ -106,26 +101,23 @@ struct Boost : Module {
 struct BoostWidget : ModuleWidget {
 	BoostWidget(Boost* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/Boost.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/Boost_info.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.16, 20.41)), module, Boost::GAIN_PARAM));
-		addParam(createParamCentered<CKSSThreeHorizontal>(mm2px(Vec(10.16, 44.576)), module, Boost::RANGE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.16, 65.889)), module, Boost::VOLUME_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.16, 15.501)), module, Boost::GAIN_PARAM));
+		addParam(createParam<_3PosHorizontal>(mm2px(Vec(6.3, 24.501)), module, Boost::RANGE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.16, 42.5)), module, Boost::VOLUME_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(4.273, 95.881)), module, Boost::LEFTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(4.273, 109.61)), module, Boost::RIGHTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 59.5)), module, Boost::LEFTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 76.501)), module, Boost::RIGHTIN_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.402, 95.881)), module, Boost::LEFTOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.402, 109.61)), module, Boost::RIGHTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(10.16, 93.501)), module, Boost::LEFTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(10.16, 110.001)), module, Boost::RIGHTOUT_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(4.273, 88)), module, Boost::LEFTLEDRED_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(4.273, 88)), module, Boost::LEFTLEDGREEN_LIGHT));
-
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(15.402, 88)), module, Boost::RIGHTLEDRED_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(15.402, 88)), module, Boost::RIGHTLEDGREEN_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(4.801, 103.503)), module, Boost::RIGHTLEDRED_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(4.801, 103.503)), module, Boost::RIGHTLEDGREEN_LIGHT));
 	}
 };
 
