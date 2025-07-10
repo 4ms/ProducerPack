@@ -26,6 +26,18 @@ struct _9mmKnob : RoundKnob {
     }
 };
 
+struct Davies1900hBlack : RoundKnob {
+    Davies1900hBlack() {
+        setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/Davies1900hBlack.svg")));
+    }
+};
+
+struct Davies_large : RoundKnob {
+    Davies_large() {
+        setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/Davies_large.svg")));
+    }
+};
+
 struct _2Pos : SvgSwitch {
     _2Pos() {
         momentary = false; // true for momentary behavior
