@@ -91,17 +91,17 @@ struct AuxSendsWidget : ModuleWidget {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/AuxSends.svg")));
 
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(10.665, 24.452)), module, AuxSends::ASEND_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(30.184, 24.452)), module, AuxSends::BSEND_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(47.999, 24.452)), module, AuxSends::CSEND_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(10.375, 67.087)), module, AuxSends::ARETURN_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(30.184, 67.393)), module, AuxSends::BRETURN_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(47.999, 67.743)), module, AuxSends::CRETURN_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.665, 24.452)), module, AuxSends::ASEND_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(30.184, 24.452)), module, AuxSends::BSEND_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(47.999, 24.452)), module, AuxSends::CSEND_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.375, 67.087)), module, AuxSends::ARETURN_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(30.184, 67.393)), module, AuxSends::BRETURN_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(47.999, 67.743)), module, AuxSends::CRETURN_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.665, 32.96)), module, AuxSends::ASENDCVIN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.184, 32.96)), module, AuxSends::BSENDCVIN_INPUT));
