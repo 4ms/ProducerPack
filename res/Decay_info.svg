@@ -12,7 +12,18 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <defs
-     id="defs58" />
+     id="defs58">
+    <clipPath
+       id="clippath-1">
+      <rect
+         y="0"
+         width="27.799999"
+         height="25.620001"
+         style="fill:none"
+         id="rect2"
+         x="0" />
+    </clipPath>
+  </defs>
   <sodipodi:namedview
      id="namedview58"
      pagecolor="#ffffff"
@@ -23,12 +34,12 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="8.0000002"
-     inkscape:cx="42.062499"
-     inkscape:cy="141.5"
+     inkscape:zoom="1"
+     inkscape:cx="-248.49999"
+     inkscape:cy="209.99999"
      inkscape:window-width="1920"
      inkscape:window-height="1027"
-     inkscape:window-x="433"
+     inkscape:window-x="0"
      inkscape:window-y="25"
      inkscape:window-maximized="0"
      inkscape:current-layer="art" />
@@ -105,10 +116,41 @@
            y2="64.879997"
            style="fill:none;stroke:#000000;stroke-width:1.41728743;stroke-miterlimit:10;stroke-dasharray:none"
            id="line5" />
-        <path
-           d="m 19.78,55 1.31,-1.86 c -2.58,-2.2 -4.22,-5.48 -4.22,-9.15 0,-6.62 5.35,-12.01 11.92,-12.01 6.57,0 11.92,5.39 11.92,12.01 0,3.78 -1.75,7.15 -4.47,9.36 l 1.26,1.88 c 3.32,-2.61 5.46,-6.67 5.46,-11.24 0,-7.88 -6.35,-14.27 -14.17,-14.27 -7.82,0 -14.17,6.39 -14.17,14.27 0,4.43 2.01,8.39 5.15,11.01 z"
-           id="path5"
-           style="stroke-width:2.8346" />
+        <g
+           clip-path="url(#clippath)"
+           id="g11"
+           transform="matrix(0.99993343,0,0,0.9999714,14.895921,30.330527)">
+          <path
+             d="M 19.59,2.78 20.3,1.55 C 18.56,0.64 16.61,0.09 14.53,0 v 1.43 c 1.81,0.09 3.53,0.56 5.06,1.35"
+             id="path2-2" />
+          <path
+             d="M 24.39,7.12 25.62,6.41 C 24.53,4.72 23.09,3.27 21.4,2.19 l -0.71,1.23 c 1.48,0.96 2.74,2.22 3.7,3.7"
+             id="path3-4" />
+          <path
+             d="M 7.12,3.41 6.41,2.18 C 4.72,3.27 3.27,4.71 2.19,6.4 L 3.42,7.11 C 4.38,5.63 5.64,4.37 7.12,3.41"
+             id="path4" />
+          <path
+             d="m 26.38,13.27 h 1.43 C 27.72,11.2 27.17,9.24 26.26,7.5 l -1.23,0.71 c 0.79,1.53 1.26,3.24 1.35,5.06"
+             id="path5" />
+          <path
+             d="M 13.27,1.43 V 0 C 11.2,0.09 9.24,0.64 7.5,1.55 L 8.21,2.78 C 9.74,1.99 11.45,1.52 13.27,1.43"
+             id="path6-8" />
+          <path
+             d="M 3.41,20.69 2.18,21.4 c 1.09,1.69 2.53,3.14 4.22,4.22 L 7.11,24.39 C 5.63,23.43 4.37,22.17 3.41,20.69"
+             id="path7-3" />
+          <path
+             d="m 20.69,24.39 0.71,1.23 c 1.69,-1.09 3.14,-2.53 4.22,-4.22 l -1.23,-0.71 c -0.96,1.48 -2.22,2.74 -3.7,3.7"
+             id="path8-9" />
+          <path
+             d="m 26.38,14.53 c -0.09,1.81 -0.56,3.53 -1.35,5.06 l 1.23,0.71 c 0.9,-1.74 1.45,-3.7 1.55,-5.77 z"
+             id="path9-0" />
+          <path
+             d="M 1.43,14.53 H 0 c 0.09,2.07 0.64,4.03 1.55,5.77 L 2.78,19.59 C 1.99,18.06 1.52,16.35 1.43,14.53"
+             id="path10-5" />
+          <path
+             d="M 2.78,8.21 1.55,7.5 C 0.64,9.24 0.09,11.19 0,13.27 H 1.43 C 1.52,11.46 1.99,9.74 2.78,8.21"
+             id="path11-2" />
+        </g>
       </g>
       <g
          id="text"
