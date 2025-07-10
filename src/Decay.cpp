@@ -82,22 +82,22 @@ struct Decay : Module {
 struct DecayWidget : ModuleWidget {
 	DecayWidget(Decay* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/Decay.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/Decay_info.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.16, 27.298)), module, Decay::DECAY_PARAM));
-		addParam(createParamCentered<CKSSThreeHorizontal>(mm2px(Vec(10.16, 45.869)), module, Decay::RANGE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.16, 15.501)), module, Decay::DECAY_PARAM));
+		addParam(createParam<_3PosHorizontal>(mm2px(Vec(6.3, 24.5)), module, Decay::RANGE_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 63.087)), module, Decay::DECAYCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(4.891, 94.966)), module, Decay::TRIGIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(4.891, 112.344)), module, Decay::AUDIOIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 42.498)), module, Decay::DECAYCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 59.498)), module, Decay::TRIGIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 76.498)), module, Decay::AUDIOIN_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.191, 94.966)), module, Decay::DECAYOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.191, 112.344)), module, Decay::AUDIOOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(10.16, 93.499)), module, Decay::DECAYOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(10.16, 109.998)), module, Decay::AUDIOOUT_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(10.16, 16.206)), module, Decay::LED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(16.581, 24.694)), module, Decay::LED_LIGHT));
 	}
 };
 
