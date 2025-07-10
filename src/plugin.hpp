@@ -18,6 +18,7 @@ extern Model* model_70sComp;
 extern Model* modelBoost;
 extern Model* model_2op;
 extern Model* modelDecay;
+extern Model* modelAuxSends;
 
 struct _9mmKnob : RoundKnob {
     _9mmKnob() {

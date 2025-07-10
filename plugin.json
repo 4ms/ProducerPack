@@ -72,6 +72,12 @@
       "name": "Decay",
       "description": "Decay envelope with built in VCA",
       "tags": []
+    },
+    {
+      "slug": "AuxSends",
+      "name": "AuxSends",
+      "description": "3 sets of stereo aux and returns with CV",
+      "tags": []
     }
   ]
 }
