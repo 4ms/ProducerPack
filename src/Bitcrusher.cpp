@@ -33,6 +33,7 @@ struct Bitcrusher : Module {
         DRY_WETCVIN_INPUT,
         CUTOFFCVIN_INPUT,
         RESONANCECVIN_INPUT,
+        VOLUMECVIN_INPUT,
         AUDIOLEFTIN_INPUT,
         AUDIORIGHTIN_INPUT,
         INPUTS_LEN
@@ -75,6 +76,7 @@ struct Bitcrusher : Module {
         configInput(RESONANCECVIN_INPUT, "Resonance CV");
         configInput(AUDIOLEFTIN_INPUT, "Audio Left");
         configInput(AUDIORIGHTIN_INPUT, "Audio Right");
+        configInput(VOLUMECVIN_INPUT, "Volume CV");
         configOutput(AUDIOLEFTOUT_OUTPUT, "Audio Left");
         configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
 
@@ -124,7 +126,9 @@ struct Bitcrusher : Module {
         float leftWet = bitcrush(leftSampleHold);
         float rightWet = bitcrush(rightSampleHold);
 
-        float volume = clamp(params[VOLUME_PARAM].getValue(), 0.f, 1.f);
+        float volumeParam = params[VOLUME_PARAM].getValue();
+        float volumeCV = clamp(inputs[VOLUMECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f;
+        float volume = clamp(volumeParam + volumeCV, 0.f, 1.f);
 
         float leftOut = clamp(crossfade(leftIn, leftWet, dryWet), -5.f, 5.f);
         float rightOut = clamp(crossfade(rightIn, rightWet, dryWet), -5.f, 5.f);
@@ -152,6 +156,7 @@ struct BitcrusherWidget : ModuleWidget {
 		addParam(createParamCentered<_2PosHorizontal>(mm2px(Vec(20.32, 85.948)), module, Bitcrusher::FILTERTYPE_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(20.32, 95.631)), module, Bitcrusher::VOLUME_PARAM));
 
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(31.302, 95.631)), module, Bitcrusher::VOLUMECVIN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.924, 29.117)), module, Bitcrusher::SAMPLERATECVIN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(31.302, 29.117)), module, Bitcrusher::BITDEPTHCVIN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(20.32, 53.904)), module, Bitcrusher::DRY_WETCVIN_INPUT));
