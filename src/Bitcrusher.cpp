@@ -1,126 +1,137 @@
 #include "plugin.hpp"
 
 struct InvertedRangeParamQuantity : rack::engine::ParamQuantity {
-	float displayMin, displayMax;
+    float displayMin, displayMax;
 
-	InvertedRangeParamQuantity(float min, float max, std::string paramName) : displayMin(min), displayMax(max) {
-		name = paramName;
-	}
+    InvertedRangeParamQuantity(float min, float max, std::string paramName) : displayMin(min), displayMax(max) {
+        name = paramName;
+    }
 
-	float getDisplayValue() override {
-		return displayMax - getValue() * (displayMax - displayMin);
-	}
+    float getDisplayValue() override {
+        return displayMax - getValue() * (displayMax - displayMin);
+    }
 
-	std::string getDisplayValueString() override {
-		return rack::string::f("%.1f Hz", getDisplayValue());
-	}
+    std::string getDisplayValueString() override {
+        return rack::string::f("%.1f Hz", getDisplayValue());
+    }
 };
 
-
 struct Bitcrusher : Module {
-	enum ParamId {
-		SAMPLERATE_PARAM,
-		BITDEPTH_PARAM,
-		DRY_WET_PARAM,
-		CUTOFF_PARAM,
-		RESONANCE_PARAM,
-		FILTERTYPE_PARAM,
-		VOLUME_PARAM,
-		PARAMS_LEN
-	};
-	enum InputId {
-		SAMPLERATECVIN_INPUT,
-		BITDEPTHCVIN_INPUT,
-		DRY_WETCVIN_INPUT,
-		CUTOFFCVIN_INPUT,
-		RESONANCECVIN_INPUT,
-		AUDIOLEFTIN_INPUT,
-		AUDIORIGHTIN_INPUT,
-		INPUTS_LEN
-	};
-	enum OutputId {
-		AUDIOLEFTOUT_OUTPUT,
-		AUDIORIGHTOUT_OUTPUT,
-		OUTPUTS_LEN
-	};
-	enum LightId {
-		LIGHTS_LEN
-	};
+    enum ParamId {
+        SAMPLERATE_PARAM,
+        BITDEPTH_PARAM,
+        DRY_WET_PARAM,
+        CUTOFF_PARAM,
+        RESONANCE_PARAM,
+        FILTERTYPE_PARAM,
+        VOLUME_PARAM,
+        PARAMS_LEN
+    };
+    enum InputId {
+        SAMPLERATECVIN_INPUT,
+        BITDEPTHCVIN_INPUT,
+        DRY_WETCVIN_INPUT,
+        CUTOFFCVIN_INPUT,
+        RESONANCECVIN_INPUT,
+        AUDIOLEFTIN_INPUT,
+        AUDIORIGHTIN_INPUT,
+        INPUTS_LEN
+    };
+    enum OutputId {
+        AUDIOLEFTOUT_OUTPUT,
+        AUDIORIGHTOUT_OUTPUT,
+        OUTPUTS_LEN
+    };
+    enum LightId {
+        LIGHTS_LEN
+    };
 
-	
-	Bitcrusher() {
-		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(SAMPLERATE_PARAM, 0.f, 1.f, 0.f, "Clock Frequency"); 
-		configSwitch(BITDEPTH_PARAM, 0.f, 15.f, 0.f, "Bit Depth", {"16 bits", "15 bits", "14 bits", "13 bits", "12 bits", "11 bits", "10 bits", "9 bits", "8 bits", "7 bits", "6 bits", "5 bits", "4 bits", "3 bits", "2 bits", "1 bit"});
-		configParam(DRY_WET_PARAM, 0.f, 1.f, 1.f, "Dry/Wet", "%", 0.f, 100.f);
-		configParam(CUTOFF_PARAM, 0.f, 1.f, 1.f, "Cutoff", "hz", 80.f, 100.f);
-		configParam(RESONANCE_PARAM, 0.f, 1.f, 0.f, "Resonance", "%", 0.f, 100.f);
-		configSwitch(FILTERTYPE_PARAM, 0.f, 1.f, 0.f, "Filter Type", {"Lowpass", "Highpass"});
-		configParam(VOLUME_PARAM, 0.f, 1.f, 1.f, "Volume", "%", 0.f, 100.f);
-		configInput(SAMPLERATECVIN_INPUT, "Sample Rate CV");
-		configInput(BITDEPTHCVIN_INPUT, "Bit Depth CV");
-		configInput(DRY_WETCVIN_INPUT, "Dry/Wet CV");
-		configInput(CUTOFFCVIN_INPUT, "Cutoff CV");
-		configInput(RESONANCECVIN_INPUT, "Resonance CV");
-		configInput(AUDIOLEFTIN_INPUT, "Audio Left");
-		configInput(AUDIORIGHTIN_INPUT, "Audio Right");
-		configOutput(AUDIOLEFTOUT_OUTPUT, "Audio Left");
-		configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
+    const float sampleRateMinHz;
+    const float sampleRateMaxHz;
 
-		paramQuantities[SAMPLERATE_PARAM] = new InvertedRangeParamQuantity(20.f, 8000.f, "Clock Frequency");
-		paramQuantities[SAMPLERATE_PARAM]->module = this;
-		paramQuantities[SAMPLERATE_PARAM]->paramId = SAMPLERATE_PARAM;
-	}
+    float sampleHoldPhase = 0.f;
+    float leftSampleHold = 0.f;
+    float rightSampleHold = 0.f;
 
+    Bitcrusher()
+        : sampleRateMinHz(15000.f)
+        , sampleRateMaxHz(20.f)
+    {
+        config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
+        configParam(SAMPLERATE_PARAM, 0.f, 1.f, 0.f, "Clock Frequency");
+        configSwitch(BITDEPTH_PARAM, 0.f, 15.f, 0.f, "Bit Depth", {
+            "16 bits", "15 bits", "14 bits", "13 bits", "12 bits", "11 bits", "10 bits",
+            "9 bits", "8 bits", "7 bits", "6 bits", "5 bits", "4 bits", "3 bits", "2 bits", "1 bit"
+        });
+        configParam(DRY_WET_PARAM, 0.f, 1.f, 1.f, "Dry/Wet", "%", 0.f, 100.f);
+        configParam(CUTOFF_PARAM, 0.f, 1.f, 1.f, "Cutoff", "hz", 80.f, 100.f);
+        configParam(RESONANCE_PARAM, 0.f, 1.f, 0.f, "Resonance", "%", 0.f, 100.f);
+        configSwitch(FILTERTYPE_PARAM, 0.f, 1.f, 0.f, "Filter Type", {"Lowpass", "Highpass"});
+        configParam(VOLUME_PARAM, 0.f, 1.f, 1.f, "Volume", "%", 0.f, 100.f);
+        configInput(SAMPLERATECVIN_INPUT, "Sample Rate CV");
+        configInput(BITDEPTHCVIN_INPUT, "Bit Depth CV");
+        configInput(DRY_WETCVIN_INPUT, "Dry/Wet CV");
+        configInput(CUTOFFCVIN_INPUT, "Cutoff CV");
+        configInput(RESONANCECVIN_INPUT, "Resonance CV");
+        configInput(AUDIOLEFTIN_INPUT, "Audio Left");
+        configInput(AUDIORIGHTIN_INPUT, "Audio Right");
+        configOutput(AUDIOLEFTOUT_OUTPUT, "Audio Left");
+        configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
 
-void process(const ProcessArgs& args) override {
-	// Read input voltages
-	float leftIn = inputs[AUDIOLEFTIN_INPUT].getVoltage();
-	float rightIn = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : leftIn;
+        paramQuantities[SAMPLERATE_PARAM] = new InvertedRangeParamQuantity(sampleRateMaxHz, sampleRateMinHz, "Clock Frequency");
+        paramQuantities[SAMPLERATE_PARAM]->module = this;
+        paramQuantities[SAMPLERATE_PARAM]->paramId = SAMPLERATE_PARAM;
+    }
 
-	// BIT DEPTH CONTROL -----------------------------------------
-	// Get bit depth parameter + CV (clamped to -5V to +5V)
-	float bitDepthParam = params[BITDEPTH_PARAM].getValue(); // 0 to 15
-	float bitDepthCV = clamp(inputs[BITDEPTHCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f * 15.f;
-	int bitDepth = (int)clamp(15.f - (bitDepthParam + bitDepthCV), 0.f, 15.f);
+    void process(const ProcessArgs& args) override {
+        float leftIn = inputs[AUDIOLEFTIN_INPUT].getVoltage();
+        float rightIn = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : leftIn;
 
-	// DRY/WET MIX -----------------------------------------------
-	float dryWetParam = params[DRY_WET_PARAM].getValue(); // 0 to 1
-	float dryWetCV = clamp(inputs[DRY_WETCVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f; // normalized to -0.5 to 0.5
-	float dryWet = clamp(dryWetParam + dryWetCV, 0.f, 1.f);
+        float sampleRateParam = params[SAMPLERATE_PARAM].getValue();
+        float sampleRateCV = clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f;
+        float normSampleRateControl = clamp(sampleRateParam + sampleRateCV, 0.f, 1.f);
+        float sampleRateHz = sampleRateMinHz + normSampleRateControl * (sampleRateMaxHz - sampleRateMinHz);
+        float holdInterval = args.sampleRate / sampleRateHz;
 
-	// AUDIO PROCESSING ------------------------------------------
-	auto bitcrush = [&](float in) {
-		if (bitDepth >= 15) return in; // full 16-bit precision (effect bypassed)
+        sampleHoldPhase += 1.f;
+        if (sampleHoldPhase >= holdInterval) {
+            sampleHoldPhase -= holdInterval;
+            leftSampleHold = leftIn;
+            rightSampleHold = rightIn;
+        }
 
-		// Map to 0..1, then quantize to 2^bitDepth levels, then map back to -5..5
-		float normalized = clamp((in + 5.f) / 10.f, 0.f, 1.f);
-		float quantized;
-		
-		if (bitDepth <= 0) {
-			// One-bit: output is either -5V or +5V
-			quantized = (normalized >= 0.5f) ? 1.f : 0.f;
-		} else {
-			int levels = 1 << bitDepth; // 2^bitDepth
-			quantized = std::round(normalized * (levels - 1)) / (levels - 1);
-		}
+        float bitDepthParam = params[BITDEPTH_PARAM].getValue();
+        float bitDepthCV = clamp(inputs[BITDEPTHCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f * 15.f;
+        int bitDepth = (int)clamp(15.f - (bitDepthParam + bitDepthCV), 0.f, 15.f);
 
-		return quantized * 10.f - 5.f; // map back to -5V..+5V
-	};
+        float dryWetParam = params[DRY_WET_PARAM].getValue();
+        float dryWetCV = clamp(inputs[DRY_WETCVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f;
+        float dryWet = clamp(dryWetParam + dryWetCV, 0.f, 1.f);
 
-	float leftWet = bitcrush(leftIn);
-	float rightWet = bitcrush(rightIn);
+        auto bitcrush = [&](float in) {
+            if (bitDepth >= 15) return in;
+            float normalized = clamp((in + 5.f) / 10.f, 0.f, 1.f);
+            float quantized;
+            if (bitDepth <= 0) {
+                quantized = (normalized >= 0.5f) ? 1.f : 0.f;
+            } else {
+                int levels = 1 << bitDepth;
+                quantized = std::round(normalized * (levels - 1)) / (levels - 1);
+            }
+            return quantized * 10.f - 5.f;
+        };
 
-	float volume = clamp(params[VOLUME_PARAM].getValue(), 0.f, 1.f); // 0.0 to 1.0
+        float leftWet = bitcrush(leftSampleHold);
+        float rightWet = bitcrush(rightSampleHold);
 
-	// MIX DRY AND WET -------------------------------------------
-	float leftOut = clamp(crossfade(leftIn, leftWet, dryWet), -5.f, 5.f);
-	float rightOut = clamp(crossfade(rightIn, rightWet, dryWet), -5.f, 5.f);
+        float volume = clamp(params[VOLUME_PARAM].getValue(), 0.f, 1.f);
 
-	// OUTPUT
-	outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(leftOut * volume);
-	outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(rightOut * volume);
-}
+        float leftOut = clamp(crossfade(leftIn, leftWet, dryWet), -5.f, 5.f);
+        float rightOut = clamp(crossfade(rightIn, rightWet, dryWet), -5.f, 5.f);
+
+        outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(leftOut * volume);
+        outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(rightOut * volume);
+    }
 };
 
 struct BitcrusherWidget : ModuleWidget {
