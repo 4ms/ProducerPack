@@ -81,10 +81,82 @@ struct AuxSends : Module {
 		configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
 	}
 
-	void process(const ProcessArgs& args) override {
-	}
-};
-
+void process(const ProcessArgs& args) override {
+		// --- Stereo input with normalization ---
+		float inL = inputs[AUDIOLEFTIN_INPUT].getVoltage();
+		float inR = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : inL;
+	
+		// Dry signal is the starting point for output
+		float outL = inL;
+		float outR = inR;
+	
+		// --- Helper to compute modulated amount from knob + CV ---
+		auto computeAmount = [](float knob, Input& cvInput) {
+			float cv = clamp(cvInput.getVoltage(), -5.f, 5.f) / 5.f; // -1..1
+			return clamp(knob + cv, 0.f, 1.f);
+		};
+	
+		// === SEND A ===
+		float sendA = computeAmount(params[ASEND_PARAM].getValue(), inputs[ASENDCVIN_INPUT]);
+		float sendAL = inL * sendA;
+		float sendAR = inR * sendA;
+		outputs[ASENDLEFTOUT_OUTPUT].setVoltage(sendAL);
+		outputs[ASENDRIGHTOUT_OUTPUT].setVoltage(sendAR);
+		lights[ASENDLED_LIGHT].setBrightnessSmooth(fabsf(sendAL + sendAR) * 0.1f, args.sampleTime);
+	
+		// === RETURN A (normalized) ===
+		float returnAL = inputs[ARETURNLEFTIN_INPUT].getVoltage();
+		float returnAR = inputs[ARETURNRIGHTIN_INPUT].isConnected() ? inputs[ARETURNRIGHTIN_INPUT].getVoltage() : returnAL;
+		float returnA = computeAmount(params[ARETURN_PARAM].getValue(), inputs[ARETURNCVIN_INPUT]);
+		returnAL *= returnA;
+		returnAR *= returnA;
+		outL += returnAL;
+		outR += returnAR;
+		lights[ARETURNLED_LIGHT].setBrightnessSmooth(fabsf(returnAL + returnAR) * 0.1f, args.sampleTime);
+	
+		// === SEND B ===
+		float sendB = computeAmount(params[BSEND_PARAM].getValue(), inputs[BSENDCVIN_INPUT]);
+		float sendBL = inL * sendB;
+		float sendBR = inR * sendB;
+		outputs[BSENDLEFTOUT_OUTPUT].setVoltage(sendBL);
+		outputs[BSENDRIGHTOUT_OUTPUT].setVoltage(sendBR);
+		lights[BSENDLED_LIGHT].setBrightnessSmooth(fabsf(sendBL + sendBR) * 0.1f, args.sampleTime);
+	
+		// === RETURN B (normalized) ===
+		float returnBL = inputs[BRETURNLEFTIN_INPUT].getVoltage();
+		float returnBR = inputs[BRETURNRIGHTIN_INPUT].isConnected() ? inputs[BRETURNRIGHTIN_INPUT].getVoltage() : returnBL;
+		float returnB = computeAmount(params[BRETURN_PARAM].getValue(), inputs[BRETURNCVIN_INPUT]);
+		returnBL *= returnB;
+		returnBR *= returnB;
+		outL += returnBL;
+		outR += returnBR;
+		lights[BRETURNLED_LIGHT].setBrightnessSmooth(fabsf(returnBL + returnBR) * 0.1f, args.sampleTime);
+	
+		// === SEND C ===
+		float sendC = computeAmount(params[CSEND_PARAM].getValue(), inputs[CSENDCVIN_INPUT]);
+		float sendCL = inL * sendC;
+		float sendCR = inR * sendC;
+		outputs[CSENDLEFTOUT_OUTPUT].setVoltage(sendCL);
+		outputs[CSENDRIGHTOUT_OUTPUT].setVoltage(sendCR);
+		lights[CSENDLED_LIGHT].setBrightnessSmooth(fabsf(sendCL + sendCR) * 0.1f, args.sampleTime);
+	
+		// === RETURN C (normalized) ===
+		float returnCL = inputs[CRETURNLEFTIN_INPUT].getVoltage();
+		float returnCR = inputs[CRETURNRIGHTIN_INPUT].isConnected() ? inputs[CRETURNRIGHTIN_INPUT].getVoltage() : returnCL;
+		float returnC = computeAmount(params[CRETURN_PARAM].getValue(), inputs[CRETURNCVIN_INPUT]);
+		returnCL *= returnC;
+		returnCR *= returnC;
+		outL += returnCL;
+		outR += returnCR;
+		lights[CRETURNLED_LIGHT].setBrightnessSmooth(fabsf(returnCL + returnCR) * 0.1f, args.sampleTime);
+	
+		// --- Final output clamp ---
+		outL = clamp(outL, -10.f, 10.f);
+		outR = clamp(outR, -10.f, 10.f);
+		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(outL);
+		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(outR);
+	}	
+};	
 
 struct AuxSendsWidget : ModuleWidget {
 	AuxSendsWidget(AuxSends* module) {
