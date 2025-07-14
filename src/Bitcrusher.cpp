@@ -16,32 +16,63 @@ struct InvertedRangeParamQuantity : rack::engine::ParamQuantity {
 };
 
 struct Biquad {
-    float a0 = 1.f, a1 = 0.f, a2 = 0.f;
-    float b1 = 0.f, b2 = 0.f;
-    float z1 = 0.f, z2 = 0.f;
+    float b0 = 1.f, b1 = 0.f, b2 = 0.f;
+    float a1 = 0.f, a2 = 0.f;
+
+    float x1 = 0.f, x2 = 0.f;
+    float y1 = 0.f, y2 = 0.f;
 
     void setupLowpass(float cutoff, float resonance, float sampleRate) {
         float w0 = 2.f * M_PI * cutoff / sampleRate;
-        float Q = resonance * 10.f + 0.1f;
+        float Q = resonance * 5.f + 0.1f;
         float alpha = sinf(w0) / (2.f * Q);
         float cosw0 = cosf(w0);
-        float norm = 1.f / (1.f + alpha);
-        a0 = (1.f - cosw0) * 0.5f * norm;
-        a1 = (1.f - cosw0) * norm;
-        a2 = a0;
-        b1 = -2.f * cosw0 * norm;
-        b2 = (1.f - alpha) * norm;
+
+        b0 = (1.f - cosw0) * 0.5f;
+        b1 = 1.f - cosw0;
+        b2 = b0;
+        float a0 = 1.f + alpha;
+        a1 = -2.f * cosw0;
+        a2 = 1.f - alpha;
+
+        b0 /= a0;
+        b1 /= a0;
+        b2 /= a0;
+        a1 /= a0;
+        a2 /= a0;
+    }
+
+    void setupHighpass(float cutoff, float resonance, float sampleRate) {
+        float w0 = 2.f * M_PI * cutoff / sampleRate;
+        float Q = resonance * 5.f + 0.1f;
+        float alpha = sinf(w0) / (2.f * Q);
+        float cosw0 = cosf(w0);
+
+        b0 = (1.f + cosw0) * 0.5f;
+        b1 = -(1.f + cosw0);
+        b2 = b0;
+        float a0 = 1.f + alpha;
+        a1 = -2.f * cosw0;
+        a2 = 1.f - alpha;
+
+        b0 /= a0;
+        b1 /= a0;
+        b2 /= a0;
+        a1 /= a0;
+        a2 /= a0;
     }
 
     float process(float in) {
-        float out = a0 * in + a1 * z1 + a2 * z2 - b1 * z1 - b2 * z2;
-        z2 = z1;
-        z1 = out;
+        float out = b0 * in + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+        x2 = x1;
+        x1 = in;
+        y2 = y1;
+        y1 = out;
         return out;
     }
 
     void reset() {
-        z1 = z2 = 0.f;
+        x1 = x2 = y1 = y2 = 0.f;
     }
 };
 
@@ -106,8 +137,9 @@ struct Bitcrusher : Module {
         float leftIn = inputs[AUDIOLEFTIN_INPUT].getVoltage();
         float rightIn = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : leftIn;
 
-       float norm = clamp(params[SAMPLERATE_PARAM].getValue() + clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f, 0.f, 1.f);
-       float sampleRateHz = sampleRateMinHz + (1.f - norm) * (sampleRateMaxHz - sampleRateMinHz);
+        float norm = clamp(params[SAMPLERATE_PARAM].getValue() + clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f, 0.f, 1.f);
+        // Invert norm for the sample rate since param is inverted display
+        float sampleRateHz = sampleRateMinHz + (1.f - norm) * (sampleRateMaxHz - sampleRateMinHz);
 
         float holdInterval = args.sampleRate / sampleRateHz;
         sampleHoldPhase += 1.f;
@@ -134,8 +166,13 @@ struct Bitcrusher : Module {
         float cutoff = cutoffMinHz + clamp(params[CUTOFF_PARAM].getValue() + cutoffCV, 0.f, 1.f) * (cutoffMaxHz - cutoffMinHz);
         float resonance = clamp(params[RESONANCE_PARAM].getValue() + clamp(inputs[RESONANCECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f, 0.f, 1.f);
 
-        filterL.setupLowpass(cutoff, resonance, args.sampleRate);
-        filterR.setupLowpass(cutoff, resonance, args.sampleRate);
+        if (params[FILTERTYPE_PARAM].getValue() < 0.5f) {
+            filterL.setupLowpass(cutoff, resonance, args.sampleRate);
+            filterR.setupLowpass(cutoff, resonance, args.sampleRate);
+        } else {
+            filterL.setupHighpass(cutoff, resonance, args.sampleRate);
+            filterR.setupHighpass(cutoff, resonance, args.sampleRate);
+        }
 
         float filteredL = filterL.process(crushedL);
         float filteredR = filterR.process(crushedR);
@@ -143,14 +180,13 @@ struct Bitcrusher : Module {
         float dryWet = clamp(params[DRY_WET_PARAM].getValue() + clamp(inputs[DRY_WETCVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f, 0.f, 1.f);
         float volume = clamp(params[VOLUME_PARAM].getValue() + clamp(inputs[VOLUMECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f, 0.f, 1.f);
 
-        float outL = crossfade(leftIn, filteredL, dryWet) * volume;
-        float outR = crossfade(rightIn, filteredR, dryWet) * volume;
+        float outL = rack::math::crossfade(leftIn, filteredL, dryWet) * volume;
+        float outR = rack::math::crossfade(rightIn, filteredR, dryWet) * volume;
 
         outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(outL, -5.f, 5.f));
         outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(outR, -5.f, 5.f));
     }
 };
-
 
 struct BitcrusherWidget : ModuleWidget {
 	BitcrusherWidget(Bitcrusher* module) {
