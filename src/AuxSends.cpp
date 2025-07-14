@@ -3,12 +3,16 @@
 
 struct AuxSends : Module {
 	enum ParamId {
+		PREPOST1_PARAM,
 		ASEND_PARAM,
+		PREPOST2_PARAM,
 		BSEND_PARAM,
+		PREPOST3_PARAM,
 		CSEND_PARAM,
 		ARETURN_PARAM,
 		BRETURN_PARAM,
 		CRETURN_PARAM,
+		DRYLEVEL_PARAM,
 		PARAMS_LEN
 	};
 	enum InputId {
@@ -26,6 +30,7 @@ struct AuxSends : Module {
 		CRETURNRIGHTIN_INPUT,
 		AUDIOLEFTIN_INPUT,
 		AUDIORIGHTIN_INPUT,
+		DRYLEVELCVIN_INPUT,
 		INPUTS_LEN
 	};
 	enum OutputId {
@@ -57,6 +62,12 @@ struct AuxSends : Module {
 		configParam(ARETURN_PARAM, 0.f, 1.f, 0.5f, "Return A", "%", 0.f, 100.f);
 		configParam(BRETURN_PARAM, 0.f, 1.f, 0.5f, "Return B", "%", 0.f, 100.f);
 		configParam(CRETURN_PARAM, 0.f, 1.f, 0.5f, "Return C", "%", 0.f, 100.f);
+		configParam(DRYLEVEL_PARAM, 0.f, 1.f, 1.f, "Dry Level", "%", 0.f, 100.f);
+
+		configSwitch(PREPOST1_PARAM, 0.f, 1.f, 0.f, "Pre/Post", {"Post fader", "Pre fader"});
+		configSwitch(PREPOST2_PARAM, 0.f, 1.f, 0.f, "Pre/Post", {"Post fader", "Pre fader"});
+		configSwitch(PREPOST3_PARAM, 0.f, 1.f, 0.f, "Pre/Post", {"Post fader", "Pre fader"});
+
 		configInput(ASENDCVIN_INPUT, "Send A CV");
 		configInput(BSENDCVIN_INPUT, "Send B CV");
 		configInput(CSENDCVIN_INPUT, "Send C CV");
@@ -71,6 +82,7 @@ struct AuxSends : Module {
 		configInput(CRETURNRIGHTIN_INPUT, "Return C Right");
 		configInput(AUDIOLEFTIN_INPUT, "Audio Left");
 		configInput(AUDIORIGHTIN_INPUT, "Audio Right");
+		configInput(DRYLEVELCVIN_INPUT, "Dry Level CV");
 		configOutput(ASENDLEFTOUT_OUTPUT, "Send A Left");
 		configOutput(ASENDRIGHTOUT_OUTPUT, "Send A Right");
 		configOutput(BSENDLEFTOUT_OUTPUT, "Send B Left");
@@ -168,12 +180,17 @@ struct AuxSendsWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(4.049, 24.452)), module, AuxSends::PREPOST1_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(22.086, 24.452)), module, AuxSends::PREPOST2_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(40.24, 24.452)), module, AuxSends::PREPOST3_PARAM));
+
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.665, 24.452)), module, AuxSends::ASEND_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(30.184, 24.452)), module, AuxSends::BSEND_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(47.999, 24.452)), module, AuxSends::CSEND_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.375, 67.087)), module, AuxSends::ARETURN_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(30.184, 67.393)), module, AuxSends::BRETURN_PARAM));
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(47.999, 67.743)), module, AuxSends::CRETURN_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(30.48, 111.645)), module, AuxSends::DRYLEVEL_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.665, 32.96)), module, AuxSends::ASENDCVIN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.184, 32.96)), module, AuxSends::BSENDCVIN_INPUT));
@@ -189,6 +206,7 @@ struct AuxSendsWidget : ModuleWidget {
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(52.874, 88.118)), module, AuxSends::CRETURNRIGHTIN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.589, 116.408)), module, AuxSends::AUDIOLEFTIN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(18.876, 116.408)), module, AuxSends::AUDIORIGHTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.48, 119.695)), module, AuxSends::DRYLEVELCVIN_INPUT));
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(6.379, 45.387)), module, AuxSends::ASENDLEFTOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.092, 45.387)), module, AuxSends::ASENDRIGHTOUT_OUTPUT));
