@@ -26,9 +26,9 @@ struct Boost : Module {
 
 	Boost() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(GAIN_PARAM, 0.f, 1.f, 0.f, "Gain", "%", 0.f, 100.f);
+		configParam(GAIN_PARAM, 0.f, 1.f, 1.f, "Gain", "%", 0.f, 100.f);
 		configSwitch(RANGE_PARAM, 0.f, 2.f, 0.f, "Gain Range", {"1x", "5x", "100x"});
-		configParam(VOLUME_PARAM, 0.f, 1.f, 0.f, "Volume", "%", 0.f, 100.f);
+		configParam(VOLUME_PARAM, 0.f, 1.f, 1.f, "Volume", "%", 0.f, 100.f);
 		configInput(LEFTIN_INPUT, "Audio Left");
 		configInput(RIGHTIN_INPUT, "Audio Right");
 		configOutput(LEFTOUT_OUTPUT, "Audio Left");
