@@ -35,7 +35,7 @@ struct Boost : Module {
 		configOutput(RIGHTOUT_OUTPUT, "Audio Right");
 	}
 
-	void process(const ProcessArgs& args) override {
+		void process(const ProcessArgs& args) override {
 		int rangeSelection = (int)params[RANGE_PARAM].getValue();
 		float rangeMultiplier = 1.f;
 		switch (rangeSelection) {
@@ -54,21 +54,17 @@ struct Boost : Module {
 		if (leftConnected) {
 			float in = inputs[LEFTIN_INPUT].getVoltage();
 			float boosted = in * preVolumeGain;
-			bool clipping = (boosted < -5.f || boosted > 5.f);
 			float clipped = clamp(boosted, -5.f, 5.f);
 			float out = clipped * volumeAmount;
 			outputs[LEFTOUT_OUTPUT].setVoltage(out);
-	
-			float brightness = clamp(fabs(out) / 5.f, 0.f, 1.f);
 
-	
 			if (!rightConnected) {
 				float boostedR = in * preVolumeGain;
 				bool clippingR = (boostedR < -5.f || boostedR > 5.f);
 				float clippedR = clamp(boostedR, -5.f, 5.f);
 				float outR = clippedR * volumeAmount;
 				outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
-	
+
 				float brightnessR = clamp(fabs(outR) / 5.f, 0.f, 1.f);
 				lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clippingR ? brightnessR : 0.f, args.sampleTime);
 				lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clippingR ? 0.f : brightnessR, args.sampleTime);
@@ -89,7 +85,7 @@ struct Boost : Module {
 			float clipped = clamp(boosted, -5.f, 5.f);
 			float out = clipped * volumeAmount;
 			outputs[RIGHTOUT_OUTPUT].setVoltage(out);
-	
+
 			float brightness = clamp(fabs(out) / 5.f, 0.f, 1.f);
 			lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clipping ? brightness : 0.f, args.sampleTime);
 			lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clipping ? 0.f : brightness, args.sampleTime);
