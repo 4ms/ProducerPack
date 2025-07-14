@@ -22,7 +22,7 @@ struct Biquad {
 
     void setupLowpass(float cutoff, float resonance, float sampleRate) {
         float w0 = 2.f * M_PI * cutoff / sampleRate;
-        float Q = resonance * 5.f + 0.1f;
+        float Q = resonance * 10.f + 0.1f;
         float alpha = sinf(w0) / (2.f * Q);
         float cosw0 = cosf(w0);
         float norm = 1.f / (1.f + alpha);
