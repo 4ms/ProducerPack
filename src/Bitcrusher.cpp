@@ -71,10 +71,57 @@ struct Bitcrusher : Module {
 		paramQuantities[SAMPLERATE_PARAM]->module = this;
 		paramQuantities[SAMPLERATE_PARAM]->paramId = SAMPLERATE_PARAM;
 	}
-	void process(const ProcessArgs& args) override {
-	}
-};
 
+
+void process(const ProcessArgs& args) override {
+	// Read input voltages
+	float leftIn = inputs[AUDIOLEFTIN_INPUT].getVoltage();
+	float rightIn = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : leftIn;
+
+	// BIT DEPTH CONTROL -----------------------------------------
+	// Get bit depth parameter + CV (clamped to -5V to +5V)
+	float bitDepthParam = params[BITDEPTH_PARAM].getValue(); // 0 to 15
+	float bitDepthCV = clamp(inputs[BITDEPTHCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f * 15.f;
+	int bitDepth = (int)clamp(15.f - (bitDepthParam + bitDepthCV), 0.f, 15.f);
+
+	// DRY/WET MIX -----------------------------------------------
+	float dryWetParam = params[DRY_WET_PARAM].getValue(); // 0 to 1
+	float dryWetCV = clamp(inputs[DRY_WETCVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f; // normalized to -0.5 to 0.5
+	float dryWet = clamp(dryWetParam + dryWetCV, 0.f, 1.f);
+
+	// AUDIO PROCESSING ------------------------------------------
+	auto bitcrush = [&](float in) {
+		if (bitDepth >= 15) return in; // full 16-bit precision (effect bypassed)
+
+		// Map to 0..1, then quantize to 2^bitDepth levels, then map back to -5..5
+		float normalized = clamp((in + 5.f) / 10.f, 0.f, 1.f);
+		float quantized;
+		
+		if (bitDepth <= 0) {
+			// One-bit: output is either -5V or +5V
+			quantized = (normalized >= 0.5f) ? 1.f : 0.f;
+		} else {
+			int levels = 1 << bitDepth; // 2^bitDepth
+			quantized = std::round(normalized * (levels - 1)) / (levels - 1);
+		}
+
+		return quantized * 10.f - 5.f; // map back to -5V..+5V
+	};
+
+	float leftWet = bitcrush(leftIn);
+	float rightWet = bitcrush(rightIn);
+
+	float volume = clamp(params[VOLUME_PARAM].getValue(), 0.f, 1.f); // 0.0 to 1.0
+
+	// MIX DRY AND WET -------------------------------------------
+	float leftOut = clamp(crossfade(leftIn, leftWet, dryWet), -5.f, 5.f);
+	float rightOut = clamp(crossfade(rightIn, rightWet, dryWet), -5.f, 5.f);
+
+	// OUTPUT
+	outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(leftOut * volume);
+	outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(rightOut * volume);
+}
+};
 
 struct BitcrusherWidget : ModuleWidget {
 	BitcrusherWidget(Bitcrusher* module) {
