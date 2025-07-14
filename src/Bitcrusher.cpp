@@ -96,7 +96,7 @@ struct Bitcrusher : Module {
         configOutput(AUDIOLEFTOUT_OUTPUT, "Audio Left");
         configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
 
-        paramQuantities[SAMPLERATE_PARAM] = new InvertedRangeParamQuantity(sampleRateMaxHz, sampleRateMinHz, "Clock Frequency");
+        paramQuantities[SAMPLERATE_PARAM] = new InvertedRangeParamQuantity(sampleRateMinHz, sampleRateMaxHz, "Clock Frequency");
         paramQuantities[SAMPLERATE_PARAM]->module = this;
         paramQuantities[SAMPLERATE_PARAM]->paramId = SAMPLERATE_PARAM;
     }
@@ -105,8 +105,9 @@ struct Bitcrusher : Module {
         float leftIn = inputs[AUDIOLEFTIN_INPUT].getVoltage();
         float rightIn = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : leftIn;
 
-        float t = params[SAMPLERATE_PARAM].getValue() + clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f;
-        float sampleRateHz = sampleRateMinHz + clamp(t, 0.f, 1.f) * (sampleRateMaxHz - sampleRateMinHz);
+       float norm = clamp(params[SAMPLERATE_PARAM].getValue() + clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f, 0.f, 1.f);
+       float sampleRateHz = sampleRateMinHz + (1.f - norm) * (sampleRateMaxHz - sampleRateMinHz);
+
         float holdInterval = args.sampleRate / sampleRateHz;
         sampleHoldPhase += 1.f;
         if (sampleHoldPhase >= holdInterval) {
