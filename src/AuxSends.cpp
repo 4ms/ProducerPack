@@ -64,9 +64,9 @@ struct AuxSends : Module {
 		configParam(CRETURN_PARAM, 0.f, 1.f, 0.5f, "Return C", "%", 0.f, 100.f);
 		configParam(DRYLEVEL_PARAM, 0.f, 1.f, 1.f, "Dry Level", "%", 0.f, 100.f);
 
-		configSwitch(PREPOST1_PARAM, 0.f, 1.f, 0.f, "Pre/Post", {"Post fader", "Pre fader"});
-		configSwitch(PREPOST2_PARAM, 0.f, 1.f, 0.f, "Pre/Post", {"Post fader", "Pre fader"});
-		configSwitch(PREPOST3_PARAM, 0.f, 1.f, 0.f, "Pre/Post", {"Post fader", "Pre fader"});
+		configSwitch(PREPOST1_PARAM, 0.f, 1.f, 0.f, "Pre/Post A", {"Post fader", "Pre fader"});
+		configSwitch(PREPOST2_PARAM, 0.f, 1.f, 0.f, "Pre/Post B", {"Post fader", "Pre fader"});
+		configSwitch(PREPOST3_PARAM, 0.f, 1.f, 0.f, "Pre/Post C", {"Post fader", "Pre fader"});
 
 		configInput(ASENDCVIN_INPUT, "Send A CV");
 		configInput(BSENDCVIN_INPUT, "Send B CV");
@@ -191,58 +191,58 @@ void process(const ProcessArgs& args) override {
 struct AuxSendsWidget : ModuleWidget {
 	AuxSendsWidget(AuxSends* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/AuxSends.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/AuxSends_info.svg")));
 
-		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(4.049, 24.452)), module, AuxSends::PREPOST1_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(22.086, 24.452)), module, AuxSends::PREPOST2_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(40.24, 24.452)), module, AuxSends::PREPOST3_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(17.681, 13.501)), module, AuxSends::ASEND_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(40.678, 13.501)), module, AuxSends::BSEND_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(63.58, 13.501)), module, AuxSends::CSEND_PARAM));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.665, 24.452)), module, AuxSends::ASEND_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(30.184, 24.452)), module, AuxSends::BSEND_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(47.999, 24.452)), module, AuxSends::CSEND_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.375, 67.087)), module, AuxSends::ARETURN_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(30.184, 67.393)), module, AuxSends::BRETURN_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(47.999, 67.743)), module, AuxSends::CRETURN_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(30.48, 111.645)), module, AuxSends::DRYLEVEL_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(6.699, 14.702)), module, AuxSends::PREPOST1_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(29.7, 14.702)), module, AuxSends::PREPOST2_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(52.701, 14.702)), module, AuxSends::PREPOST3_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.665, 32.96)), module, AuxSends::ASENDCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.184, 32.96)), module, AuxSends::BSENDCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(47.999, 32.96)), module, AuxSends::CSENDCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.375, 75.519)), module, AuxSends::ARETURNCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.184, 75.519)), module, AuxSends::BRETURNCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(47.999, 75.519)), module, AuxSends::CRETURNCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(6.73, 88.118)), module, AuxSends::ARETURNLEFTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.443, 88.118)), module, AuxSends::ARETURNRIGHTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(26.304, 88.118)), module, AuxSends::BRETURNLEFTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(35.017, 88.118)), module, AuxSends::BRETURNRIGHTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(44.162, 88.118)), module, AuxSends::CRETURNLEFTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(52.874, 88.118)), module, AuxSends::CRETURNRIGHTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.589, 116.408)), module, AuxSends::AUDIOLEFTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(18.876, 116.408)), module, AuxSends::AUDIORIGHTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.48, 119.695)), module, AuxSends::DRYLEVELCVIN_INPUT));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(12.679, 61.499)), module, AuxSends::ARETURN_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(35.581, 61.499)), module, AuxSends::BRETURN_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(58.578, 61.499)), module, AuxSends::CRETURN_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(28.998, 111.0)), module, AuxSends::DRYLEVEL_PARAM));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(6.379, 45.387)), module, AuxSends::ASENDLEFTOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.092, 45.387)), module, AuxSends::ASENDRIGHTOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(25.953, 45.387)), module, AuxSends::BSENDLEFTOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(34.666, 45.387)), module, AuxSends::BSENDRIGHTOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(43.811, 45.387)), module, AuxSends::CSENDLEFTOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(52.524, 45.387)), module, AuxSends::CSENDRIGHTOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(39.574, 116.408)), module, AuxSends::AUDIOLEFTOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(50.983, 116.408)), module, AuxSends::AUDIORIGHTOUT_OUTPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.7, 30.998)), module, AuxSends::ASENDCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(35.581, 30.998)), module, AuxSends::BSENDCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(58.599, 30.998)), module, AuxSends::CSENDCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.7, 79.0)), module, AuxSends::ARETURNCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(35.549, 79.0)), module, AuxSends::BRETURNCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(58.599, 79.0)), module, AuxSends::CRETURNCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.549, 94.998)), module, AuxSends::ARETURNLEFTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(17.55, 94.998)), module, AuxSends::ARETURNRIGHTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.55, 94.998)), module, AuxSends::BRETURNLEFTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(40.548, 94.998)), module, AuxSends::BRETURNRIGHTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(53.551, 94.998)), module, AuxSends::CRETURNLEFTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(63.559, 94.998)), module, AuxSends::CRETURNRIGHTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.8, 111.0)), module, AuxSends::AUDIOLEFTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(17.6, 111.0)), module, AuxSends::AUDIORIGHTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(40.498, 111.0)), module, AuxSends::DRYLEVELCVIN_INPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(10.665, 17.587)), module, AuxSends::ASENDLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(30.184, 17.587)), module, AuxSends::BSENDLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(47.999, 17.587)), module, AuxSends::CSENDLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(10.375, 59.904)), module, AuxSends::ARETURNLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(30.184, 60.21)), module, AuxSends::BRETURNLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(47.999, 60.56)), module, AuxSends::CRETURNLED_LIGHT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.56, 47.0)), module, AuxSends::ASENDLEFTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(17.561, 47.0)), module, AuxSends::ASENDRIGHTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(30.561, 47.0)), module, AuxSends::BSENDLEFTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(40.558, 47.0)), module, AuxSends::BSENDRIGHTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(53.558, 47.0)), module, AuxSends::CSENDLEFTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(63.559, 47.0)), module, AuxSends::CSENDRIGHTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(53.498, 111.0)), module, AuxSends::AUDIOLEFTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(63.7, 111.0)), module, AuxSends::AUDIORIGHTOUT_OUTPUT));
+
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(12.679, 22.5)), module, AuxSends::ASENDLED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(35.581, 22.5)), module, AuxSends::BSENDLED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(58.578, 22.5)), module, AuxSends::CSENDLED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(12.7, 70.498)), module, AuxSends::ARETURNLED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(35.598, 70.498)), module, AuxSends::BRETURNLED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(58.599, 70.498)), module, AuxSends::CRETURNLED_LIGHT));
 	}
 };
-
 
 Model* modelAuxSends = createModel<AuxSends, AuxSendsWidget>("AuxSends");
