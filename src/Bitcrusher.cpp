@@ -191,32 +191,32 @@ struct Bitcrusher : Module {
 struct BitcrusherWidget : ModuleWidget {
 	BitcrusherWidget(Bitcrusher* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/Bitcrusher.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/Bitcrusher_info.svg")));
 
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(8.924, 19.095)), module, Bitcrusher::SAMPLERATE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(31.302, 19.095)), module, Bitcrusher::BITDEPTH_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(20.32, 44.599)), module, Bitcrusher::DRY_WET_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(8.924, 67.068)), module, Bitcrusher::CUTOFF_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(31.302, 67.068)), module, Bitcrusher::RESONANCE_PARAM));
-		addParam(createParamCentered<_2PosHorizontal>(mm2px(Vec(20.32, 85.948)), module, Bitcrusher::FILTERTYPE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(20.32, 95.631)), module, Bitcrusher::VOLUME_PARAM));
+		addParam(createParamCentered<Davies_large>(mm2px(Vec(14.499, 18.5)), module, Bitcrusher::SAMPLERATE_PARAM));
+		addParam(createParamCentered<Davies_large>(mm2px(Vec(46.5, 18.5)), module, Bitcrusher::BITDEPTH_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(30.502, 41.751)), module, Bitcrusher::DRY_WET_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(13.501, 58.998)), module, Bitcrusher::CUTOFF_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(47.502, 58.998)), module, Bitcrusher::RESONANCE_PARAM));
+		addParam(createParamCentered<_2PosHorizontal>(mm2px(Vec(13.501, 95.002)), module, Bitcrusher::FILTERTYPE_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(47.502, 94.999)), module, Bitcrusher::VOLUME_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(31.302, 95.631)), module, Bitcrusher::VOLUMECVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.924, 29.117)), module, Bitcrusher::SAMPLERATECVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(31.302, 29.117)), module, Bitcrusher::BITDEPTHCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(20.32, 53.904)), module, Bitcrusher::DRY_WETCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.924, 77.047)), module, Bitcrusher::CUTOFFCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(31.302, 77.047)), module, Bitcrusher::RESONANCECVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(5.585, 117.107)), module, Bitcrusher::AUDIOLEFTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.493, 117.107)), module, Bitcrusher::AUDIORIGHTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(13.501, 41.751)), module, Bitcrusher::SAMPLERATECVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(47.502, 41.751)), module, Bitcrusher::BITDEPTHCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(13.501, 77.963)), module, Bitcrusher::CUTOFFCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.502, 77.963)), module, Bitcrusher::DRY_WETCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(47.502, 77.963)), module, Bitcrusher::RESONANCECVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.502, 94.999)), module, Bitcrusher::VOLUMECVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.1, 111.001)), module, Bitcrusher::AUDIOLEFTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.001, 111.001)), module, Bitcrusher::AUDIORIGHTIN_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(27.136, 117.107)), module, Bitcrusher::AUDIOLEFTOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(36.083, 117.107)), module, Bitcrusher::AUDIORIGHTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(38.1, 111.001)), module, Bitcrusher::AUDIOLEFTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(53.002, 111.001)), module, Bitcrusher::AUDIORIGHTOUT_OUTPUT));
 	}
 };
 
