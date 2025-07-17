@@ -11,7 +11,7 @@
   "manualUrl": "https://github.com/4ms/ProducerPack/blob/main/doc/Producer%20Pack%20User%20Manual.md",
   "sourceUrl": "https://github.com/4ms/ProducerPack/",
   "donateUrl": "",
-  "changelogUrl": "https://github.com/4ms/ProducerPack/blob/main/doc/CHANGELOG.md",
+  "changelogUrl": "https://github.com/4ms/ProducerPack/blob/main/CHANGELOG.md",
   "modules": [
     {
       "slug": "DJFilter",
@@ -59,7 +59,7 @@
       "slug": "70sComp",
       "name": "70sComp",
       "description": "LA2A inspired optical compressor",
-      "tags": ["Stereo", "Utility", "Effect", "Dynamic"]
+      "tags": ["Stereo", "Utility", "Effect", "Dynamics"]
     },
     {
       "slug": "2op",
