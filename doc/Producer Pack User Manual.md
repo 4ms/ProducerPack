@@ -102,8 +102,8 @@ Three stereo auxiliary send/return pairs with pre/post fader selection and CV co
 
 - **Pre/Post A, B, C (switches)**  
   Selects whether the send taps the signal before or after dry level attenuation:  
-  - **Post fader** = send follows dry signal level  
-  - **Pre fader** = send taps raw input signal before "Dry Level" attenuation
+  **Post fader** = send follows dry signal level  
+  **Pre fader** = send taps raw input signal before "Dry Level" attenuation
 
 - **Return A, B, C (knobs + CV inputs)**  
   Controls the level of the returned signal from each auxiliary return channel, expressed as a percentage of the return input signal.
@@ -122,10 +122,7 @@ Three stereo auxiliary send/return pairs with pre/post fader selection and CV co
 
 - **Audio Outputs (Left & Right)**  
   The mixed output of the dry signal plus all returns combined.
-
-- **LED Indicators (Red LEDs for each send and return)**  
-  Visual feedback showing signal presence and approximate level on each send and return channel.
-
+  
 ---
 ![Bitcrusher](https://github.com/4ms/ProducerPack/blob/main/doc/Bitcrusher.png) 
 
@@ -134,28 +131,22 @@ Three stereo auxiliary send/return pairs with pre/post fader selection and CV co
 A stereo bitcrusher effect with sample rate reduction, bit depth control, selectable filter, and volume adjustment.
 
 - **Clock Frequency**: Sets the rate at which audio samples are held, reducing sample rate.  
-  Range: **20 Hz to 15,000 Hz**
+  Range: **15,000 Hz to 20hz**
 
 - **Bit Depth**: Controls the number of bits used to represent each audio sample, affecting crunchiness.  
-  Range: **1 to 16 bits**
+  Range: **16 bits to 1 bit**
 
 - **Dry/Wet**: Mixes between the clean input signal and the processed bitcrushed output.  
-  Range: **0 % to 100 %**
 
 - **Cutoff**: Sets the cutoff frequency of the filter applied after bitcrushing.  
   Range: **20 Hz to 8,000 Hz**
 
-- **Resonance**: Adjusts the emphasis or Q factor of the filter around the cutoff frequency.  
-  Range: **0 % to 100 %**
+- **Resonance**: Adjusts the emphasis or Q factor of the filter around the cutoff frequency. Higher values = more resonant.  
 
 - **Filter Type (switch)**: Selects the filter mode:  
-  • **Lowpass**  
-  • **Highpass**
+  **Lowpass** or **Highpass**
 
 - **Volume**: Controls the output amplitude of the processed signal.  
-  Range: **0 % to 100 %**
-
-Stereo input and output.
 
 ---
 ![Boost](https://github.com/4ms/ProducerPack/blob/main/doc/Boost.png) 
@@ -164,35 +155,32 @@ Stereo input and output.
 
 A stereo audio booster with adjustable gain range and output volume control.
 
-- **Gain**: Amplifies the input signal before clipping.  
-  Range: **0 % to 100 %**
-
+- **Gain**: Amplifies the input signal. Clipping occurs at +/-5v
+- 
 - **Gain Range (switch)**: Selects the gain multiplier applied to the gain parameter:  
-  • **1×**  
-  • **5×**  
-  • **100×**
+  **1×** 
+  **5×**  
+  **100×**
 
 - **Volume**: Controls the final output level after gain and clipping.  
   Range: **0 % to 100 %**
 
-Stereo input and output.
-
-Red and green LED indicator shows clipping status.
+Red and green LED indicator shows clipping status (red when clipping).
 
 ---
 ![Decay](https://github.com/4ms/ProducerPack/blob/main/doc/Decay.png) 
 
 ## Decay
 
-A decay envelope generator with CV control, trigger input, and audio amplitude modulation.
+A decay envelope generator with CV control, and built in VCA for modulating the amplitude of incoming audio. 
 
 - **Decay**: Sets the base length of the decay envelope.  
   Range: **0 % to 100 %**
 
 - **Range (switch)**: Selects the maximum decay time:  
-  • **Short**: 30 ms  
-  • **Med**: 200 ms  
-  • **Long**: 5000 ms
+  **Short**: 30 ms  
+  **Med**: 200 ms  
+  **Long**: 5000 ms
 
 - **Decay CV (input)**: Modulates decay time by control voltage.  
 - **Trig (input)**: Triggers the decay envelope on rising edge.  
@@ -201,14 +189,12 @@ A decay envelope generator with CV control, trigger input, and audio amplitude m
 - **Decay (output)**: Outputs the decay envelope signal.  
 - **Audio (output)**: Outputs the input audio modulated by the decay envelope.
 
-A LED indicates the current envelope amplitude.
-
 ---
 ![DJF](https://github.com/4ms/ProducerPack/blob/main/doc/DJF.png) 
 
 ## DJFilter
 
-A stereo multimode filter with adjustable cutoff, resonance, and selectable slope.
+A stereo multimode filter based on the filter from Pioneer DJ mixers. The filter has adjustable cutoff, resonance, and selectable slope. The filter sweeps continuously from lowpass to highpass with bypass in the middle (no filtering). 
 
 - **Cutoff**: Controls the filter cutoff frequency with a unique morphing range:  
   • From 20 Hz to 2000 Hz  
@@ -220,10 +206,10 @@ A stereo multimode filter with adjustable cutoff, resonance, and selectable slop
   Range: **0 % to 100 %**
 
 - **Slope (switch)**: Selects the filter slope:  
-  • **6 dB/oct**  
-  • **12 dB/oct**  
-  • **18 dB/oct**  
-  • **24 dB/oct**
+  **6 dB/oct**  
+  **12 dB/oct**  
+  **18 dB/oct**  
+  **24 dB/oct**
 
 - **Cutoff CV (input)**: Modulates cutoff frequency by control voltage.
 
