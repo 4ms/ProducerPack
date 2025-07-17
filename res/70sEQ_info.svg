@@ -93,13 +93,13 @@
      inkscape:document-units="mm"
      inkscape:zoom="2.5195774"
      inkscape:cx="24.210409"
-     inkscape:cy="272.66477"
+     inkscape:cy="367.91884"
      inkscape:window-width="1920"
      inkscape:window-height="1027"
-     inkscape:window-x="2002"
-     inkscape:window-y="53"
+     inkscape:window-x="640"
+     inkscape:window-y="25"
      inkscape:window-maximized="0"
-     inkscape:current-layer="text" />
+     inkscape:current-layer="art" />
   <g
      inkscape:groupmode="layer"
      id="layer4"
@@ -195,15 +195,15 @@
          style="stroke-width:2.82904">
         <g
            id="g3"
-           style="stroke-width:1.41452;stroke-dasharray:none"
+           style="stroke-width:1.00534461;stroke-dasharray:none"
            transform="matrix(1.0002688,0,0,0.96976947,-0.01161137,10.322303)">
           <path
              d="m 17.69,297.16 h 51.02 c 7.82,0 14.17,6.35 14.17,14.17 v 24.09 c 0,3.13 -2.54,5.67 -5.67,5.67 H 9.18 c -3.13,0 -5.67,-2.54 -5.67,-5.67 v -24.09 c 0,-7.82 6.35,-14.17 14.17,-14.17 z"
              id="path2"
-             style="stroke-width:1.41452;stroke-dasharray:none" />
+             style="stroke-width:1.00534461;stroke-dasharray:none" />
           <path
              d="m 17.69,258.19 h 51.02 c 7.82,0 14.17,6.35 14.17,14.17 v 63.07 c 0,3.13 -2.54,5.67 -5.67,5.67 H 9.18 c -3.13,0 -5.67,-2.54 -5.67,-5.67 v -63.07 c 0,-7.82 6.35,-14.17 14.17,-14.17 z"
-             style="fill:none;stroke:#000000;stroke-width:1.41452;stroke-miterlimit:10;stroke-dasharray:none"
+             style="fill:none;stroke:#000000;stroke-width:1.00534461;stroke-miterlimit:10;stroke-dasharray:none"
              id="path3" />
         </g>
         <g
