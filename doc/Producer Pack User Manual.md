@@ -316,7 +316,7 @@ Waveform options:
 - Square  
 - Stepped Random (when LFO frequency = 0 then stepped random responds to main incoming gate signal) 
 
-### Bipolar / Unipolar (Switch)
+### Bipolar / Unipolar 
 - **Bipolar:** –5 V to +5 V  
 - **Unipolar:** 0 V to 5 V
 
@@ -335,6 +335,8 @@ Outputs shaped LFO wave.
 ## Overview
 
 **Spatializer** is a stereo audio processor that applies short delay-based widening and mid/side blending to incoming signals. It features internal delay buffers, width control, and flexible CV modulation. Designed for insert-style use with send/return capabilities.
+
+A signal is sent to two delay lines of equal time to both left and right channels. The right channel is flipped 180 degrees out of phase. The original mono signal is considered the "mid" and is blended with these two delayed signals. 
 
 - Delay time is selectable in milliseconds or samples.
 - Stereo widening and mid/side mixing are adjustable via knobs or CV.
@@ -401,46 +403,21 @@ Crossfades between mid and side components.
 
 ## Overview
 
-**StereoWidth** adjusts how wide your stereo signal sounds and lets you pan it left or right. You can also control these settings with CV inputs.
-
-- **Width**: Makes your sound more mono or wider stereo.  
-- **Pan**: Moves the sound between left and right speakers.  
-- **CV Inputs**: Control width and pan with control voltages.
-
----
+**StereoWidth** adjusts how wide your stereo signal sounds and lets you pan it left or right. You can also control these settings with CV inputs. When stereo width is greater than 50%, the left and right channels are subtracted from one another creating a differential pair. At 100% the signal is fully differential. This creates the perception that the stereo field is even wider than the original signal. 
 
 ## Controls
 
 ### **Width**  
-Changes how wide the stereo image is.  
+Changes how wide the stereo image is. If the width knob is greater than 50%, the left and right channels are subtracted from one another creating a differential pair. A greater differential is percieved as an even wider stereo image than the original signal. If the width knob is less than 50% it makes a stereo signal more mono. 
 - 0% = mono  
 - 100% = normal stereo  
 - Up to 200% = extra wide  
-- **CV Input**: Modulate width with a voltage signal.
 
 ### **Pan**  
 Moves the stereo balance left or right.  
 - -50% = left  
 - 0% = center  
 - +50% = right  
-- **CV Input**: Modulate pan with a voltage signal.
-
----
-
-## Audio Connections
-
-- **Inputs:** Left and Right audio signals go in here.  
-- **Outputs:** Processed Left and Right signals come out here.
-
----
-
-## Notes
-
-- Width below 50% blends stereo into mono.  
-- Width above 50% makes the stereo image wider.  
-- Pan shifts the stereo sound after width is applied.  
-- Outputs are limited to prevent clipping.
-
 ---
 ![STXF](https://github.com/4ms/ProducerPack/blob/main/doc/STXF.png) 
 
@@ -448,41 +425,20 @@ Moves the stereo balance left or right.
 
 ## Overview
 
-**StereoCrossfader** smoothly blends between two stereo input pairs (A and B) and lets you adjust the curve of the crossfade for different mixing feels. You can also control the mix amount with CV.
-
+**StereoCrossfader** smoothly blends between two stereo input pairs (A and B) and lets you adjust the curve of the crossfade for different mixing feels and weight. A logarithmic curve has a lower degree of change over a wider field and has a faster change closer to the center point of the fade. 
 ---
-
-## Controls
 
 ### Mix  
 Controls how much signal comes from Input A vs. Input B.  
 - 0% = full Input A  
 - 100% = full Input B  
 - 50% = equal blend of A and B  
-- Can be modulated by a control voltage (CV).
 
 ### Shape  
 Adjusts the curve of the crossfade:  
 - 0% = linear fade (straight mix)  
 - 100% = curved fade (logarithmic style)  
 - Allows smoother or sharper transitions between A and B.
-
 ---
-
-## Audio Connections
-
-- **Inputs A (Left and Right):** First stereo signal pair to mix.  
-- **Inputs B (Left and Right):** Second stereo signal pair to mix.  
-- If right input is missing, left input is used for both channels.  
-- **Outputs (Left and Right):** Mixed stereo output combining signals A and B.
-
----
-
-## How It Works
-
-- The **Mix** knob sets the balance between the two input pairs.  
-- The **Shape** knob changes the fading curve, making crossfades smoother or more abrupt.  
-- The **Mix CV input** lets you automate or modulate the mix amount with external control voltage.  
-- The output is a stereo mix of inputs A and B according to the settings.
 
 
