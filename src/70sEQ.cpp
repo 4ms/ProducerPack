@@ -223,10 +223,13 @@ struct _70sEQ : Module {
         configInput(INR_INPUT, "Audio Right");
         configOutput(OUTL_OUTPUT, "Output Left");
         configOutput(OUTR_OUTPUT, "Output Right");
-        configLight(GAINLED_LIGHT_GREEN, "Gain LED Green");
-        configLight(GAINLED_LIGHT_RED, "Gain LED Red");
-        configLight(OUTLED_LIGHT_GREEN, "Output LED Green");
-        configLight(OUTLED_LIGHT_RED, "Output LED Red");
+
+        configLight(GAINLED_LIGHT_GREEN, "Gain");
+        configLight(GAINLED_LIGHT_RED, "Gain");
+        configLight(EQLED_LIGHT_GREEN, "EQ");
+        configLight(EQLED_LIGHT_RED, "EQ");
+        configLight(OUTLED_LIGHT_GREEN, "Output");
+        configLight(OUTLED_LIGHT_RED, "Output");
         
     }
 
