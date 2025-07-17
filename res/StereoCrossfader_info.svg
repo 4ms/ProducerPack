@@ -24,14 +24,14 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="2.5195774"
-     inkscape:cx="51.7944"
-     inkscape:cy="388.35878"
+     inkscape:cx="51.595954"
+     inkscape:cy="189.11902"
      inkscape:window-width="1200"
      inkscape:window-height="1186"
-     inkscape:window-x="2134"
-     inkscape:window-y="25"
+     inkscape:window-x="820"
+     inkscape:window-y="81"
      inkscape:window-maximized="0"
-     inkscape:current-layer="art" />
+     inkscape:current-layer="text" />
   <g
      inkscape:groupmode="layer"
      id="layer2"
@@ -141,13 +141,15 @@
            y="274.46"
            width="45.35"
            height="1"
-           id="rect27" />
+           id="rect27"
+           style="stroke-width:0.99212748;stroke-dasharray:none" />
         <rect
            x="20.52"
            y="234.94"
            width="45.35"
            height="1"
-           id="rect28" />
+           id="rect28"
+           style="stroke-width:0.99212748;stroke-dasharray:none" />
       </g>
       <g
          id="g37">
@@ -277,13 +279,15 @@
       </g>
       <path
          d="M82.82,233.72c-.31-8.93-6.53-15.93-14.16-15.93H17.74c-7.63,0-13.85,7-14.16,15.95l-.06,6.83v21.06l.07,61.87h0v11.26c0,3.5,2.84,6.34,6.34,6.34h13.29s40.05,0,40.05,0h0s13.29,0,13.29,0c3.5,0,6.34-2.84,6.34-6.34v-94.2l-.06-6.84ZM81.86,324.48v10.28c0,2.93-2.38,5.31-5.31,5.31H17.78s0,0,0,0h-7.86c-2.93,0-5.31-2.38-5.31-5.31v-10.28h0l-.07-62.85v-21.06l.06-6.81c.29-8.38,6.06-14.94,13.14-14.94h50.92c7.07,0,12.84,6.56,13.14,14.93l.06,6.82v83.92Z"
-         id="path64" />
+         id="path64"
+         style="stroke-width:0.99212748;stroke-dasharray:none" />
       <rect
          x="42.7"
          y="84.65"
          width="1"
          height="30.99"
-         id="rect64" />
+         id="rect64"
+         style="stroke-width:0.99212748;stroke-dasharray:none" />
       <g
          id="g69">
         <path
