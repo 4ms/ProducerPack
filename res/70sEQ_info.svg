@@ -138,9 +138,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="2.5195774"
-     inkscape:cx="24.210409"
-     inkscape:cy="240.91342"
+     inkscape:zoom="1.2597887"
+     inkscape:cx="-129.38678"
+     inkscape:cy="193.68327"
      inkscape:window-width="1920"
      inkscape:window-height="1027"
      inkscape:window-x="0"
@@ -888,7 +888,7 @@
      inkscape:groupmode="layer"
      id="layer3"
      inkscape:label="components"
-     style="display:inline">
+     style="display:none">
     <ellipse
        id="OutR"
        cx="23.070066"
