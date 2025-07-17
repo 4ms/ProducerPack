@@ -60,12 +60,12 @@ A vintage-style stereo compressor/limiter modeled after optical compressors such
 
 ## 70sEQ
 
-A classic analog-style 3-band stereo equalizer with sweepable mids, selectable shelving/HPF frequencies, and gain staging with clip indicators.
+A classic analog-style 3-band stereo equalizer modeled after the Neve 1073.
 
 - **Input Gain**: Boosts incoming signal before EQ stage.  
   Range: **1x to 5x** gain
 
-- **High Shelf Gain**: Boost or cut the high frequencies around 10 kHz.  
+- **High Shelf Gain**: Boost or cut the high frequencies at a fixed band of 10 kHz.  
   Range: **–15 dB to +15 dB**
 
 - **Mid Gain**: Boost or cut the selected mid frequency band.  
@@ -95,17 +95,15 @@ A classic analog-style 3-band stereo equalizer with sweepable mids, selectable s
 
 # AuxSends
 
-A versatile stereo auxiliary send/return mixer with three independent sends and returns, featuring pre/post fader selection, CV modulation, and dry level control.
-
-## Controls and Inputs/Outputs
+Three stereo auxiliary send/return pairs with pre/post fader selection and CV control.
 
 - **Send A, B, C (knobs + CV inputs)**  
-  Controls the amount of signal sent to each auxiliary send channel, expressed as a percentage of the input signal.
+  Controls the amount of signal sent to each aux send pair. 
 
 - **Pre/Post A, B, C (switches)**  
   Selects whether the send taps the signal before or after dry level attenuation:  
   - **Post fader** = send follows dry signal level  
-  - **Pre fader** = send taps raw input signal before attenuation
+  - **Pre fader** = send taps raw input signal before "Dry Level" attenuation
 
 - **Return A, B, C (knobs + CV inputs)**  
   Controls the level of the returned signal from each auxiliary return channel, expressed as a percentage of the return input signal.
