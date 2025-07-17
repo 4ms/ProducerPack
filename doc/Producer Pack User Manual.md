@@ -1,6 +1,6 @@
 # Producer Pack User Manual
 
-Use this document to understand the behavior, controls, and design inspirations behind each drum module.
+Use this document to understand the behavior, controls, and design inspirations behind each module.
 
 ---
 
