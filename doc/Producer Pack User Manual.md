@@ -6,7 +6,7 @@ Use this document to understand the behavior, controls, and design inspirations 
 
 ## CV + Knob Behavior
 
-**All CV inputs are bipolar and clamped to 10vpp. Each knob functions as a 10vpp offset.**
+**All CV inputs are bipolar and clamped to 10vpp. Each knob functions as a 10vpp offset. Unless otherwise noted,   gate inputs are conditioned to have rising edge trigger detection and ignore pulse width.**
 
 ---
 ![2Op](https://github.com/4ms/ProducerPack/blob/main/doc/2Op.png) 
@@ -14,19 +14,19 @@ Use this document to understand the behavior, controls, and design inspirations 
 
 A simple two operator FM drum with built in decay envelope and VCA. 
 
-- **Pitch**: Sets the base frequency of the sound.  
+- **Pitch**: Sets the base frequency of the oscillators.  
   Range: **20 Hz to 20,000 Hz**
 
-- **FM Amount**: Controls how much the modulator oscillator bends the pitch of the carrier.  
+- **FM Amount**: Controls how much the modulator oscillator effects the pitch of the carrier.  
   Range: **0 Hz to 5000 Hz**
 
-- **Ratio**: Sets the frequency ratio between modulator and carrier.  
+- **Ratio**: Sets the frequency ratio between modulator and carrier. Changes the pitch of modulator.  
   Range: **0.1× to 8.0×**
 
-- **Decay**: Sets how long the sound fades out after a trigger.  
+- **Decay**: Amplitude decay time.  
   Range: **1 ms to max value set by Range switch**
 
-- **Range (switch)**: Selects the maximum decay time:  
+- **Range**: Selects the maximum decay time:  
   • **Short**: 30 ms  
   • **Med**: 200 ms  
   • **Long**: 5000 ms  
@@ -36,19 +36,19 @@ A simple two operator FM drum with built in decay envelope and VCA.
 
 ## 70sComp
 
-A vintage-style stereo compressor/limiter with gain makeup, bypass, and dry/wet mix control.
+A vintage-style stereo compressor/limiter modeled after optical compressors such as the LA-2A.
 
-- **Peak Reduction**: Sets how aggressively the compressor reduces peaks.  
+- **Peak Reduction**: Sets how aggressively the compressor reduces peaks (threshold).  
   Range: **0 dB to 40 dB** of possible gain reduction.
 
 - **Comp/Limit (switch)**: Selects compression ratio.  
-  • **Compressor** = 3:1 ratio  
-  • **Limiter** = 10:1 ratio
+   **Compressor** = 3:1 ratio  
+   **Limiter** = 10:1 ratio
 
 - **Gain**: Adds makeup gain after compression to bring signal back up.  
   Range: **0 dB to 40 dB**
 
-- **Dry/Wet**: Mixes between original (dry) and processed (wet) signal.  
+- **Dry/Wet**: Mixes between original (dry) and processed (wet) signal. This allows for parallel compression.  
   Range: **0% dry to 100% wet**
 
 - **Bypass (switch)**: Turns compression on or off.  
