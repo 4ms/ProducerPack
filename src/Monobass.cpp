@@ -81,7 +81,7 @@ struct Monobass : Module {
 		configSwitch(LFO_RANGE_PARAM, 0.f, 1.f, 0.f, "LFO Range", {"Slow", "Fast"});
 		configParam(LFO_DEPTH_PARAM, 0.f, 1.f, 0.f, "LFO Depth", "%", 0.f, 100.f);
 		configSwitch(LFO_SHAPE_PARAM, 0.f, 5.f, 0.f, "LFO Shape", {"Sine", "Triangle", "Saw Up", "Saw Down", "Square", "Random"});
-		configSwitch(UNIPOLARBIPOLAR_PARAM, 0.f, 1.f, 0.f, "Bipolar/Unipolar", {"Bipolar", "Unipolar"});
+		configSwitch(UNIPOLARBIPOLAR_PARAM, 0.f, 1.f, 0.f, "LFO Range", {"Bipolar", "Unipolar"});
 
 		configParam(LFOFREQATT_PARAM, -100.f, 100.f, 0.f, "LFO Frequency Attenuverter", "%");
 		configParam(FMATT_PARAM, 0.f, 1.f, 0.f, "FM Amount", "%", 0.f, 100.f);
