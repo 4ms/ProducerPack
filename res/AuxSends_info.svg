@@ -24,8 +24,8 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="1.7812005"
-     inkscape:cx="145.96897"
-     inkscape:cy="257.12995"
+     inkscape:cx="127.16143"
+     inkscape:cy="239.72596"
      inkscape:window-width="1920"
      inkscape:window-height="1027"
      inkscape:window-x="640"
@@ -109,21 +109,21 @@
            y1="239.53"
            x2="166"
            y2="244.92999"
-           style="fill:none;stroke:#000000;stroke-width:2.83469;stroke-miterlimit:10"
+           style="fill:none;stroke:#000000;stroke-width:1.41732403;stroke-miterlimit:10;stroke-dasharray:none"
            id="line9" />
         <line
            x1="100.85"
            y1="239.53"
            x2="100.85"
            y2="244.92999"
-           style="fill:none;stroke:#000000;stroke-width:2.83469;stroke-miterlimit:10"
+           style="fill:none;stroke:#000000;stroke-width:1.41732403;stroke-miterlimit:10;stroke-dasharray:none"
            id="line10" />
         <line
            x1="35.599998"
            y1="239.53"
            x2="35.599998"
            y2="244.92999"
-           style="fill:none;stroke:#000000;stroke-width:2.83469;stroke-miterlimit:10"
+           style="fill:none;stroke:#000000;stroke-width:1.41732403;stroke-miterlimit:10;stroke-dasharray:none"
            id="line11" />
         <path
            d="m 40.12,251.64 h 3.99 c 3.13,0 5.67,2.54 5.67,5.67 v 6.31 c 0,3.13 -2.54,5.67 -5.67,5.67 H 27.1 c -3.13,0 -5.67,-2.54 -5.67,-5.67 v -6.31 c 0,-3.13 2.54,-5.67 5.67,-5.67 h 3.83"
@@ -979,7 +979,8 @@
      inkscape:groupmode="layer"
      id="layer1"
      inkscape:label="components"
-     style="display:none">
+     style="display:none"
+     sodipodi:insensitive="true">
     <circle
        id="AudioRightOut"
        cx="63.700081"
