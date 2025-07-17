@@ -78,10 +78,10 @@ struct Monobass : Module {
 		configSwitch(GATETRIG_PARAM, 0.f, 2.f, 0.f, "Gate Behavior", {"Gate", "Trig", "Drone"});
 
 		configParam(LFOFREQ_PARAM, 0.f, 1.f, 0.f, "LFO Frequency", "%", 0.f, 100.f);
-		configSwitch(LFO_RANGE_PARAM, 0.f, 1.f, 0.f, "LFO Range", {"Slow", "Fast"});
+		configSwitch(LFO_RANGE_PARAM, 0.f, 1.f, 0.f, "LFO Frequency Range", {"Slow", "Fast"});
 		configParam(LFO_DEPTH_PARAM, 0.f, 1.f, 0.f, "LFO Depth", "%", 0.f, 100.f);
 		configSwitch(LFO_SHAPE_PARAM, 0.f, 5.f, 0.f, "LFO Shape", {"Sine", "Triangle", "Saw Up", "Saw Down", "Square", "Random"});
-		configSwitch(UNIPOLARBIPOLAR_PARAM, 0.f, 1.f, 0.f, "LFO Range", {"Bipolar", "Unipolar"});
+		configSwitch(UNIPOLARBIPOLAR_PARAM, 0.f, 1.f, 0.f, "LFO Output Voltage Range", {"Bipolar +/-5v", "Unipolar 0-5v"});
 
 		configParam(LFOFREQATT_PARAM, -100.f, 100.f, 0.f, "LFO Frequency Attenuverter", "%");
 		configParam(FMATT_PARAM, 0.f, 1.f, 0.f, "FM Amount", "%", 0.f, 100.f);
