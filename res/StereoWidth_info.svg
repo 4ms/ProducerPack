@@ -24,14 +24,14 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="1.7816103"
-     inkscape:cx="57.532222"
+     inkscape:cx="12.348379"
      inkscape:cy="261.28048"
      inkscape:window-width="1200"
      inkscape:window-height="1186"
-     inkscape:window-x="2240"
+     inkscape:window-x="1360"
      inkscape:window-y="25"
      inkscape:window-maximized="0"
-     inkscape:current-layer="text" />
+     inkscape:current-layer="art" />
   <g
      inkscape:groupmode="layer"
      id="layer3"
@@ -255,19 +255,22 @@
       </g>
       <path
          d="M82.82,274.12c-.31-8.93-6.53-15.93-14.16-15.93H17.74c-7.63,0-13.85,7-14.16,15.95l-.06,6.83v9.06l.07,33.47h0v11.26c0,3.5,2.84,6.34,6.34,6.34h13.29s40.05,0,40.05,0h0s13.29,0,13.29,0c3.5,0,6.34-2.84,6.34-6.34v-53.8l-.06-6.84ZM81.86,324.48v10.28c0,2.93-2.38,5.31-5.31,5.31H17.78s0,0,0,0h-7.86c-2.93,0-5.31-2.38-5.31-5.31v-10.28h0l-.07-34.45v-9.06l.06-6.81c.29-8.38,6.06-14.94,13.14-14.94h50.92c7.07,0,12.84,6.56,13.14,14.93l.06,6.82v43.52Z"
-         id="path59" />
+         id="path59"
+         style="stroke-width:0.99212748;stroke-dasharray:none" />
       <rect
          x="42.7"
          y="84.65"
          width="1"
          height="15.99"
-         id="rect59" />
+         id="rect59"
+         style="stroke-width:0.99212748;stroke-dasharray:none" />
       <rect
          x="42.7"
          y="192.23"
          width="1"
          height="15.99"
-         id="rect60" />
+         id="rect60"
+         style="stroke-width:0.99212748;stroke-dasharray:none" />
       <rect
          x="274.58734"
          y="-71.398247"
@@ -275,7 +278,7 @@
          height="58.928749"
          id="rect60-8"
          transform="rotate(90)"
-         style="stroke-width:1.91973" />
+         style="stroke-width:0.99212748;stroke-dasharray:none" />
       <g
          id="g69">
         <path
