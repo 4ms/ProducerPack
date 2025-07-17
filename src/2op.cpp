@@ -36,7 +36,7 @@ struct _2op : Module {
 		configInput(FMAMTCVIN_INPUT, "FM Amount CV");
 		configInput(RATIOCVIN_INPUT, "Ratio CV");
 		configInput(DECAYCVIN_INPUT, "Decay CV");
-		configInput(GATEIN_INPUT, "Gate");
+		configInput(GATEIN_INPUT, "Trig");
 		configOutput(AUDIO_OUTPUT, "Audio");
 	}
 
