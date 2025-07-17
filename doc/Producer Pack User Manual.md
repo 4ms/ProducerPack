@@ -229,7 +229,7 @@ The filter uses multiple stages of state variable filters to achieve the selecte
 ## Oscillator Section
 
 ### Octave (Switch)
-Transposes the oscillator in octave steps.  
+Transposes the oscillator in octave steps from base pitch determined by 1v/oct jack.  
 **Options:** –3, –2, –1, 0  
 **Default:** –2 (middle setting)
 
@@ -263,12 +263,11 @@ Detunes the second voice relative to the first.
 ## Filter Section
 
 ### Cutoff
-Controls the base cutoff frequency.  
+Controls the base cutoff frequency for the lowpass filter.  
 **Internal scaling:** 20 Hz to 7000 Hz
 
 ### Resonance
-Emphasizes frequencies around the cutoff point.  
-**Range:** 0% to 100%
+Emphasizes frequencies around the cutoff point. Higher values = more resonant. 
 
 ### Filter Decay
 Envelope decay time for the filter envelope.  
@@ -288,9 +287,9 @@ Fixed 1 ms attack, variable decay: 10 ms to 500 ms
 
 ### Gate Behavior (Switch)
 Selects how the amplitude/filter envelopes respond:  
-- **Gate** – standard ADSR-style sustain  
-- **Trig** – triggered one-shot decay  
-- **Drone** – sustained amplitude, retriggered filter envelope only
+**Gate** – decay envelope starts after gate is held low
+**Trig** – triggered one-shot for decay envelope with fixed 5ms pulse.   
+**Drone** – sustained amplitude, retriggered filter envelope only
 
 ---
 
@@ -306,7 +305,7 @@ Sets LFO rate (CV and attenuverter controllable).
 - Fast
 
 ### LFO Depth
-Depth of LFO modulation applied to outputs or destinations.
+Global LFO depth modulation applied to outputs or destinations.
 
 ### LFO Shape (Switch)
 Waveform options:  
@@ -315,7 +314,7 @@ Waveform options:
 - Ramp Up (Saw)  
 - Ramp Down  
 - Square  
-- Stepped Random
+- Stepped Random (when LFO frequency = 0 then stepped random responds to main incoming gate signal) 
 
 ### Bipolar / Unipolar (Switch)
 - **Bipolar:** –5 V to +5 V  

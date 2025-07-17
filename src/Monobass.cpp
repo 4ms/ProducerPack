@@ -177,6 +177,10 @@ void process(const ProcessArgs& args) override {
 	float lfoReset = inputs[LFORESET_INPUT].getVoltage();
 	bool currentGateHigh = gateIn >= 1.f;
 	
+static bool prevGateIn = false;
+bool gateRisingEdge = currentGateHigh && !prevGateIn;
+prevGateIn = currentGateHigh;
+
 	// === LFO Frequency Computation ===
 float freqParam = params[LFOFREQ_PARAM].getValue(); // 0–1
 float freqCV = inputs[LFOCV_INPUT].isConnected() ? clamp(inputs[LFOCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
@@ -200,13 +204,22 @@ if (!prevGateState && currentGateState) {
 }
 prevGateState = currentGateState;
 
-// === Advance LFO Phase ===
-lfoPhase += lfoFreq / args.sampleRate;
-if (lfoPhase >= 1.f) {
-	lfoPhase -= 1.f;
-	// Step new random value when shape = 5 (stepped random)
-	if ((int)params[LFO_SHAPE_PARAM].getValue() == 5) {
-		lfoRandomValue = 2.f * ((float)rand() / (float)RAND_MAX) - 1.f; // -1 to +1
+bool isRandomShape = ((int)params[LFO_SHAPE_PARAM].getValue() == 5);
+bool isLfoFreqZero = (freqParam + freqCV * freqAtt) <= 0.0001f;
+
+if (isRandomShape && isLfoFreqZero) {
+	// LFO is in stepped random mode and frequency is 0 – gate-triggered
+	if (gateRisingEdge) {
+		lfoRandomValue = 2.f * ((float)rand() / (float)RAND_MAX) - 1.f;
+	}
+} else {
+	// Free-running mode
+	lfoPhase += lfoFreq / args.sampleRate;
+	if (lfoPhase >= 1.f) {
+		lfoPhase -= 1.f;
+		if (isRandomShape) {
+			lfoRandomValue = 2.f * ((float)rand() / (float)RAND_MAX) - 1.f;
+		}
 	}
 }
 
