@@ -98,7 +98,7 @@ struct Monobass : Module {
 		configInput(GATE_INPUT, "Gate");
 		configInput(LFOCV_INPUT, "LFO Frequency CV");
 		configInput(FMCV_INPUT, "FM CV");
-		configInput(TIMBRECV_INPUT, "Timbre CV");
+		configInput(TIMBRECV_INPUT, "Phase CV");
 		configInput(DETUNECV_INPUT, "Detune CV");
 		configInput(ENVDEPTHCV_INPUT, "Envelope Depth CV");
 		configInput(RESONANCECV_INPUT, "Resonance CV");
