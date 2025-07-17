@@ -30,7 +30,7 @@ struct Decay : Module {
 		configInput(DECAYCVIN_INPUT, "Decay CV");
 		configInput(TRIGIN_INPUT, "Trig");
 		configInput(AUDIOIN_INPUT, "Audio");
-		configOutput(DECAYOUT_OUTPUT, "Decay");
+		configOutput(DECAYOUT_OUTPUT, "Envelope");
 		configOutput(AUDIOOUT_OUTPUT, "Audio");
 	}
 
