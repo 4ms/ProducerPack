@@ -10,7 +10,7 @@ Use this document to understand the behavior, controls, and design inspirations 
 
 ---
 ![2Op](https://github.com/4ms/ProducerPack/blob/main/doc/2Op.png) 
-## 2Op
+## 2Op - FM Drum
 
 A simple two operator FM drum with built in decay envelope and VCA. 
 
@@ -34,7 +34,7 @@ A simple two operator FM drum with built in decay envelope and VCA.
 ---
 ![70sComp](https://github.com/4ms/ProducerPack/blob/main/doc/70sComp.png) 
 
-## 70sComp
+## 70sComp - Stereo Optical Compressor 
 
 A vintage-style stereo compressor/limiter modeled after optical compressors such as the LA-2A.
 
@@ -58,7 +58,7 @@ A vintage-style stereo compressor/limiter modeled after optical compressors such
 ---
 ![70sEQ](https://github.com/4ms/ProducerPack/blob/main/doc/70sEQ.png) 
 
-## 70sEQ
+## 70sEQ - Stereo EQ 
 
 A classic analog-style 3-band stereo equalizer modeled after the Neve 1073.
 
@@ -93,7 +93,7 @@ A classic analog-style 3-band stereo equalizer modeled after the Neve 1073.
 ---
 ![AuxSends](https://github.com/4ms/ProducerPack/blob/main/doc/AuxSends.png) 
 
-# AuxSends
+# AuxSends - Send/Return Mixer 
 
 Three stereo auxiliary send/return pairs with pre/post fader selection and CV control.
 
@@ -126,7 +126,7 @@ Three stereo auxiliary send/return pairs with pre/post fader selection and CV co
 ---
 ![Bitcrusher](https://github.com/4ms/ProducerPack/blob/main/doc/Bitcrusher.png) 
 
-## Bitcrusher
+## Bitcrusher - Stereo Bitcrush & Sample Rate Reduction 
 
 A stereo bitcrusher effect with sample rate reduction, bit depth control, selectable filter, and volume adjustment.
 
@@ -151,7 +151,7 @@ A stereo bitcrusher effect with sample rate reduction, bit depth control, select
 ---
 ![Boost](https://github.com/4ms/ProducerPack/blob/main/doc/Boost.png) 
 
-## Boost
+## Boost - Stereo Gain 
 
 A stereo audio booster with adjustable gain range and output volume control.
 
@@ -170,7 +170,7 @@ Red and green LED indicator shows clipping status (red when clipping).
 ---
 ![Decay](https://github.com/4ms/ProducerPack/blob/main/doc/Decay.png) 
 
-## Decay
+## Decay - Envelope Generator + VCA 
 
 A decay envelope generator with CV control, and built in VCA for modulating the amplitude of incoming audio. 
 
@@ -192,7 +192,7 @@ A decay envelope generator with CV control, and built in VCA for modulating the 
 ---
 ![DJF](https://github.com/4ms/ProducerPack/blob/main/doc/DJF.png) 
 
-## DJFilter
+## DJFilter - Stereo Lowpass/Highpass combo filter
 
 A stereo multimode filter based on the filter from Pioneer DJ mixers. The filter has adjustable cutoff, resonance, and selectable slope. The filter sweeps continuously from lowpass to highpass with bypass in the middle (no filtering). 
 
