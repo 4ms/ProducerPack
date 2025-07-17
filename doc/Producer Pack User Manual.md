@@ -156,7 +156,7 @@ A stereo bitcrusher effect with sample rate reduction, bit depth control, select
 A stereo audio booster with adjustable gain range and output volume control.
 
 - **Gain**: Amplifies the input signal. Clipping occurs at +/-5v
-- 
+
 - **Gain Range (switch)**: Selects the gain multiplier applied to the gain parameter:  
   **1×** 
   **5×**  
@@ -332,8 +332,6 @@ Outputs shaped LFO wave.
 
 # Spatializer – Stereo Delay-Based Width and Mid/Side Processor
 
-## Overview
-
 **Spatializer** is a stereo audio processor that applies short delay-based widening and mid/side blending to incoming signals. It features internal delay buffers, width control, and flexible CV modulation. Designed for insert-style use with send/return capabilities.
 
 A signal is sent to two delay lines of equal time to both left and right channels. The right channel is flipped 180 degrees out of phase. The original mono signal is considered the "mid" and is blended with these two delayed signals. 
@@ -341,10 +339,6 @@ A signal is sent to two delay lines of equal time to both left and right channel
 - Delay time is selectable in milliseconds or samples.
 - Stereo widening and mid/side mixing are adjustable via knobs or CV.
 - Includes send/return jacks for external FX routing.
-
----
-
-## Controls
 
 ### **Range (Switch)**  
 Selects time unit for delay.  
@@ -369,10 +363,6 @@ Crossfades between mid and side components.
 **Range:** 0% (all mid) → 100% (all side)  
 **CV Input:** Mid/Side CV
 
----
-
-## Audio Routing
-
 ### Inputs
 - **Left** – Main left input (mono if Right is unconnected)
 - **Right** – Main right input (optional)
@@ -383,8 +373,6 @@ Crossfades between mid and side components.
 - **Send L / R** – Send left and right wet signals
 - **Send Mid** – Mid signal (dry sum) for FX processing
 - **Out L / R** – Final processed stereo output
-
----
 
 ## Notes
 
@@ -399,13 +387,10 @@ Crossfades between mid and side components.
 
 ![STW](https://github.com/4ms/ProducerPack/blob/main/doc/STW.png) 
 
-# StereoWidth – Width and Pan Processor
+# StereoWidth – Width and Pan Processor 
 
-## Overview
-
-**StereoWidth** adjusts how wide your stereo signal sounds and lets you pan it left or right. You can also control these settings with CV inputs. When stereo width is greater than 50%, the left and right channels are subtracted from one another creating a differential pair. At 100% the signal is fully differential. This creates the perception that the stereo field is even wider than the original signal. 
-
-## Controls
+### **StereoWidth** 
+adjusts how wide your stereo signal sounds and lets you pan it left or right. You can also control these settings with CV inputs. When stereo width is greater than 50%, the left and right channels are subtracted from one another creating a differential pair. At 100% the signal is fully differential. This creates the perception that the stereo field is even wider than the original signal. 
 
 ### **Width**  
 Changes how wide the stereo image is. If the width knob is greater than 50%, the left and right channels are subtracted from one another creating a differential pair. A greater differential is percieved as an even wider stereo image than the original signal. If the width knob is less than 50% it makes a stereo signal more mono. 
@@ -416,17 +401,15 @@ Changes how wide the stereo image is. If the width knob is greater than 50%, the
 ### **Pan**  
 Moves the stereo balance left or right.  
 - -50% = left  
-- 0% = center  
-- +50% = right  
+- 0% = center
+- +50% = right 
+
 ---
 ![STXF](https://github.com/4ms/ProducerPack/blob/main/doc/STXF.png) 
 
 # StereoCrossfader – Stereo Crossfader with Shape Control
 
-## Overview
-
-**StereoCrossfader** smoothly blends between two stereo input pairs (A and B) and lets you adjust the curve of the crossfade for different mixing feels and weight. A logarithmic curve has a lower degree of change over a wider field and has a faster change closer to the center point of the fade. 
----
+Smoothly blends between two stereo input pairs (A and B) and lets you adjust the curve of the crossfade for different mixing feels and weight. A logarithmic curve has a lower degree of change over a wider field and has a faster change closer to the center point of the fade. 
 
 ### Mix  
 Controls how much signal comes from Input A vs. Input B.  
@@ -439,6 +422,5 @@ Adjusts the curve of the crossfade:
 - 0% = linear fade (straight mix)  
 - 100% = curved fade (logarithmic style)  
 - Allows smoother or sharper transitions between A and B.
----
 
 
