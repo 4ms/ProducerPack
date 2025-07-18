@@ -28,10 +28,10 @@ struct StereoWidth : Module {
 		configParam(PAN_PARAM, -50.f, 50.f, 0.f, "Pan", "%");
 		configInput(WIDTHCV_INPUT, "Width CV");
 		configInput(PANCV_INPUT, "Pan CV");
-		configInput(INL_INPUT, "Left");
-		configInput(INR_INPUT, "Right");
-		configOutput(OUTL_OUTPUT, "Left");
-		configOutput(OUTR_OUTPUT, "Right");
+		configInput(INL_INPUT, "Audio Left");
+		configInput(INR_INPUT, "Audio Right");
+		configOutput(OUTL_OUTPUT, "Audio Left");
+		configOutput(OUTR_OUTPUT, "Audio Right");
 	}
 
 	void process(const ProcessArgs& args) override {
