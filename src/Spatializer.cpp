@@ -63,16 +63,16 @@ struct Spatializer : Module {
 		configInput(TIMECV_INPUT, "Time CV");
 		configInput(WIDTHCV_INPUT, "Width CV");
 		configInput(MIDSIDECV_INPUT, "Mid/Side");
-		configInput(INL_INPUT, "Left");
-		configInput(INR_INPUT, "Right");
+		configInput(INL_INPUT, "Audio Left");
+		configInput(INR_INPUT, "Audio Right");
 		configInput(RETURNL_INPUT, "Return Left");
 		configInput(RETURNM_INPUT, "Return Mid");
 		configInput(RETURNR_INPUT, "Return Right");
 		configOutput(SENDL_OUTPUT, "Send Left");
 		configOutput(SENDM_OUTPUT, "Send Mid");
 		configOutput(SENDR_OUTPUT, "Send Right");
-		configOutput(OUTL_OUTPUT, "Left");
-		configOutput(OUTR_OUTPUT, "Right");
+		configOutput(OUTL_OUTPUT, "Audio Left");
+		configOutput(OUTR_OUTPUT, "Audio Right");
 	}
 
 	static const int maxDelaySamples = 2880; // Enough for 30ms at ~96kHz
