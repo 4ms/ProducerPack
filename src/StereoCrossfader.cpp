@@ -29,12 +29,12 @@ struct StereoCrossfader : Module {
 		configParam(MIX_PARAM, 0.f, 1.f, 0.5f, "Mix", "%", 0.f, 100.f);
 		configParam(SHAPE_PARAM, 0.f, 1.f, 0.f, "Shape", "%", 0.f, 100.f);
 		configInput(MIXCV_INPUT, "Mix CV");
-		configInput(INAL_INPUT, "Left A");
-		configInput(INAR_INPUT, "Right A");
-		configInput(INBL_INPUT, "Left B");
-		configInput(INBR_INPUT, "Right B");
-		configOutput(OUTL_OUTPUT, "Left");
-		configOutput(OUTR_OUTPUT, "Right");
+		configInput(INAL_INPUT, "Audio Left A");
+		configInput(INAR_INPUT, "Audio Right A");
+		configInput(INBL_INPUT, "Audio Left B");
+		configInput(INBR_INPUT, "Audio Right B");
+		configOutput(OUTL_OUTPUT, "Audio Left");
+		configOutput(OUTR_OUTPUT, "Audio Right");
 	}
 
 	void process(const ProcessArgs& args) override {
