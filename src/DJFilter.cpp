@@ -23,31 +23,35 @@ struct DJFilter : Module {
 		LIGHTS_LEN
 	};
 
-// Custom ParamQuantity for the cutoff knob
-struct DJFilterCutoffQuantity : ParamQuantity {
-	using ParamQuantity::ParamQuantity;
-
-	std::string getDisplayValueString() override {
-		float morph = getValue();  // knob value only, no CV
+	struct DJFilterCutoffQuantity : ParamQuantity {
+		using ParamQuantity::ParamQuantity;
 	
-		if (morph <= 0.45f) {
-			float t = morph / 0.5f;
-			float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(20.f), std::log2(2000.f)));
-			return string::f("Cutoff: %.2fhz", cutoffHz);
+		std::string getDisplayValueString() override {
+			float morph = getValue();  // knob value only, no CV
+		
+			if (morph <= 0.45f) {
+				float t = morph / 0.5f;
+				float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(20.f), std::log2(2000.f)));
+				return string::f("Cutoff: %.2fhz", cutoffHz);
+			}
+			else if (morph < 0.55f) {
+				return "Cutoff: BYPASS";
+			}
+			else {
+				float t = (morph - 0.5f) / 0.5f;
+				float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(300.f), std::log2(7000.f)));
+				return string::f("Cutoff: %.2fhz", cutoffHz);
+			}
 		}
-		else if (morph < 0.55f) {
-			return "Cutoff: BYPASS";
+	
+		std::string getLabel() override {
+			return "";  // prevents the "#1:" from showing
 		}
-		else {
-			float t = (morph - 0.5f) / 0.5f;
-			float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(300.f), std::log2(7000.f)));
-			return string::f("Cutoff: %.2fhz", cutoffHz);
+	
+		void reset() override {
+			setValue(0.5f);
 		}
-	}
-	void reset() override {
-		setValue(0.5f);
-	}	
-};
+	};	
 
 	DJFilter() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
