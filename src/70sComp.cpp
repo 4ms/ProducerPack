@@ -32,10 +32,10 @@ struct _70sComp : Module {
         configParam(GAIN_PARAM, 0.f, 1.f, 0.25f, "Gain", "db", 0.f, 40.f);
 		configParam(DRY_WET_PARAM, 0.f, 1.f, 1.f, "Dry/Wet", "%", 0.f, 100.f);
         configSwitch(BYPASS_PARAM, 0.f, 1.f, 0.f, "Bypass", {"Off", "On"});
-        configInput(AUDIO_L_INPUT, "Audio Left In");
-        configInput(AUDIO_R_INPUT, "Audio Right In");
-        configOutput(AUDIO_L_OUTPUT, "Audio Left Out");
-        configOutput(AUDIO_R_OUTPUT, "Audio Right Out");
+        configInput(AUDIO_L_INPUT, "Audio Left");
+        configInput(AUDIO_R_INPUT, "Audio Right");
+        configOutput(AUDIO_L_OUTPUT, "Audio Left");
+        configOutput(AUDIO_R_OUTPUT, "Audio Right");
 	}
 
 	void process(const ProcessArgs& args) override {
