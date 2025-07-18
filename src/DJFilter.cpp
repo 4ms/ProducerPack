@@ -33,15 +33,15 @@ struct DJFilterCutoffQuantity : ParamQuantity {
 		if (morph <= 0.45f) {
 			float t = morph / 0.5f;
 			float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(20.f), std::log2(2000.f)));
-			return string::f("Cutoff:%.2fhz", cutoffHz);
+			return string::f("Cutoff: %.2fhz", cutoffHz);
 		}
 		else if (morph < 0.55f) {
-			return "Cutoff BYPASS";
+			return "Cutoff: BYPASS";
 		}
 		else {
 			float t = (morph - 0.5f) / 0.5f;
 			float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(300.f), std::log2(7000.f)));
-			return string::f("Cutoff:%.2fhz", cutoffHz);
+			return string::f("Cutoff: %.2fhz", cutoffHz);
 		}
 	}
 	void reset() override {
@@ -60,18 +60,16 @@ struct DJFilterCutoffQuantity : ParamQuantity {
 		cutoffQ->setValue(0.5f);  // <-- Explicitly set default value
 		paramQuantities[CUTOFF_PARAM] = cutoffQ;
 
-		
-
 		configParam(RESONANCE_PARAM, 0.f, 1.f, 0.f, "Resonance", "%", 0.f, 100.f);
 		configSwitch(SLOPE_PARAM, 1.f, 4.f, 1.f, "Slope", {"6db/Oct", "12db/Oct", "18db/Oct", "24db/Oct"});
 
-		configInput(INL_INPUT, "Left");
+		configInput(INL_INPUT, "Audio Left");
 		configInput(CUTOFFCV_INPUT, "Cutoff CV");
-		configInput(INR_INPUT, "Right");
+		configInput(INR_INPUT, "Audio Right");
 		configInput(RESONANCECV_INPUT, "Resonance CV");
 
-		configOutput(OUT_L_OUTPUT, "Left");
-		configOutput(OUT_R_OUTPUT, "Right");
+		configOutput(OUT_L_OUTPUT, "Audio Left");
+		configOutput(OUT_R_OUTPUT, "Audio Right");
 	}
 
 	struct SVF {
