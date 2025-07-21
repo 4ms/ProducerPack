@@ -12,14 +12,14 @@ endif()
 
 include(${METAMODULE_SDK_DIR}/plugin.cmake)
 
-project(ProducerPack VERSION 0.1 DESCRIPTION "ProducerPack for MetaModule" LANGUAGES C CXX ASM)
+project(4ms-ProducerPack VERSION 0.1 DESCRIPTION "4ms-ProducerPack for MetaModule" LANGUAGES C CXX ASM)
 
-add_library(ProducerPack STATIC)
+add_library(4ms-ProducerPack STATIC)
 
 # Add sources from the Rack source repo
 set(SOURCE_DIR .)
 
-target_sources(ProducerPack PRIVATE
+target_sources(4ms-ProducerPack PRIVATE
     ${SOURCE_DIR}/src/DJFilter.cpp                    # Note: this file contains init(rack::Plugin*
     ${SOURCE_DIR}/src/Monobass.cpp    
     ${SOURCE_DIR}/src/Boost.cpp    
@@ -38,13 +38,13 @@ target_sources(ProducerPack PRIVATE
     ) 
 
 # Add includes and compile options for source repo
-target_include_directories(ProducerPack PRIVATE ${SOURCE_DIR}/src)
+target_include_directories(4ms-ProducerPack PRIVATE ${SOURCE_DIR}/src)
 
 # Call this to link and create the plugin file
 create_plugin(
-    SOURCE_LIB      ProducerPack                                          # The cmake target name (defined in add_target)
-    PLUGIN_NAME     ProducerPack                                          # This must match the brand "slug" used in VCV Rack
+    SOURCE_LIB      4ms-ProducerPack                                          # The cmake target name (defined in add_target)
+    PLUGIN_NAME     4ms-ProducerPack                                          # This must match the brand "slug" used in VCV Rack
     PLUGIN_JSON     ${CMAKE_CURRENT_LIST_DIR}/plugin.json              # Path to the plugin.json file used by VCV Rack
-    SOURCE_ASSETS   ${CMAKE_CURRENT_LIST_DIR}/assets                  # Path to the assets/ dir containing the PNGs
+    SOURCE_ASSETS   ${CMAKE_CURRENT_LIST_DIR}/assets/panels                  # Path to the assets/ dir containing the PNGs
     DESTINATION     ${CMAKE_CURRENT_LIST_DIR}/metamodule-plugins   # Path to where you want the plugin file output
 )
