@@ -29,16 +29,16 @@
 		"name": "StereoCrossfader"
 	},
     {
-		"slug": "70sEQ",
-		"name": "70sEQ"
+		"slug": "SeventiesEQ",
+		"name": "SeventiesEQ"
 	},
     {
-		"slug": "70sComp",
-		"name": "70sComp"
+		"slug": "SeventiesComp",
+		"name": "SeventiesComp"
 	},
     {
-		"slug": "2op",
-		"name": "2op"
+		"slug": "TwoOp",
+		"name": "TwoOp"
 	},
     {
 		"slug": "Decay",

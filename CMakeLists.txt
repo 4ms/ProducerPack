@@ -26,9 +26,9 @@ target_sources(ProducerPack PRIVATE
     ${SOURCE_DIR}/src/Spatializer.cpp 
     ${SOURCE_DIR}/src/StereoWidth.cpp      
     ${SOURCE_DIR}/src/StereoCrossfader.cpp     
-    ${SOURCE_DIR}/src/70sEQ.cpp    
-    ${SOURCE_DIR}/src/70sComp.cpp    
-    ${SOURCE_DIR}/src/2op.cpp  
+    ${SOURCE_DIR}/src/SeventiesEQ.cpp    
+    ${SOURCE_DIR}/src/SeventiesComp.cpp    
+    ${SOURCE_DIR}/src/TwoOp.cpp  
     ${SOURCE_DIR}/src/Decay.cpp
     ${SOURCE_DIR}/src/AuxSends.cpp      
     ${SOURCE_DIR}/src/Bitcrusher.cpp     

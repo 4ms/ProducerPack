@@ -13,10 +13,10 @@ void init(Plugin* p) {
 	p->addModel(modelSpatializer);
 	p->addModel(modelStereoWidth);
 	p->addModel(modelStereoCrossfader);
-	p->addModel(model_70sEQ);
-	p->addModel(model_70sComp);
+	p->addModel(modelSeventiesEQ);
+	p->addModel(modelSeventiesComp);
 	p->addModel(modelBoost);
-	p->addModel(model_2op);
+	p->addModel(modelTwoOp);
 	p->addModel(modelDecay);
 	p->addModel(modelAuxSends);
 	p->addModel(modelBitcrusher);

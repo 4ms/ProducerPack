@@ -1,6 +1,6 @@
 #include "plugin.hpp"
 
-struct _2op : Module {
+struct TwoOp : Module {
 	enum ParamId {
 		PITCH_PARAM,
 		FMAMT_PARAM,
@@ -25,7 +25,7 @@ struct _2op : Module {
 		LIGHTS_LEN
 	};
 
-	_2op() {
+	TwoOp() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		configParam(PITCH_PARAM, 0.f, 1.f, 0.5f, "Pitch", "hz", 1000.f, 20.f);
 		configParam(FMAMT_PARAM, 0.f, 1.f, 0.f, "FM Amount", "%", 0.f, 100.f);
@@ -117,31 +117,31 @@ void process(const ProcessArgs& args) override {
 }
 };
 
-struct _2opWidget : ModuleWidget {
-	_2opWidget(_2op* module) {
+struct TwoOpWidget : ModuleWidget {
+	TwoOpWidget(TwoOp* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/2op_info.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/TwoOp_info.svg")));
 
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 19.502)), module, _2op::PITCH_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 38.499)), module, _2op::FMAMT_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 57.5)), module, _2op::RATIO_PARAM));
-		addParam(createParam<_3Pos>(mm2px(Vec(6.999, 73.502)), module, _2op::RANGE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 76.501)), module, _2op::DECAY_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 19.502)), module, TwoOp::PITCH_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 38.499)), module, TwoOp::FMAMT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 57.5)), module, TwoOp::RATIO_PARAM));
+		addParam(createParam<_3Pos>(mm2px(Vec(6.999, 73.502)), module, TwoOp::RANGE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 76.501)), module, TwoOp::DECAY_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 19.502)), module, _2op::VOCTIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 38.499)), module, _2op::FMAMTCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 57.504)), module, _2op::RATIOCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 97.001)), module, _2op::DECAYCVIN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.299, 111.003)), module, _2op::GATEIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 19.502)), module, TwoOp::VOCTIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 38.499)), module, TwoOp::FMAMTCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 57.504)), module, TwoOp::RATIOCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 97.001)), module, TwoOp::DECAYCVIN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.299, 111.003)), module, TwoOp::GATEIN_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.001, 111.003)), module, _2op::AUDIO_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.001, 111.003)), module, TwoOp::AUDIO_OUTPUT));
 	}
 };
 
 
-Model* model_2op = createModel<_2op, _2opWidget>("2op");
+Model* modelTwoOp = createModel<TwoOp, TwoOpWidget>("TwoOp");

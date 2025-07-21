@@ -1,7 +1,7 @@
 #include "plugin.hpp"
 
 
-struct _70sComp : Module {
+struct SeventiesComp : Module {
 	enum ParamId {
 		PEAK_REDUCTION_PARAM,
 		RATIO_PARAM,
@@ -25,7 +25,7 @@ struct _70sComp : Module {
 		LIGHTS_LEN
 	};
 
-	_70sComp() {
+	SeventiesComp() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
         configParam(PEAK_REDUCTION_PARAM, 0.f, 1.f, 0.5f, "Peak Reduction", "%", 0.f, 100.f);
         configSwitch(RATIO_PARAM, 0.f, 1.f, 0.f, "Comp/Limit", {"Compressor", "Limiter"}); // 3:1 or 10:1
@@ -106,29 +106,29 @@ struct _70sComp : Module {
 };	
 
 
-struct _70sCompWidget : ModuleWidget {
-	_70sCompWidget(_70sComp* module) {
+struct SeventiesCompWidget : ModuleWidget {
+	SeventiesCompWidget(SeventiesComp* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/70sComp_info.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/SeventiesComp_info.svg")));
 
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.262, 18.804)), module, _70sComp::PEAK_REDUCTION_PARAM));
-		addParam(createParam<_2Pos>(mm2px(Vec(5.25, 35.77)), module, _70sComp::RATIO_PARAM));
-		addParam(createParam<_2Pos>(mm2px(Vec(19.268, 35.77)), module, _70sComp::BYPASS_PARAM));
-		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.262, 56.014)), module, _70sComp::GAIN_PARAM));
-		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.262, 78.018)), module, _70sComp::DRY_WET_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.262, 18.804)), module, SeventiesComp::PEAK_REDUCTION_PARAM));
+		addParam(createParam<_2Pos>(mm2px(Vec(5.25, 35.77)), module, SeventiesComp::RATIO_PARAM));
+		addParam(createParam<_2Pos>(mm2px(Vec(19.268, 35.77)), module, SeventiesComp::BYPASS_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.262, 56.014)), module, SeventiesComp::GAIN_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.262, 78.018)), module, SeventiesComp::DRY_WET_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.309, 97.023)), module, _70sComp::AUDIO_L_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.034, 97.023)), module, _70sComp::AUDIO_R_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.309, 97.023)), module, SeventiesComp::AUDIO_L_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.034, 97.023)), module, SeventiesComp::AUDIO_R_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.309, 111.029)), module, _70sComp::AUDIO_L_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.034, 111.029)), module, _70sComp::AUDIO_R_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.309, 111.029)), module, SeventiesComp::AUDIO_L_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.034, 111.029)), module, SeventiesComp::AUDIO_R_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(25.772, 50.442)), module, _70sComp::CLIPLED_LIGHT));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(25.772, 50.442)), module, SeventiesComp::CLIPLED_LIGHT));
 	}
 };
-Model* model_70sComp = createModel<_70sComp, _70sCompWidget>("70sComp");
+Model* modelSeventiesComp = createModel<SeventiesComp, SeventiesCompWidget>("SeventiesComp");

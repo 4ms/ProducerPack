@@ -50,20 +50,20 @@
       "tags": ["Stereo", "Utility"]
     },
     {
-      "slug": "70sEQ",
-      "name": "70sEQ",
+      "slug": "SeventiesEQ",
+      "name": "SeventiesEQ",
       "description": "Neve 1073 inspired stereo EQ",
       "tags": ["Stereo", "Utility", "Equalizer", "EQ", "Effect"]
     },
     {
-      "slug": "70sComp",
-      "name": "70sComp",
+      "slug": "SeventiesComp",
+      "name": "SeventiesComp",
       "description": "LA2A inspired optical compressor",
       "tags": ["Stereo", "Utility", "Effect", "Dynamics"]
     },
     {
-      "slug": "2op",
-      "name": "2op",
+      "slug": "TwoOp",
+      "name": "TwoOp",
       "description": "Simple 2 operator FM voice",
       "tags": ["Synth Voice", "Drum"]
     },

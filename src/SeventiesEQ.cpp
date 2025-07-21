@@ -165,7 +165,7 @@ struct LowShelf {
     }
 };
 
-struct _70sEQ : Module {
+struct SeventiesEQ : Module {
     enum ParamId {
         GAIN_PARAM,
         HIGH_SHELF_PARAM,
@@ -205,7 +205,7 @@ struct _70sEQ : Module {
     MidPeakingEQ midBandL, midBandR;
     LowShelf lowShelfL, lowShelfR;
 
-    _70sEQ() {
+    SeventiesEQ() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
         configParam(GAIN_PARAM, 0.f, 1.f, 0.2f, "Gain", "x", 0.f, 5.f);
         configParam(HIGH_SHELF_PARAM, -15.f, 15.f, 0.f, "High Shelf Gain", "dB");
@@ -371,39 +371,39 @@ struct _70sEQ : Module {
     }
 };    
 
-struct _70sEQWidget : ModuleWidget {
-	_70sEQWidget(_70sEQ* module) {
+struct SeventiesEQWidget : ModuleWidget {
+	SeventiesEQWidget(SeventiesEQ* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/70sEQ_info.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/SeventiesEQ_info.svg")));
 
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.286, 15.445)), module, _70sEQ::GAIN_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 31.53)), module, _70sEQ::HIGH_SHELF_PARAM));
-		addParam(createParam<_2Pos>(mm2px(Vec(20, 28.528)), module, _70sEQ::BYPASS_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 48.547)), module, _70sEQ::MID_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.819, 48.547)), module, _70sEQ::MIDFREQSELECT_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 65.563)), module, _70sEQ::LOW_SHELF_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.819, 65.563)), module, _70sEQ::LOWFREQSELECT_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 82.58)), module, _70sEQ::HIGHPASSFREQSELECT_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.819, 82.58)), module, _70sEQ::OUTPUTVOL_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.286, 15.445)), module, SeventiesEQ::GAIN_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 31.53)), module, SeventiesEQ::HIGH_SHELF_PARAM));
+		addParam(createParam<_2Pos>(mm2px(Vec(20, 28.528)), module, SeventiesEQ::BYPASS_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 48.547)), module, SeventiesEQ::MID_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.819, 48.547)), module, SeventiesEQ::MIDFREQSELECT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 65.563)), module, SeventiesEQ::LOW_SHELF_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.819, 65.563)), module, SeventiesEQ::LOWFREQSELECT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 82.58)), module, SeventiesEQ::HIGHPASSFREQSELECT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.819, 82.58)), module, SeventiesEQ::OUTPUTVOL_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.321, 97.093)), module, _70sEQ::INL_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.07, 97.093)), module, _70sEQ::INR_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.321, 97.093)), module, SeventiesEQ::INL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.07, 97.093)), module, SeventiesEQ::INR_INPUT));
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.321, 111.109)), module, _70sEQ::OUTL_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.07, 111.109)), module, _70sEQ::OUTR_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.321, 111.109)), module, SeventiesEQ::OUTL_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.07, 111.109)), module, SeventiesEQ::OUTR_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(26.821, 15.445)), module, _70sEQ::GAINLED_LIGHT_GREEN));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(26.821, 15.445)), module, _70sEQ::GAINLED_LIGHT_RED));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(15.286, 58.558)), module, _70sEQ::EQLED_LIGHT_GREEN));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(15.286, 58.558)), module, _70sEQ::EQLED_LIGHT_RED));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(15.286, 78.576)), module, _70sEQ::OUTLED_LIGHT_GREEN));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(15.286, 78.576)), module, _70sEQ::OUTLED_LIGHT_RED));
+		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(26.821, 15.445)), module, SeventiesEQ::GAINLED_LIGHT_GREEN));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(26.821, 15.445)), module, SeventiesEQ::GAINLED_LIGHT_RED));
+		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(15.286, 58.558)), module, SeventiesEQ::EQLED_LIGHT_GREEN));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(15.286, 58.558)), module, SeventiesEQ::EQLED_LIGHT_RED));
+		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(15.286, 78.576)), module, SeventiesEQ::OUTLED_LIGHT_GREEN));
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(15.286, 78.576)), module, SeventiesEQ::OUTLED_LIGHT_RED));
 	}
 };
 
-Model* model_70sEQ = createModel<_70sEQ, _70sEQWidget>("70sEQ");
+Model* modelSeventiesEQ = createModel<SeventiesEQ, SeventiesEQWidget>("SeventiesEQ");
