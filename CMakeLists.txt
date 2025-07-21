@@ -31,7 +31,10 @@ target_sources(ProducerPack PRIVATE
     ${SOURCE_DIR}/src/2op.cpp  
     ${SOURCE_DIR}/src/Decay.cpp
     ${SOURCE_DIR}/src/AuxSends.cpp      
-    ${SOURCE_DIR}/src/Bitcrusher.cpp        
+    ${SOURCE_DIR}/src/Bitcrusher.cpp     
+    ${SOURCE_DIR}/src/plugin.cpp        
+    ${SOURCE_DIR}/src/plugin.hpp        
+   
     ) 
 
 # Add includes and compile options for source repo
