@@ -1,9 +1,13 @@
 {
-	"MetaModulePluginMaintainer": "ProducerPack",
-	"MetaModulePluginMaintainerEmail": "4ms@4mscompany.com",
-	"MetaModulePluginMaintainerUrl": "https://4mscompany.com",
-	"MetaModuleDescription": "Stereo tools and other essentials for music producers",
-	"MetaModuleIncludedModules": [
+"MetaModuleBrandName": "Producer Pack",
+  "MetaModuleBrandSlug": "4ms-ProducerPack",
+  "MetaModuleBrandAliases": ["4msProducerPack", "ProducerPack"],
+  "MetaModulePluginMaintainer": "4ms Company",
+  "MetaModulePluginMaintainerEmail": "4ms@4mscompany.com",
+  "MetaModulePluginMaintainerUrl": "",
+  "MetaModuleDescription": "Stereo tools and other essentials for music producers",
+  "MetaModuleIncludedModules":
+  [
 	{
 		"slug": "DJFilter",
 		"name": "DJFilter"

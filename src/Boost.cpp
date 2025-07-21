@@ -97,7 +97,7 @@ struct Boost : Module {
 struct BoostWidget : ModuleWidget {
 	BoostWidget(Boost* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/Boost_info.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/Boost_info.svg")));
 
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));

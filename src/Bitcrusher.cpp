@@ -191,7 +191,7 @@ struct Bitcrusher : Module {
 struct BitcrusherWidget : ModuleWidget {
 	BitcrusherWidget(Bitcrusher* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/Bitcrusher_info.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/Bitcrusher_info.svg")));
 
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

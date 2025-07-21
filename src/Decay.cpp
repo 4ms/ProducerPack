@@ -82,7 +82,7 @@ struct Decay : Module {
 struct DecayWidget : ModuleWidget {
 	DecayWidget(Decay* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/Decay_info.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/Decay_info.svg")));
 
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));

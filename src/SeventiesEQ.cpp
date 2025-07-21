@@ -374,7 +374,7 @@ struct SeventiesEQ : Module {
 struct SeventiesEQWidget : ModuleWidget {
 	SeventiesEQWidget(SeventiesEQ* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/SeventiesEQ_info.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/SeventiesEQ_info.svg")));
 
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
