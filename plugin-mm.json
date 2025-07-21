@@ -1,0 +1,56 @@
+{
+	"MetaModulePluginMaintainer": "ProducerPack",
+	"MetaModulePluginMaintainerEmail": "4ms@4mscompany.com",
+	"MetaModulePluginMaintainerUrl": "https://4mscompany.com",
+	"MetaModuleDescription": "Stereo tools and other essentials for music producers",
+	"MetaModuleIncludedModules": [
+	{
+		"slug": "DJFilter",
+		"name": "DJFilter"
+	},
+    {
+		"slug": "Monobass",
+		"name": "Monobass"
+	},
+    {
+		"slug": "Boost",
+		"name": "Boost"
+	},
+    {
+		"slug": "Spatializer",
+		"name": "Spatializer"
+	},
+    {
+		"slug": "StereoWidth",
+		"name": "StereoWidth"
+	},
+    {
+		"slug": "StereoCrossfader",
+		"name": "StereoCrossfader"
+	},
+    {
+		"slug": "70sEQ",
+		"name": "70sEQ"
+	},
+    {
+		"slug": "70sComp",
+		"name": "70sComp"
+	},
+    {
+		"slug": "2op",
+		"name": "2op"
+	},
+    {
+		"slug": "Decay",
+		"name": "Decay"
+	},
+    {
+		"slug": "AuxSends",
+		"name": "AuxSends"
+	},
+    {
+		"slug": "Bitcrusher",
+		"name": "Bitcrusher"
+	}
+]
+}
