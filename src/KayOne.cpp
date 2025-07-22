@@ -1,5 +1,5 @@
 #include "plugin.hpp"
-
+#include "KayOneSamples.h"
 
 struct KayOne : Module {
 	enum ParamId {
@@ -33,32 +33,125 @@ struct KayOne : Module {
 		LIGHTS_LEN
 	};
 
+	struct Voice {
+		float samplePos = 0.f;
+		bool playing = false;
+		bool lastTriggerState = false;
+		const unsigned char* rawData = nullptr;
+		int sampleLength = 0;
+		int outputId = 0;
+
+		int16_t readSample16(int index) {
+			return (int16_t)(rawData[2 * index] | (rawData[2 * index + 1] << 8));
+		}
+	};
+
+	Voice kickVoice;
+	Voice snareVoice;
+	Voice tomLoVoice;
+	Voice tomHiVoice;
+	Voice closedHatVoice;
+	Voice openHatVoice;
+	
+	const float SPEED_LOW = 0.1f;   // Minimum playback speed
+	const float SPEED_HIGH = 2.0f;  // Maximum playback speed
+
 	KayOne() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
+
 		configParam(SPEED_PARAM, 0.f, 1.f, 0.5f, "Speed", "%", 0.f, 100.f);
 		configParam(LENGTH_PARAM, 0.f, 1.f, 1.f, "Length", "%", 0.f, 100.f);
 		configSwitch(LOOP_PARAM, 0.f, 1.f, 0.f, "Loop", {"Off", "On"});
+
 		configInput(SPEEDCVIN_INPUT, "Speed CV");
 		configInput(LENGTHCVIN_INPUT, "Length CV");
 		configInput(LOOPCVIN_INPUT, "Loop Gate");
+
 		configInput(KICKTRIGIN_INPUT, "Kick Trig");
 		configInput(SNARETRIGIN_INPUT, "Snare Trig");
 		configInput(TOMLTRIG_INPUT, "Tom Lo Trig");
 		configInput(TOMHTRIG_INPUT, "Tom Hi Trig");
 		configInput(CLTRIG_INPUT, "Closed Hat Trig");
 		configInput(OHTRIG_INPUT, "Open Hat Trig");
+
 		configOutput(KICKOUT_OUTPUT, "Kick");
 		configOutput(SNAREOUT_OUTPUT, "Snare");
 		configOutput(TOMLOUT_OUTPUT, "Tom Lo");
 		configOutput(TOMHOUT_OUTPUT, "Tom Hi");
 		configOutput(CLOUT_OUTPUT, "Closed Hat");
 		configOutput(OHOUT_OUTPUT, "Open Hat");
+
+		kickVoice.rawData = Kick_raw;
+		kickVoice.sampleLength = sizeof(Kick_raw) / 2;
+		kickVoice.outputId = KICKOUT_OUTPUT;
+
+		snareVoice.rawData = Snare_raw;
+		snareVoice.sampleLength = sizeof(Snare_raw) / 2;
+		snareVoice.outputId = SNAREOUT_OUTPUT;
+
+		tomLoVoice.rawData = TomLo_raw;
+		tomLoVoice.sampleLength = sizeof(TomLo_raw) / 2;
+		tomLoVoice.outputId = TOMLOUT_OUTPUT;
+
+		tomHiVoice.rawData = TomHi_raw;
+		tomHiVoice.sampleLength = sizeof(TomHi_raw) / 2;
+		tomHiVoice.outputId = TOMHOUT_OUTPUT;
+
+		closedHatVoice.rawData = ClosedHat_raw;
+		closedHatVoice.sampleLength = sizeof(ClosedHat_raw) / 2;
+		closedHatVoice.outputId = CLOUT_OUTPUT;
+
+		openHatVoice.rawData = OpenHat_raw;
+		openHatVoice.sampleLength = sizeof(OpenHat_raw) / 2;
+		openHatVoice.outputId = OHOUT_OUTPUT;
 	}
 
 	void process(const ProcessArgs& args) override {
+		// Base speed from knob param in [0.01..1.0]
+		float knobSpeed = 0.01f + params[SPEED_PARAM].getValue() * (1.0f - 0.01f);
+	
+		float speedCV = inputs[SPEEDCVIN_INPUT].getVoltage();
+		speedCV = clamp(speedCV, -5.f, 5.f);
+		float cvOffset = (speedCV / 5.f) * 0.5f;
+	
+		float normSpeed = clamp(knobSpeed + cvOffset, 0.01f, 1.0f);
+		float speed = SPEED_LOW + (normSpeed - 0.01f) * ((SPEED_HIGH - SPEED_LOW) / (1.0f - 0.01f));
+	
+		processVoice(args, kickVoice, KICKTRIGIN_INPUT, KICKOUT_OUTPUT, speed);
+		processVoice(args, snareVoice, SNARETRIGIN_INPUT, SNAREOUT_OUTPUT, speed);
+		processVoice(args, tomLoVoice, TOMLTRIG_INPUT, TOMLOUT_OUTPUT, speed);
+		processVoice(args, tomHiVoice, TOMHTRIG_INPUT, TOMHOUT_OUTPUT, speed);
+		processVoice(args, closedHatVoice, CLTRIG_INPUT, CLOUT_OUTPUT, speed);
+		processVoice(args, openHatVoice, OHTRIG_INPUT, OHOUT_OUTPUT, speed);
+	}
+	
+
+	void processVoice(const ProcessArgs& args, Voice& voice, int trigInputId, int outputId, float speed) {
+		bool trigger = inputs[trigInputId].getVoltage() > 1.0f;
+
+		// Rising edge detection
+		if (trigger && !voice.lastTriggerState) {
+			voice.playing = true;
+			voice.samplePos = 0.f;
+		}
+		voice.lastTriggerState = trigger;
+
+		if (voice.playing) {
+			int idx = (int)voice.samplePos;
+			if (idx < voice.sampleLength) {
+				int16_t sampleInt = voice.readSample16(idx);
+				float sample = (float)sampleInt / 32768.f;
+				outputs[outputId].setVoltage(sample * 5.f);
+				voice.samplePos += speed; // Advance sample by speed
+			} else {
+				voice.playing = false;
+				outputs[outputId].setVoltage(0.f);
+			}
+		} else {
+			outputs[outputId].setVoltage(0.f);
+		}
 	}
 };
-
 
 struct KayOneWidget : ModuleWidget {
 	KayOneWidget(KayOne* module) {
