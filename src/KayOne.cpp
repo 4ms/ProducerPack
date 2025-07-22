@@ -53,8 +53,8 @@ struct KayOne : Module {
 	Voice closedHatVoice;
 	Voice openHatVoice;
 
-	const float SPEED_LOW = 0.1f;
-	const float SPEED_HIGH = 2.0f;
+	const float SPEED_LOW = 0.05f;
+	const float SPEED_HIGH = 1.0f;
 	const float LENGTH_MIN = 0.1f;
 	const float LENGTH_MAX = 1.0f;
 
