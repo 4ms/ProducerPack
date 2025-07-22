@@ -123,18 +123,25 @@ struct KayOne : Module {
 		float normLength = clamp(knobLength + lengthOffset, 0.1f, 1.0f);
 		float lengthRatio = LENGTH_MIN + (normLength - 0.1f) * ((LENGTH_MAX - LENGTH_MIN) / (1.0f - 0.1f));
 
-		// Loop logic
-		bool loopSwitch = params[LOOP_PARAM].getValue() > 0.5f;
-		bool loopCV = inputs[LOOPCVIN_INPUT].getVoltage() > 1.0f;
-		bool loopEnabled = loopSwitch || loopCV;
-
+		bool baseLoop = params[LOOP_PARAM].getValue() > 0.5f;
+		float loopCV = inputs[LOOPCVIN_INPUT].getVoltage();
+		bool loopEnabled = baseLoop;
+		
+		// Apply CV override logic
+		if (!baseLoop && loopCV > 1.f) {
+			loopEnabled = true;
+		}
+		else if (baseLoop && loopCV < -1.f) {
+			loopEnabled = false;
+		}
+		
 		// Process each voice
 		processVoice(args, kickVoice, KICKTRIGIN_INPUT, KICKOUT_OUTPUT, speed, lengthRatio, loopEnabled);
 		processVoice(args, snareVoice, SNARETRIGIN_INPUT, SNAREOUT_OUTPUT, speed, lengthRatio, loopEnabled);
 		processVoice(args, tomLoVoice, TOMLTRIG_INPUT, TOMLOUT_OUTPUT, speed, lengthRatio, loopEnabled);
 		processVoice(args, tomHiVoice, TOMHTRIG_INPUT, TOMHOUT_OUTPUT, speed, lengthRatio, loopEnabled);
 		processVoice(args, closedHatVoice, CLTRIG_INPUT, CLOUT_OUTPUT, speed, lengthRatio, loopEnabled);
-		processVoice(args, openHatVoice, OHTRIG_INPUT, OHOUT_OUTPUT, speed, lengthRatio, loopEnabled);
+		processVoice(args, openHatVoice, OHTRIG_INPUT, OHOUT_OUTPUT, speed, lengthRatio, loopEnabled);		
 	}
 
 	void processVoice(const ProcessArgs& args, Voice& voice, int trigInputId, int outputId, float speed, float lengthRatio, bool loopEnabled) {
