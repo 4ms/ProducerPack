@@ -1,5 +1,5 @@
 #include "plugin.hpp"
-#include "KayOneSamples.h"
+#include "KayOneSamples.hpp"
 
 struct KayOne : Module {
 	enum ParamId {
