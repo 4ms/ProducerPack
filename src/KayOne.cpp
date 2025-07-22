@@ -52,11 +52,11 @@ struct KayOne : Module {
 	Voice tomHiVoice;
 	Voice closedHatVoice;
 	Voice openHatVoice;
-	
-	const float SPEED_LOW = 0.1f;   // Minimum playback speed
-	const float SPEED_HIGH = 2.0f;  // Maximum playback speed
-	const float LENGTH_MIN = 0.1f;  // Minimum 10% of sample
-	const float LENGTH_MAX = 1.0f;  // Maximum 100% of sample
+
+	const float SPEED_LOW = 0.1f;
+	const float SPEED_HIGH = 2.0f;
+	const float LENGTH_MIN = 0.1f;
+	const float LENGTH_MAX = 1.0f;
 
 	KayOne() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -109,41 +109,50 @@ struct KayOne : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-		// --- Speed computation ---
+		// Speed calculation
 		float knobSpeed = 0.01f + params[SPEED_PARAM].getValue() * (1.0f - 0.01f);
-		float speedCV = inputs[SPEEDCVIN_INPUT].getVoltage();
-		speedCV = clamp(speedCV, -5.f, 5.f);
+		float speedCV = clamp(inputs[SPEEDCVIN_INPUT].getVoltage(), -5.f, 5.f);
 		float speedOffset = (speedCV / 5.f) * 0.5f;
 		float normSpeed = clamp(knobSpeed + speedOffset, 0.01f, 1.0f);
 		float speed = SPEED_LOW + (normSpeed - 0.01f) * ((SPEED_HIGH - SPEED_LOW) / (1.0f - 0.01f));
-	
-		// --- Length computation ---
-		float knobLength = params[LENGTH_PARAM].getValue();  // 0.0 to 1.0
-		float lengthCV = inputs[LENGTHCVIN_INPUT].getVoltage();
-		lengthCV = clamp(lengthCV, -5.f, 5.f);
-		float lengthOffset = (lengthCV / 5.f) * 0.5f;  // -0.5 to +0.5
-		float normLength = clamp(knobLength + lengthOffset, 0.1f, 1.0f);  // Use 0.1 to 1.0
-		float lengthRatio = LENGTH_MIN + (normLength - 0.1f) * ((LENGTH_MAX - LENGTH_MIN) / (1.0f - 0.1f));
-	
-		// Process all voices with final speed and lengthRatio
-		processVoice(args, kickVoice, KICKTRIGIN_INPUT, KICKOUT_OUTPUT, speed, lengthRatio);
-		processVoice(args, snareVoice, SNARETRIGIN_INPUT, SNAREOUT_OUTPUT, speed, lengthRatio);
-		processVoice(args, tomLoVoice, TOMLTRIG_INPUT, TOMLOUT_OUTPUT, speed, lengthRatio);
-		processVoice(args, tomHiVoice, TOMHTRIG_INPUT, TOMHOUT_OUTPUT, speed, lengthRatio);
-		processVoice(args, closedHatVoice, CLTRIG_INPUT, CLOUT_OUTPUT, speed, lengthRatio);
-		processVoice(args, openHatVoice, OHTRIG_INPUT, OHOUT_OUTPUT, speed, lengthRatio);
-	}	
 
-	void processVoice(const ProcessArgs& args, Voice& voice, int trigInputId, int outputId, float speed, float lengthRatio) {
+		// Length calculation
+		float knobLength = params[LENGTH_PARAM].getValue();
+		float lengthCV = clamp(inputs[LENGTHCVIN_INPUT].getVoltage(), -5.f, 5.f);
+		float lengthOffset = (lengthCV / 5.f) * 0.5f;
+		float normLength = clamp(knobLength + lengthOffset, 0.1f, 1.0f);
+		float lengthRatio = LENGTH_MIN + (normLength - 0.1f) * ((LENGTH_MAX - LENGTH_MIN) / (1.0f - 0.1f));
+
+		// Loop logic
+		bool loopSwitch = params[LOOP_PARAM].getValue() > 0.5f;
+		bool loopCV = inputs[LOOPCVIN_INPUT].getVoltage() > 1.0f;
+		bool loopEnabled = loopSwitch || loopCV;
+
+		// Process each voice
+		processVoice(args, kickVoice, KICKTRIGIN_INPUT, KICKOUT_OUTPUT, speed, lengthRatio, loopEnabled);
+		processVoice(args, snareVoice, SNARETRIGIN_INPUT, SNAREOUT_OUTPUT, speed, lengthRatio, loopEnabled);
+		processVoice(args, tomLoVoice, TOMLTRIG_INPUT, TOMLOUT_OUTPUT, speed, lengthRatio, loopEnabled);
+		processVoice(args, tomHiVoice, TOMHTRIG_INPUT, TOMHOUT_OUTPUT, speed, lengthRatio, loopEnabled);
+		processVoice(args, closedHatVoice, CLTRIG_INPUT, CLOUT_OUTPUT, speed, lengthRatio, loopEnabled);
+		processVoice(args, openHatVoice, OHTRIG_INPUT, OHOUT_OUTPUT, speed, lengthRatio, loopEnabled);
+	}
+
+	void processVoice(const ProcessArgs& args, Voice& voice, int trigInputId, int outputId, float speed, float lengthRatio, bool loopEnabled) {
 		bool trigger = inputs[trigInputId].getVoltage() > 1.0f;
 	
+		// Rising edge detection: start or restart voice
 		if (trigger && !voice.lastTriggerState) {
 			voice.playing = true;
 			voice.samplePos = 0.f;
 		}
 		voice.lastTriggerState = trigger;
 	
-		// Compute max sample position for this playback
+		// If loop is enabled and we're not already playing, auto-start
+		if (loopEnabled && !voice.playing) {
+			voice.playing = true;
+			voice.samplePos = 0.f;
+		}
+	
 		int maxSamplesToPlay = (int)(voice.sampleLength * lengthRatio);
 	
 		if (voice.playing) {
@@ -154,8 +163,12 @@ struct KayOne : Module {
 				outputs[outputId].setVoltage(sample * 5.f);
 				voice.samplePos += speed;
 			} else {
-				voice.playing = false;
-				outputs[outputId].setVoltage(0.f);
+				if (loopEnabled) {
+					voice.samplePos = 0.f; // Restart loop
+				} else {
+					voice.playing = false;
+					outputs[outputId].setVoltage(0.f);
+				}
 			}
 		} else {
 			outputs[outputId].setVoltage(0.f);
