@@ -32,6 +32,7 @@ target_sources(4ms-ProducerPack PRIVATE
     ${SOURCE_DIR}/src/Decay.cpp
     ${SOURCE_DIR}/src/AuxSends.cpp      
     ${SOURCE_DIR}/src/Bitcrusher.cpp     
+    ${SOURCE_DIR}/src/DrumBus.cpp     
     ${SOURCE_DIR}/src/plugin.cpp        
     ${SOURCE_DIR}/src/plugin.hpp        
    

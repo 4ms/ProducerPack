@@ -84,6 +84,12 @@
       "name": "Bitcrusher",
       "description": "Stereo bitcrusher, sample rate reducer, and selectable resonant filter",
       "tags": ["Stereo", "Effect", "Filter", "VCF", "Distortion"]
+    },
+    {
+      "slug": "DrumBus",
+      "name": "DrumBus",
+      "description": "8 channel mono to stereo mixer with mute per channel",
+      "tags": ["Stereo", "Mixer", "Drum", "Utility"]
     }
   ]
 }
