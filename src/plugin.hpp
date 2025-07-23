@@ -20,7 +20,6 @@ extern Model* modelTwoOp;
 extern Model* modelDecay;
 extern Model* modelAuxSends;
 extern Model* modelBitcrusher;
-extern Model* modelKayOne;
 
 struct _9mmKnob : RoundKnob {
     _9mmKnob() {

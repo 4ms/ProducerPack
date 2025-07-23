@@ -84,12 +84,6 @@
       "name": "Bitcrusher",
       "description": "Stereo bitcrusher, sample rate reducer, and selectable resonant filter",
       "tags": ["Stereo", "Effect", "Filter", "VCF", "Distortion"]
-    },
-    {
-      "slug": "KayOne",
-      "name": "KayOne",
-      "description": "SK-1 drum samples with direct outputs, pitch, length, and loop control",
-      "tags": ["Drum"]
     }
   ]
 }
