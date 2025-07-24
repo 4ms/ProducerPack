@@ -222,6 +222,25 @@ A stereo multimode filter based on the filter from Pioneer DJ mixers. The filter
 The filter uses multiple stages of state variable filters to achieve the selected slope and offers a smooth morph between lowpass, bypass, and highpass modes based on cutoff knob position.
 
 ---
+![STXF](https://github.com/4ms/ProducerPack/blob/main/doc/DrumBus.png) 
+
+# DrumBus – 8 channel mono mixer with pan, mute, and master volume
+
+Use this mixer as a submix for drum modules or any mono signals that you wish to convert to a stereo bus. 
+
+### Volume  
+Volume per channel.
+
+### Pan  
+Pan per channel.
+
+### Mute
+Mute per channel.
+
+### Master Volume
+Volume of total mix. Output is clamped to 20vpp. 
+---
+
 ![Monobass](https://github.com/4ms/ProducerPack/blob/main/doc/Monobass.png) 
 
 # Monobass – Analog-Style Bass Voice with Filter and Modulation
@@ -422,23 +441,4 @@ Adjusts the curve of the crossfade:
 - 0% = linear fade (straight mix)  
 - 100% = curved fade (logarithmic style)  
 - Allows smoother or sharper transitions between A and B.
-
-![STXF](https://github.com/4ms/ProducerPack/blob/main/doc/DrumBus.png) 
-
-# DrumBus – 8 channel mono mixer with pan, mute, and master volume
-
-Use this mixer as a submix for drum modules or any mono signals that you wish to convert to a stereo bus. 
-
-### Volume  
-Volume per channel.
-
-### Pan  
-Pan per channel.
-
-### Mute
-Mute per channel.
-
-### Master Volume
-Volume of total mix. Output is clamped to 20vpp. 
-
 
