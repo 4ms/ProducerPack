@@ -136,7 +136,6 @@ struct DrumBus : Module {
 	}	
 };
 
-
 struct DrumBusWidget : ModuleWidget {
 	DrumBusWidget(DrumBus* module) {
 		setModule(module);
@@ -147,42 +146,43 @@ struct DrumBusWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(25.046, 21.696)), module, DrumBus::CH1VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(38.806, 21.696)), module, DrumBus::CH1PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(51.723, 21.696)), module, DrumBus::CH1MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(25.046, 32.983)), module, DrumBus::CH2VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(38.806, 32.983)), module, DrumBus::CH2PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(51.723, 32.983)), module, DrumBus::CH2MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(25.046, 43.831)), module, DrumBus::CH3VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(38.806, 43.831)), module, DrumBus::CH3PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(51.723, 43.831)), module, DrumBus::CH3MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(25.046, 54.944)), module, DrumBus::CH4VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(38.806, 54.944)), module, DrumBus::CH4PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(51.723, 54.944)), module, DrumBus::CH4MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(25.046, 66.585)), module, DrumBus::CH5VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(38.806, 66.585)), module, DrumBus::CH5PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(51.723, 66.585)), module, DrumBus::CH5MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(25.046, 78.492)), module, DrumBus::CH6VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(38.806, 78.492)), module, DrumBus::CH6PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(51.723, 78.492)), module, DrumBus::CH6MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(25.046, 89.34)), module, DrumBus::CH7VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(38.806, 89.34)), module, DrumBus::CH7PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(51.723, 89.34)), module, DrumBus::CH7MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(25.046, 100.981)), module, DrumBus::CH8VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(38.806, 100.981)), module, DrumBus::CH8PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(51.723, 100.981)), module, DrumBus::CH8MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(42.405, 115.18)), module, DrumBus::MASTERVOL_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 13.501)), module, DrumBus::CH1VOL_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 13.501)), module, DrumBus::CH1PAN_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 13.499)), module, DrumBus::CH1MUTE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 25.199)), module, DrumBus::CH2VOL_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 25.199)), module, DrumBus::CH2PAN_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 25.201)), module, DrumBus::CH2MUTE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 36.901)), module, DrumBus::CH3VOL_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 36.901)), module, DrumBus::CH3PAN_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 36.899)), module, DrumBus::CH3MUTE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 48.599)), module, DrumBus::CH4VOL_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 48.599)), module, DrumBus::CH4PAN_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 48.601)), module, DrumBus::CH4MUTE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 60.399)), module, DrumBus::CH5VOL_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 60.399)), module, DrumBus::CH5PAN_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 60.401)), module, DrumBus::CH5MUTE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 71.999)), module, DrumBus::CH6VOL_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 72.073)), module, DrumBus::CH6PAN_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 72.001)), module, DrumBus::CH6MUTE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 83.799)), module, DrumBus::CH7VOL_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 83.799)), module, DrumBus::CH7PAN_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 83.801)), module, DrumBus::CH7MUTE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 95.501)), module, DrumBus::CH8VOL_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 95.501)), module, DrumBus::CH8PAN_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 95.499)), module, DrumBus::CH8MUTE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(13.0, 111.002)), module, DrumBus::MASTERVOL_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.171, 21.696)), module, DrumBus::CH1IN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.171, 32.983)), module, DrumBus::CH2IN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.171, 43.831)), module, DrumBus::CH3IN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.171, 54.944)), module, DrumBus::CH4IN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.171, 66.585)), module, DrumBus::CH5IN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.171, 78.492)), module, DrumBus::CH6IN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.171, 89.34)), module, DrumBus::CH7IN_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.171, 100.981)), module, DrumBus::CH8IN_INPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(12.003, 115.18)), module, DrumBus::AUDIOLEFTOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(29.08, 115.18)), module, DrumBus::AUDIORIGHTOUT_OUTPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.599, 13.501)), module, DrumBus::CH1IN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.599, 25.199)), module, DrumBus::CH2IN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.599, 36.901)), module, DrumBus::CH3IN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.599, 48.599)), module, DrumBus::CH4IN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.599, 60.301)), module, DrumBus::CH5IN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.599, 71.999)), module, DrumBus::CH6IN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.599, 83.799)), module, DrumBus::CH7IN_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.599, 95.501)), module, DrumBus::CH8IN_INPUT));
+
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(43.201, 111.002)), module, DrumBus::AUDIOLEFTOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(58.0, 111.002)), module, DrumBus::AUDIORIGHTOUT_OUTPUT));
 	}
 };
 
