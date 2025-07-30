@@ -103,6 +103,11 @@ struct Bitcrusher : Module {
 
     Biquad filterL, filterR;
 
+    // Cache last parameters to avoid redundant coefficient recalculation
+    float lastCutoff = -1.f;
+    float lastResonance = -1.f;
+    bool lastIsLowpass = true;
+
     Bitcrusher() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
         configParam(SAMPLERATE_PARAM, 0.f, 1.f, 0.f, "Clock Frequency");
@@ -131,16 +136,41 @@ struct Bitcrusher : Module {
         paramQuantities[SAMPLERATE_PARAM] = new InvertedRangeParamQuantity(sampleRateMinHz, sampleRateMaxHz, "Clock Frequency");
         paramQuantities[SAMPLERATE_PARAM]->module = this;
         paramQuantities[SAMPLERATE_PARAM]->paramId = SAMPLERATE_PARAM;
+
+        filterL.reset();
+        filterR.reset();
+    }
+
+    float getNormalizedParam(int paramId, int inputId) {
+        float paramValue = params[paramId].getValue();
+        float inputCV = inputs[inputId].isConnected() ? clamp(inputs[inputId].getVoltage(), -5.f, 5.f) / 10.f : 0.f;
+        return clamp(paramValue + inputCV, 0.f, 1.f);
+    }
+
+    void updateFilterCoefficients(float cutoff, float resonance, float sampleRate, bool isLowpass) {
+        if (cutoff != lastCutoff || resonance != lastResonance || isLowpass != lastIsLowpass) {
+            if (isLowpass) {
+                filterL.setupLowpass(cutoff, resonance, sampleRate);
+                filterR.setupLowpass(cutoff, resonance, sampleRate);
+            } else {
+                filterL.setupHighpass(cutoff, resonance, sampleRate);
+                filterR.setupHighpass(cutoff, resonance, sampleRate);
+            }
+            lastCutoff = cutoff;
+            lastResonance = resonance;
+            lastIsLowpass = isLowpass;
+        }
     }
 
     void process(const ProcessArgs& args) override {
         float leftIn = inputs[AUDIOLEFTIN_INPUT].getVoltage();
         float rightIn = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : leftIn;
 
-        float norm = clamp(params[SAMPLERATE_PARAM].getValue() + clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f, 0.f, 1.f);
-        // Invert norm for the sample rate since param is inverted display
-        float sampleRateHz = sampleRateMinHz + (1.f - norm) * (sampleRateMaxHz - sampleRateMinHz);
+        // Compute sample rate from parameter + CV, inverted because param display is inverted
+        float normSampleRate = clamp(params[SAMPLERATE_PARAM].getValue() + (inputs[SAMPLERATECVIN_INPUT].isConnected() ? clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f : 0.f), 0.f, 1.f);
+        float sampleRateHz = sampleRateMinHz + (1.f - normSampleRate) * (sampleRateMaxHz - sampleRateMinHz);
 
+        // Sample & hold logic
         float holdInterval = args.sampleRate / sampleRateHz;
         sampleHoldPhase += 1.f;
         if (sampleHoldPhase >= holdInterval) {
@@ -149,40 +179,47 @@ struct Bitcrusher : Module {
             rightSampleHold = rightIn;
         }
 
-        float bitCV = clamp(inputs[BITDEPTHCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f * 15.f;
+        // Bit depth with CV
+        float bitCV = inputs[BITDEPTHCVIN_INPUT].isConnected() ? clamp(inputs[BITDEPTHCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f * 15.f : 0.f;
         int bitDepth = (int)clamp(15.f - (params[BITDEPTH_PARAM].getValue() + bitCV), 0.f, 15.f);
 
         auto bitcrush = [&](float in) {
             if (bitDepth >= 15) return in;
             float norm = clamp((in + 5.f) / 10.f, 0.f, 1.f);
-            float quantized = (bitDepth <= 0) ? (norm >= 0.5f ? 1.f : 0.f) : std::round(norm * ((1 << bitDepth) - 1)) / ((1 << bitDepth) - 1);
+            if (bitDepth <= 0)
+                return norm >= 0.5f ? 5.f : -5.f;
+            float levels = (1 << bitDepth) - 1;
+            float quantized = std::round(norm * levels) / levels;
             return quantized * 10.f - 5.f;
         };
 
         float crushedL = bitcrush(leftSampleHold);
         float crushedR = bitcrush(rightSampleHold);
 
-        float cutoffCV = clamp(inputs[CUTOFFCVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f;
-        float cutoff = cutoffMinHz + clamp(params[CUTOFF_PARAM].getValue() + cutoffCV, 0.f, 1.f) * (cutoffMaxHz - cutoffMinHz);
-        float resonance = clamp(params[RESONANCE_PARAM].getValue() + clamp(inputs[RESONANCECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f, 0.f, 1.f);
+        // Cutoff & resonance with CV
+        float cutoffNorm = getNormalizedParam(CUTOFF_PARAM, CUTOFFCVIN_INPUT);
+        float resonance = getNormalizedParam(RESONANCE_PARAM, RESONANCECVIN_INPUT);
+        float cutoff = cutoffMinHz + cutoffNorm * (cutoffMaxHz - cutoffMinHz);
 
-        if (params[FILTERTYPE_PARAM].getValue() < 0.5f) {
-            filterL.setupLowpass(cutoff, resonance, args.sampleRate);
-            filterR.setupLowpass(cutoff, resonance, args.sampleRate);
-        } else {
-            filterL.setupHighpass(cutoff, resonance, args.sampleRate);
-            filterR.setupHighpass(cutoff, resonance, args.sampleRate);
-        }
+        // Filter type
+        bool isLowpass = params[FILTERTYPE_PARAM].getValue() < 0.5f;
 
+        // Precompute filter coefficients only if changed
+        updateFilterCoefficients(cutoff, resonance, args.sampleRate, isLowpass);
+
+        // Filter the bitcrushed signal
         float filteredL = filterL.process(crushedL);
         float filteredR = filterR.process(crushedR);
 
-        float dryWet = clamp(params[DRY_WET_PARAM].getValue() + clamp(inputs[DRY_WETCVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f, 0.f, 1.f);
-        float volume = clamp(params[VOLUME_PARAM].getValue() + clamp(inputs[VOLUMECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f, 0.f, 1.f);
+        // Dry/Wet mix and volume with CV
+        float dryWet = getNormalizedParam(DRY_WET_PARAM, DRY_WETCVIN_INPUT);
+        float volume = getNormalizedParam(VOLUME_PARAM, VOLUMECVIN_INPUT);
 
+        // Crossfade dry and wet, apply volume
         float outL = rack::math::crossfade(leftIn, filteredL, dryWet) * volume;
         float outR = rack::math::crossfade(rightIn, filteredR, dryWet) * volume;
 
+        // Output
         outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(outL, -5.f, 5.f));
         outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(outR, -5.f, 5.f));
     }
