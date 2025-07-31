@@ -46,74 +46,64 @@ float env = 0.f;
 bool lastGate = false;
 
 void process(const ProcessArgs& args) override {
-	float sampleRate = args.sampleRate;
+	const float sampleRate = args.sampleRate;
+	const float sampleTime = 1.f / sampleRate;
 
-	float pitchParam = params[PITCH_PARAM].getValue();
-	float baseFreq = 20.f * std::pow(1000.f, pitchParam);
+	// --- Pitch and Frequency ---
+	const float pitchParam = params[PITCH_PARAM].getValue();
+	const float voct = inputs[VOCTIN_INPUT].getVoltage();
+	const float baseFreq = 20.f * std::pow(1000.f, pitchParam);
+	float carrierFreq = baseFreq * std::exp2(voct); // faster than pow(2.f, voct)
+	carrierFreq = clamp(carrierFreq, 20.f, 20000.f);
 
-	float voct = inputs[VOCTIN_INPUT].isConnected() ? inputs[VOCTIN_INPUT].getVoltage() : 0.f;
-	float carrierFreqBase = baseFreq * std::pow(2.f, voct);
-	carrierFreqBase = clamp(carrierFreqBase, 20.f, 20000.f);
+	// --- Ratio ---
+	float ratio = params[RATIO_PARAM].getValue();
+	if (inputs[RATIOCVIN_INPUT].isConnected())
+		ratio += inputs[RATIOCVIN_INPUT].getVoltage() * 0.2f; // == /5
+	ratio = clamp(ratio, 0.f, 1.f);
+	const float modFreq = carrierFreq * (0.1f + 7.9f * ratio);
 
-	float ratioParam = params[RATIO_PARAM].getValue();
-	float ratioCV = inputs[RATIOCVIN_INPUT].isConnected() ? inputs[RATIOCVIN_INPUT].getVoltage() / 5.f : 0.f;
-	float ratio = clamp(ratioParam + ratioCV, 0.f, 1.f);
-	float modFreq = carrierFreqBase * (0.1f + 7.9f * ratio);
+	// --- FM Amount ---
+	float fmAmt = params[FMAMT_PARAM].getValue();
+	if (inputs[FMAMTCVIN_INPUT].isConnected())
+		fmAmt += inputs[FMAMTCVIN_INPUT].getVoltage() * 0.2f;
+	const float fmAmount = clamp(fmAmt, 0.f, 1.f) * 5000.f;
 
-	float fmParam = params[FMAMT_PARAM].getValue();
-	float fmCV = inputs[FMAMTCVIN_INPUT].isConnected() ? inputs[FMAMTCVIN_INPUT].getVoltage() / 5.f : 0.f;
-	float fmAmount = clamp(fmParam + fmCV, 0.f, 1.f) * 5000.f;
-
-	bool gateConnected = inputs[GATEIN_INPUT].isConnected();
-	bool gate = gateConnected && (inputs[GATEIN_INPUT].getVoltage() >= 1.f);
-
-	if (gateConnected) {
-		if (gate && !lastGate) {
+	// --- Gate & Envelope ---
+	bool gate = inputs[GATEIN_INPUT].getVoltage() >= 1.f;
+	if (inputs[GATEIN_INPUT].isConnected()) {
+		if (gate && !lastGate)
 			env = 1.f;
-		}
 		lastGate = gate;
 
-		float decayParam = params[DECAY_PARAM].getValue();
-		float decayCV = inputs[DECAYCVIN_INPUT].isConnected() ? inputs[DECAYCVIN_INPUT].getVoltage() / 5.f : 0.f;
-		float decayControl = clamp(decayParam + decayCV, 0.f, 1.f);
+		// Decay Time
+		float decay = params[DECAY_PARAM].getValue();
+		if (inputs[DECAYCVIN_INPUT].isConnected())
+			decay += inputs[DECAYCVIN_INPUT].getVoltage() * 0.2f;
+		decay = clamp(decay, 0.f, 1.f);
 
-		// Determine decay range from switch
-		int range = static_cast<int>(params[RANGE_PARAM].getValue());
-		float maxDecayMs = 200.f;  // Default: Medium
-
-		switch (range) {
-			case 0: maxDecayMs = 30.f; break;    // Fast
-			case 1: maxDecayMs = 200.f; break;   // Medium
-			case 2: maxDecayMs = 5000.f; break;  // Slow
-		}
-
-		float decayTimeMs = 1.f + (maxDecayMs - 1.f) * decayControl;
-		float decayTimeSec = decayTimeMs / 1000.f;
-
-		float decayCoeff = std::exp(-1.f / (decayTimeSec * sampleRate));
+		const float maxDecayMs[] = {30.f, 200.f, 5000.f};
+		const int range = clamp((int)params[RANGE_PARAM].getValue(), 0, 2);
+		const float decayMs = 1.f + (maxDecayMs[range] - 1.f) * decay;
+		const float decayCoeff = std::exp(-sampleTime / (decayMs * 0.001f));
 		env *= decayCoeff;
-
 	} else {
 		env = 1.f;
 		lastGate = false;
 	}
 
-	modulatorPhase += modFreq / sampleRate;
-	if (modulatorPhase >= 1.f)
-		modulatorPhase -= 1.f;
+	// --- Modulator ---
+	modulatorPhase += modFreq * sampleTime;
+	if (modulatorPhase >= 1.f) modulatorPhase -= 1.f;
+	const float mod = std::sin(2.f * M_PI * modulatorPhase);
 
-	float modulatorOutput = std::sin(modulatorPhase * 2.f * M_PI);
+	// --- Carrier ---
+	const float freq = clamp(carrierFreq + mod * fmAmount, 20.f, 20000.f);
+	carrierPhase += freq * sampleTime;
+	if (carrierPhase >= 1.f) carrierPhase -= 1.f;
 
-	float instantaneousFreq = carrierFreqBase + (modulatorOutput * fmAmount);
-	instantaneousFreq = clamp(instantaneousFreq, 20.f, 20000.f);
-
-	carrierPhase += instantaneousFreq / sampleRate;
-	if (carrierPhase >= 1.f)
-		carrierPhase -= 1.f;
-
-	float carrierOutput = std::sin(carrierPhase * 2.f * M_PI);
-
-	outputs[AUDIO_OUTPUT].setVoltage(clamp(carrierOutput * 5.f * env, -5.f, 5.f));
+	const float output = std::sin(2.f * M_PI * carrierPhase) * 5.f * env;
+	outputs[AUDIO_OUTPUT].setVoltage(clamp(output, -5.f, 5.f));
 }
 };
 
