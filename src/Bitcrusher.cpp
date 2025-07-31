@@ -163,66 +163,69 @@ struct Bitcrusher : Module {
     }
 
     void process(const ProcessArgs& args) override {
-        float leftIn = inputs[AUDIOLEFTIN_INPUT].getVoltage();
-        float rightIn = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : leftIn;
+	// Input voltages
+	const float leftIn = inputs[AUDIOLEFTIN_INPUT].getVoltage();
+	const float rightIn = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : leftIn;
 
-        // Compute sample rate from parameter + CV, inverted because param display is inverted
-        float normSampleRate = clamp(params[SAMPLERATE_PARAM].getValue() + (inputs[SAMPLERATECVIN_INPUT].isConnected() ? clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f : 0.f), 0.f, 1.f);
-        float sampleRateHz = sampleRateMinHz + (1.f - normSampleRate) * (sampleRateMaxHz - sampleRateMinHz);
+	// Sample rate CV + param normalized
+	const float srParam = params[SAMPLERATE_PARAM].getValue();
+	const float srCV = inputs[SAMPLERATECVIN_INPUT].isConnected() ? clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f : 0.f;
+	const float normSampleRate = clamp(srParam + srCV, 0.f, 1.f);
+	const float invSampleRate = 1.f - normSampleRate;
+	const float sampleRateHz = sampleRateMinHz + invSampleRate * (sampleRateMaxHz - sampleRateMinHz);
 
-        // Sample & hold logic
-        float holdInterval = args.sampleRate / sampleRateHz;
-        sampleHoldPhase += 1.f;
-        if (sampleHoldPhase >= holdInterval) {
-            sampleHoldPhase -= holdInterval;
-            leftSampleHold = leftIn;
-            rightSampleHold = rightIn;
-        }
+	// Sample & hold logic
+	const float holdInterval = args.sampleRate / sampleRateHz;
+	sampleHoldPhase += 1.f;
+	if (sampleHoldPhase >= holdInterval) {
+		sampleHoldPhase -= holdInterval;
+		leftSampleHold = leftIn;
+		rightSampleHold = rightIn;
+	}
 
-        // Bit depth with CV
-        float bitCV = inputs[BITDEPTHCVIN_INPUT].isConnected() ? clamp(inputs[BITDEPTHCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f * 15.f : 0.f;
-        int bitDepth = (int)clamp(15.f - (params[BITDEPTH_PARAM].getValue() + bitCV), 0.f, 15.f);
+	// Bit depth CV
+	const float bitCV = inputs[BITDEPTHCVIN_INPUT].isConnected() ? clamp(inputs[BITDEPTHCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f * 15.f : 0.f;
+	const int bitDepth = (int)clamp(15.f - (params[BITDEPTH_PARAM].getValue() + bitCV), 0.f, 15.f);
 
-        auto bitcrush = [&](float in) {
-            if (bitDepth >= 15) return in;
-            float norm = clamp((in + 5.f) / 10.f, 0.f, 1.f);
-            if (bitDepth <= 0)
-                return norm >= 0.5f ? 5.f : -5.f;
-            float levels = (1 << bitDepth) - 1;
-            float quantized = std::round(norm * levels) / levels;
-            return quantized * 10.f - 5.f;
-        };
+	// Bitcrush logic (no lambda, fast edge cases)
+	auto bitcrush = [bitDepth](float in) {
+		if (bitDepth >= 15) return in;
+		float norm = clamp((in + 5.f) * 0.1f, 0.f, 1.f);  // (x + 5) / 10
+		if (bitDepth <= 0) return norm >= 0.5f ? 5.f : -5.f;
 
-        float crushedL = bitcrush(leftSampleHold);
-        float crushedR = bitcrush(rightSampleHold);
+		const float levels = static_cast<float>((1 << bitDepth) - 1);
+		const float quantized = std::round(norm * levels) / levels;
+		return quantized * 10.f - 5.f;
+	};
 
-        // Cutoff & resonance with CV
-        float cutoffNorm = getNormalizedParam(CUTOFF_PARAM, CUTOFFCVIN_INPUT);
-        float resonance = getNormalizedParam(RESONANCE_PARAM, RESONANCECVIN_INPUT);
-        float cutoff = cutoffMinHz + cutoffNorm * (cutoffMaxHz - cutoffMinHz);
+	const float crushedL = bitcrush(leftSampleHold);
+	const float crushedR = bitcrush(rightSampleHold);
 
-        // Filter type
-        bool isLowpass = params[FILTERTYPE_PARAM].getValue() < 0.5f;
+	// Filter params with CV
+	const float cutoffNorm = getNormalizedParam(CUTOFF_PARAM, CUTOFFCVIN_INPUT);
+	const float resonance = getNormalizedParam(RESONANCE_PARAM, RESONANCECVIN_INPUT);
+	const float cutoff = cutoffMinHz + cutoffNorm * (cutoffMaxHz - cutoffMinHz);
+	const bool isLowpass = params[FILTERTYPE_PARAM].getValue() < 0.5f;
 
-        // Precompute filter coefficients only if changed
-        updateFilterCoefficients(cutoff, resonance, args.sampleRate, isLowpass);
+	// Only update filters if necessary
+	updateFilterCoefficients(cutoff, resonance, args.sampleRate, isLowpass);
 
-        // Filter the bitcrushed signal
-        float filteredL = filterL.process(crushedL);
-        float filteredR = filterR.process(crushedR);
+	// Filter the crushed signal
+	const float filteredL = filterL.process(crushedL);
+	const float filteredR = filterR.process(crushedR);
 
-        // Dry/Wet mix and volume with CV
-        float dryWet = getNormalizedParam(DRY_WET_PARAM, DRY_WETCVIN_INPUT);
-        float volume = getNormalizedParam(VOLUME_PARAM, VOLUMECVIN_INPUT);
+	// Dry/Wet and Volume (with CV)
+	const float dryWet = getNormalizedParam(DRY_WET_PARAM, DRY_WETCVIN_INPUT);
+	const float volume = getNormalizedParam(VOLUME_PARAM, VOLUMECVIN_INPUT);
 
-        // Crossfade dry and wet, apply volume
-        float outL = rack::math::crossfade(leftIn, filteredL, dryWet) * volume;
-        float outR = rack::math::crossfade(rightIn, filteredR, dryWet) * volume;
+	// Mix dry/wet, apply volume and clamp
+	const float outL = clamp(rack::math::crossfade(leftIn, filteredL, dryWet) * volume, -5.f, 5.f);
+	const float outR = clamp(rack::math::crossfade(rightIn, filteredR, dryWet) * volume, -5.f, 5.f);
 
-        // Output
-        outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(outL, -5.f, 5.f));
-        outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(outR, -5.f, 5.f));
-    }
+	// Outputs
+	outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(outL);
+	outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(outR);
+}
 };
 
 struct BitcrusherWidget : ModuleWidget {
