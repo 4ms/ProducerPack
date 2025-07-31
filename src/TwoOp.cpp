@@ -46,9 +46,6 @@ float env = 0.f;
 bool lastGate = false;
 
 void process(const ProcessArgs& args) override {
-	const float sampleRate = args.sampleRate;
-	const float sampleTime = 1.f / sampleRate;
-
 	// --- Pitch and Frequency ---
 	const float pitchParam = params[PITCH_PARAM].getValue();
 	const float voct = inputs[VOCTIN_INPUT].getVoltage();
@@ -85,7 +82,7 @@ void process(const ProcessArgs& args) override {
 		const float maxDecayMs[] = {30.f, 200.f, 5000.f};
 		const int range = clamp((int)params[RANGE_PARAM].getValue(), 0, 2);
 		const float decayMs = 1.f + (maxDecayMs[range] - 1.f) * decay;
-		const float decayCoeff = std::exp(-sampleTime / (decayMs * 0.001f));
+		const float decayCoeff = std::exp(-args.sampleTime / (decayMs * 0.001f));
 		env *= decayCoeff;
 	} else {
 		env = 1.f;
@@ -93,13 +90,13 @@ void process(const ProcessArgs& args) override {
 	}
 
 	// --- Modulator ---
-	modulatorPhase += modFreq * sampleTime;
+	modulatorPhase += modFreq * args.sampleTime;
 	if (modulatorPhase >= 1.f) modulatorPhase -= 1.f;
 	const float mod = std::sin(2.f * M_PI * modulatorPhase);
 
 	// --- Carrier ---
 	const float freq = clamp(carrierFreq + mod * fmAmount, 20.f, 20000.f);
-	carrierPhase += freq * sampleTime;
+	carrierPhase += freq * args.sampleTime;
 	if (carrierPhase >= 1.f) carrierPhase -= 1.f;
 
 	const float output = std::sin(2.f * M_PI * carrierPhase) * 5.f * env;
