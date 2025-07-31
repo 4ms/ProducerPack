@@ -266,109 +266,136 @@ struct SeventiesEQ : Module {
     }
 
     void process(const ProcessArgs& args) override {
-        float inL = inputs[INL_INPUT].getVoltage();
-        float inR = inputs[INR_INPUT].isConnected() ? inputs[INR_INPUT].getVoltage() : inL;
-        
-        float gain = params[GAIN_PARAM].getValue();          // 0..1 normalized
-        float outputVol = params[OUTPUTVOL_PARAM].getValue(); // 0..1
-        bool bypass = params[BYPASS_PARAM].getValue() > 0.5f;
-    
-        // Apply input gain boost from 1x to 5x
-        float inputGain = 5.f * gain;  // maps 0..1 -> 1..5
-        inL *= inputGain;
-        inR *= inputGain;
-    
-        // Monitor signal after input gain, before clipping
-        float gainPostAmpLevel = std::max(std::fabs(inL), std::fabs(inR));
-        bool gainClipping = gainPostAmpLevel >= 5.f;
-        float gainBrightness = gainPostAmpLevel / 5.f;
-    
-        // Clip input signal to ±5V (10V peak-to-peak)
-        inL = clamp(inL, -5.f, 5.f);
-        inR = clamp(inR, -5.f, 5.f);
-    
-        // GAIN LED: Green if below clip, Red if clipped
-        lights[GAINLED_LIGHT_GREEN].setBrightnessSmooth(gainClipping ? 0.f : gainBrightness, args.sampleTime);
-        lights[GAINLED_LIGHT_RED].setBrightnessSmooth(gainClipping ? gainBrightness : 0.f, args.sampleTime);
-    
-        // --- Highpass processing (3 stages) ---
-        float hpFreq = highpassFreqSelectToFreq((int)params[HIGHPASSFREQSELECT_PARAM].getValue());
-        float alpha = 0.f;
-        if (hpFreq > 0.f) {
+    float inL = inputs[INL_INPUT].getVoltage();
+    float inR = inputs[INR_INPUT].isConnected() ? inputs[INR_INPUT].getVoltage() : inL;
+
+    float gain = params[GAIN_PARAM].getValue();          // 0..1 normalized
+    float outputVol = params[OUTPUTVOL_PARAM].getValue(); // 0..1
+    bool bypass = params[BYPASS_PARAM].getValue() > 0.5f;
+
+    // Apply input gain (1x to 5x)
+    float inputGain = 1.f + 4.f * gain;
+    inL *= inputGain;
+    inR *= inputGain;
+
+    // Clip input signal
+    float gainPostAmpLevel = std::max(std::fabs(inL), std::fabs(inR));
+    float gainBrightness = gainPostAmpLevel / 5.f;
+    bool gainClipping = gainPostAmpLevel >= 5.f;
+
+    inL = clamp(inL, -5.f, 5.f);
+    inR = clamp(inR, -5.f, 5.f);
+
+    lights[GAINLED_LIGHT_GREEN].setBrightnessSmooth(gainClipping ? 0.f : gainBrightness, args.sampleTime);
+    lights[GAINLED_LIGHT_RED].setBrightnessSmooth(gainClipping ? gainBrightness : 0.f, args.sampleTime);
+
+    // --- Highpass processing ---
+    int hpSel = (int)params[HIGHPASSFREQSELECT_PARAM].getValue();
+    static float prevHpFreq = -1.f;
+    static float hpAlpha = 0.f;
+
+    float hpFreq = highpassFreqSelectToFreq(hpSel);
+    if (hpFreq > 0.f) {
+        if (hpFreq != prevHpFreq) {
             float rc = 1.f / (2.f * M_PI * hpFreq);
             float dt = 1.f / args.sampleRate;
-            alpha = rc / (rc + dt);
-            inL = highpassL1.process(inL, alpha);
-            inL = highpassL2.process(inL, alpha);
-            inL = highpassL3.process(inL, alpha);
-            inR = highpassR1.process(inR, alpha);
-            inR = highpassR2.process(inR, alpha);
-            inR = highpassR3.process(inR, alpha);
+            hpAlpha = rc / (rc + dt);
+            prevHpFreq = hpFreq;
         }
-    
-        // EQ processing or bypass
-        float eqOutL = inL;
-        float eqOutR = inR;
-    
-        if (!bypass) {
-            // Mid band
-            int midFreqSel = (int)params[MIDFREQSELECT_PARAM].getValue();
-            float midFreq = freqSelectToFreq(midFreqSel, true);
-            float midGainDB = params[MID_PARAM].getValue();
-            if (midFreq > 0.f) {
-                midBandL.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
-                midBandR.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
-                eqOutL = midBandL.process(eqOutL);
-                eqOutR = midBandR.process(eqOutR);
-            }
-    
-            // High shelf
-            float highShelfFreq = 10000.f;
-            float highShelfGainDB = params[HIGH_SHELF_PARAM].getValue();
-            highShelfL.calcTargetCoeffs(args.sampleRate, highShelfFreq, highShelfGainDB);
-            highShelfR.calcTargetCoeffs(args.sampleRate, highShelfFreq, highShelfGainDB);
-            eqOutL = highShelfL.process(eqOutL);
-            eqOutR = highShelfR.process(eqOutR);
-    
-            // Low shelf
-            int lowFreqSel = (int)params[LOWFREQSELECT_PARAM].getValue();
-            float lowFreq = freqSelectToFreq(lowFreqSel, false);
-            float lowGainDB = params[LOW_SHELF_PARAM].getValue();
-            if (lowFreq > 0.f) {
-                lowShelfL.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
-                lowShelfR.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
-                eqOutL = lowShelfL.process(eqOutL);
-                eqOutR = lowShelfR.process(eqOutR);
-            }
-        }
-    
-        // --- EQ LED (pre-output volume) ---
-        float eqLevel = std::max(std::fabs(eqOutL), std::fabs(eqOutR));
-        bool eqClipping = eqLevel >= 5.f;
-        float eqBrightness = eqLevel / 5.f;
-    
-        lights[EQLED_LIGHT_GREEN].setBrightnessSmooth(eqClipping ? 0.f : eqBrightness, args.sampleTime);
-        lights[EQLED_LIGHT_RED].setBrightnessSmooth(eqClipping ? eqBrightness : 0.f, args.sampleTime);
-    
-        // Apply output volume
-        float outL = eqOutL * outputVol;
-        float outR = eqOutR * outputVol;
-    
-        // Output clipping
-        float outLevel = std::max(std::fabs(outL), std::fabs(outR));
-        bool outClipping = outLevel >= 5.f;
-        float outBrightness = outLevel / 5.f;
-    
-        outL = clamp(outL, -5.f, 5.f);
-        outR = clamp(outR, -5.f, 5.f);
-    
-        outputs[OUTL_OUTPUT].setVoltage(outL);
-        outputs[OUTR_OUTPUT].setVoltage(outR);
-    
-        // OUTPUT LED: Green if below clip, Red if clipped
-        lights[OUTLED_LIGHT_GREEN].setBrightnessSmooth(outClipping ? 0.f : outBrightness, args.sampleTime);
-        lights[OUTLED_LIGHT_RED].setBrightnessSmooth(outClipping ? outBrightness : 0.f, args.sampleTime);
+
+        inL = highpassL1.process(inL, hpAlpha);
+        inL = highpassL2.process(inL, hpAlpha);
+        inL = highpassL3.process(inL, hpAlpha);
+        inR = highpassR1.process(inR, hpAlpha);
+        inR = highpassR2.process(inR, hpAlpha);
+        inR = highpassR3.process(inR, hpAlpha);
     }
+
+    float eqOutL = inL;
+    float eqOutR = inR;
+
+    if (!bypass) {
+        // --- Mid band ---
+        static float prevMidFreq = -1.f, prevMidGain = -999.f;
+        int midSel = (int)params[MIDFREQSELECT_PARAM].getValue();
+        static constexpr float midFreqs[7] = {0.f, 360.f, 700.f, 1600.f, 3200.f, 4800.f, 7200.f};
+        float midFreq = midFreqs[midSel];
+        float midGainDB = params[MID_PARAM].getValue();
+
+        if (midFreq > 0.f && (midFreq != prevMidFreq || midGainDB != prevMidGain)) {
+            midBandL.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
+            midBandR.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
+            prevMidFreq = midFreq;
+            prevMidGain = midGainDB;
+        }
+
+        if (midFreq > 0.f) {
+            midBandL.smoothCoeffs();
+            midBandR.smoothCoeffs();
+            eqOutL = midBandL.process(eqOutL);
+            eqOutR = midBandR.process(eqOutR);
+        }
+
+        // --- High shelf ---
+        static float prevHighGain = -999.f;
+        float highGainDB = params[HIGH_SHELF_PARAM].getValue();
+        float highShelfFreq = 10000.f;
+
+        if (highGainDB != prevHighGain) {
+            highShelfL.calcTargetCoeffs(args.sampleRate, highShelfFreq, highGainDB);
+            highShelfR.calcTargetCoeffs(args.sampleRate, highShelfFreq, highGainDB);
+            prevHighGain = highGainDB;
+        }
+
+        highShelfL.smoothCoeffs();
+        highShelfR.smoothCoeffs();
+        eqOutL = highShelfL.process(eqOutL);
+        eqOutR = highShelfR.process(eqOutR);
+
+        // --- Low shelf ---
+        static float prevLowFreq = -1.f, prevLowGain = -999.f;
+        int lowSel = (int)params[LOWFREQSELECT_PARAM].getValue();
+        static constexpr float lowFreqs[5] = {0.f, 35.f, 60.f, 110.f, 220.f};
+        float lowFreq = lowFreqs[lowSel];
+        float lowGainDB = params[LOW_SHELF_PARAM].getValue();
+
+        if (lowFreq > 0.f && (lowFreq != prevLowFreq || lowGainDB != prevLowGain)) {
+            lowShelfL.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
+            lowShelfR.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
+            prevLowFreq = lowFreq;
+            prevLowGain = lowGainDB;
+        }
+
+        if (lowFreq > 0.f) {
+            lowShelfL.smoothCoeffs();
+            lowShelfR.smoothCoeffs();
+            eqOutL = lowShelfL.process(eqOutL);
+            eqOutR = lowShelfR.process(eqOutR);
+        }
+    }
+
+    // EQ level monitoring
+    float eqLevel = std::max(std::fabs(eqOutL), std::fabs(eqOutR));
+    float eqBrightness = eqLevel / 5.f;
+    bool eqClipping = eqLevel >= 5.f;
+
+    lights[EQLED_LIGHT_GREEN].setBrightnessSmooth(eqClipping ? 0.f : eqBrightness, args.sampleTime);
+    lights[EQLED_LIGHT_RED].setBrightnessSmooth(eqClipping ? eqBrightness : 0.f, args.sampleTime);
+
+    // Output volume
+    float outL = clamp(eqOutL * outputVol, -5.f, 5.f);
+    float outR = clamp(eqOutR * outputVol, -5.f, 5.f);
+
+    float outLevel = std::max(std::fabs(outL), std::fabs(outR));
+    float outBrightness = outLevel / 5.f;
+    bool outClipping = outLevel >= 5.f;
+
+    outputs[OUTL_OUTPUT].setVoltage(outL);
+    outputs[OUTR_OUTPUT].setVoltage(outR);
+
+    lights[OUTLED_LIGHT_GREEN].setBrightnessSmooth(outClipping ? 0.f : outBrightness, args.sampleTime);
+    lights[OUTLED_LIGHT_RED].setBrightnessSmooth(outClipping ? outBrightness : 0.f, args.sampleTime);
+}
 };    
 
 struct SeventiesEQWidget : ModuleWidget {

@@ -88,7 +88,7 @@ struct Spatializer : Module {
 			return a * (1.f - x) + b * x;
 		}
 	
-		void process(const ProcessArgs& args) override {
+	void process(const ProcessArgs& args) override {
 	const float sampleRate = args.sampleRate;
 
 	// Inputs
