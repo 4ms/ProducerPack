@@ -35,62 +35,63 @@ struct Boost : Module {
 		configOutput(RIGHTOUT_OUTPUT, "Audio Right");
 	}
 
-		void process(const ProcessArgs& args) override {
-		int rangeSelection = (int)params[RANGE_PARAM].getValue();
-		float rangeMultiplier = 1.f;
-		switch (rangeSelection) {
-			case 0: rangeMultiplier = 1.f; break;
-			case 1: rangeMultiplier = 5.f; break;
-			case 2: rangeMultiplier = 100.f; break;
-		}
-	
-		float gainAmount = params[GAIN_PARAM].getValue();
-		float volumeAmount = params[VOLUME_PARAM].getValue();
-		float preVolumeGain = gainAmount * rangeMultiplier;
-	
-		bool leftConnected = inputs[LEFTIN_INPUT].isConnected();
-		bool rightConnected = inputs[RIGHTIN_INPUT].isConnected();
-	
-		if (leftConnected) {
-			float in = inputs[LEFTIN_INPUT].getVoltage();
-			float boosted = in * preVolumeGain;
-			float clipped = clamp(boosted, -5.f, 5.f);
-			float out = clipped * volumeAmount;
-			outputs[LEFTOUT_OUTPUT].setVoltage(out);
+	void process(const ProcessArgs& args) override {
+	// Cache parameters
+	const int rangeSelection = (int)params[RANGE_PARAM].getValue();
+	const float gainParam = params[GAIN_PARAM].getValue();
+	const float volume = params[VOLUME_PARAM].getValue();
 
-			if (!rightConnected) {
-				float boostedR = in * preVolumeGain;
-				bool clippingR = (boostedR < -5.f || boostedR > 5.f);
-				float clippedR = clamp(boostedR, -5.f, 5.f);
-				float outR = clippedR * volumeAmount;
-				outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
+	// Lookup gain multiplier
+	float gainMultiplier = 1.f;
+	switch (rangeSelection) {
+		case 1: gainMultiplier = 5.f; break;
+		case 2: gainMultiplier = 100.f; break;
+	}
 
-				float brightnessR = clamp(fabs(outR) / 5.f, 0.f, 1.f);
-				lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clippingR ? brightnessR : 0.f, args.sampleTime);
-				lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clippingR ? 0.f : brightnessR, args.sampleTime);
-			}
-		} else {
-			outputs[LEFTOUT_OUTPUT].setVoltage(0.f);
-			if (!rightConnected) {
-				outputs[RIGHTOUT_OUTPUT].setVoltage(0.f);
-				lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(0.f, args.sampleTime);
-				lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(0.f, args.sampleTime);
-			}
-		}
-	
-		if (rightConnected) {
-			float in = inputs[RIGHTIN_INPUT].getVoltage();
-			float boosted = in * preVolumeGain;
-			bool clipping = (boosted < -5.f || boosted > 5.f);
-			float clipped = clamp(boosted, -5.f, 5.f);
-			float out = clipped * volumeAmount;
-			outputs[RIGHTOUT_OUTPUT].setVoltage(out);
+	const float preVolumeGain = gainParam * gainMultiplier;
 
-			float brightness = clamp(fabs(out) / 5.f, 0.f, 1.f);
-			lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clipping ? brightness : 0.f, args.sampleTime);
-			lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clipping ? 0.f : brightness, args.sampleTime);
+	const bool leftConnected = inputs[LEFTIN_INPUT].isConnected();
+	const bool rightConnected = inputs[RIGHTIN_INPUT].isConnected();
+
+	float outL = 0.f;
+	float outR = 0.f;
+	bool clippingR = false;
+
+	if (leftConnected) {
+		const float inL = inputs[LEFTIN_INPUT].getVoltage();
+		const float boostedL = inL * preVolumeGain;
+		const float clippedL = clamp(boostedL, -5.f, 5.f);
+		outL = clippedL * volume;
+		outputs[LEFTOUT_OUTPUT].setVoltage(outL);
+
+		if (!rightConnected) {
+			const float boostedR = inL * preVolumeGain;
+			clippingR = (boostedR < -5.f || boostedR > 5.f);
+			const float clippedR = clamp(boostedR, -5.f, 5.f);
+			outR = clippedR * volume;
+			outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
 		}
-	}	
+	} else {
+		outputs[LEFTOUT_OUTPUT].setVoltage(0.f);
+		if (!rightConnected) {
+			outputs[RIGHTOUT_OUTPUT].setVoltage(0.f);
+		}
+	}
+
+	if (rightConnected) {
+		const float inR = inputs[RIGHTIN_INPUT].getVoltage();
+		const float boostedR = inR * preVolumeGain;
+		clippingR = (boostedR < -5.f || boostedR > 5.f);
+		const float clippedR = clamp(boostedR, -5.f, 5.f);
+		outR = clippedR * volume;
+		outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
+	}
+
+	// Update right output lights (only once per process)
+	const float brightnessR = clamp(fabsf(outR) * 0.2f, 0.f, 1.f);  // same as /5
+	lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clippingR ? brightnessR : 0.f, args.sampleTime);
+	lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clippingR ? 0.f : brightnessR, args.sampleTime);
+}
 };
 
 
