@@ -56,14 +56,14 @@ void process(const ProcessArgs& args) override {
 	// --- Ratio ---
 	float ratio = params[RATIO_PARAM].getValue();
 	if (inputs[RATIOCVIN_INPUT].isConnected())
-		ratio += inputs[RATIOCVIN_INPUT].getVoltage() * 0.2f; // == /5
+	ratio += inputs[RATIOCVIN_INPUT].getVoltage() * 0.2f; // == /5
 	ratio = clamp(ratio, 0.f, 1.f);
 	const float modFreq = carrierFreq * (0.1f + 7.9f * ratio);
 
 	// --- FM Amount ---
 	float fmAmt = params[FMAMT_PARAM].getValue();
 	if (inputs[FMAMTCVIN_INPUT].isConnected())
-		fmAmt += inputs[FMAMTCVIN_INPUT].getVoltage() * 0.2f;
+	fmAmt += inputs[FMAMTCVIN_INPUT].getVoltage() * 0.2f;
 	const float fmAmount = clamp(fmAmt, 0.f, 1.f) * 5000.f;
 
 	// --- Gate & Envelope ---

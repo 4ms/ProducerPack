@@ -38,53 +38,44 @@ struct StereoCrossfader : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-		float mixKnob = clamp(params[MIX_PARAM].getValue(), 0.f, 1.f);
-		float shape = clamp(params[SHAPE_PARAM].getValue(), 0.f, 1.f);
-	
-		float k = 9.f * shape + 1.f;
-	
-		auto logCurve = [&](float x) {
-			float epsilon = 1e-6f;
-			float denom = logf(k + epsilon);
-			return logf(1.f + (k - 1.f) * x) / denom;
-		};
-	
-		float curvedMix;
-	
-		if (mixKnob < 0.5f) {
-			float x = mixKnob / 0.5f;
-			float linearY = x;
-			float logY = logCurve(x);
-			float y = linearY * (1.f - shape) + logY * shape;
-			curvedMix = 0.5f * y;
-		} else {
-			float x = (mixKnob - 0.5f) / 0.5f;
-			float linearY = x;
-			float logY = logCurve(x);
-			float y = linearY * (1.f - shape) + logY * shape;
-			curvedMix = 0.5f + 0.5f * y;
-		}
-	
-		curvedMix = clamp(curvedMix, 0.f, 1.f);
-	
-		float offset = rescale(curvedMix, 0.f, 1.f, -5.f, 5.f);
-		float cv = clamp(inputs[MIXCV_INPUT].getVoltage(), -5.f, 5.f);
-		float total = clamp(offset + cv, -5.f, 5.f);
-		float mix = rescale(total, -5.f, 5.f, 0.f, 1.f);
-		mix = clamp(mix, 0.f, 1.f);
-	
-		float gainA = cosf(mix * 0.5f * M_PI);
-		float gainB = cosf((1.f - mix) * 0.5f * M_PI);
-	
-		float aL = inputs[INAL_INPUT].getVoltage();
-		float aR = inputs[INAR_INPUT].isConnected() ? inputs[INAR_INPUT].getVoltage() : aL;
-	
-		float bL = inputs[INBL_INPUT].getVoltage();
-		float bR = inputs[INBR_INPUT].isConnected() ? inputs[INBR_INPUT].getVoltage() : bL;
-	
-		outputs[OUTL_OUTPUT].setVoltage(gainA * aL + gainB * bL);
-		outputs[OUTR_OUTPUT].setVoltage(gainA * aR + gainB * bR);
-	}	
+	// --- Mix Param + CV ---
+	float mixParam = clamp(params[MIX_PARAM].getValue(), 0.f, 1.f);
+	float cv = inputs[MIXCV_INPUT].getVoltage();
+	float offset = rescale(mixParam, 0.f, 1.f, -5.f, 5.f);
+	float mix = clamp(rescale(clamp(offset + cv, -5.f, 5.f), -5.f, 5.f, 0.f, 1.f), 0.f, 1.f);
+
+	// --- Shape ---
+	float shape = clamp(params[SHAPE_PARAM].getValue(), 0.f, 1.f);
+	float k = 9.f * shape + 1.f;
+	float denom = std::log(k + 1e-6f);
+
+	// --- Curved mix (log interpolation) ---
+	float x = mix;
+	if (x < 0.5f) {
+		x *= 2.f;
+		float y = x * (1.f - shape) + std::log(1.f + (k - 1.f) * x) / denom * shape;
+		mix = 0.5f * y;
+	} else {
+		x = 2.f * (x - 0.5f);
+		float y = x * (1.f - shape) + std::log(1.f + (k - 1.f) * x) / denom * shape;
+		mix = 0.5f + 0.5f * y;
+	}
+
+	// --- Equal-power gain calculation using a fast approximation of cosine
+	// cos(pi * x / 2) ≈ sin((1 - x) * pi/2)
+	float gainA = std::sin((1.f - mix) * 0.5f * M_PI);
+	float gainB = std::sin(mix * 0.5f * M_PI);
+
+	// --- Inputs ---
+	float aL = inputs[INAL_INPUT].getVoltage();
+	float aR = inputs[INAR_INPUT].isConnected() ? inputs[INAR_INPUT].getVoltage() : aL;
+	float bL = inputs[INBL_INPUT].getVoltage();
+	float bR = inputs[INBR_INPUT].isConnected() ? inputs[INBR_INPUT].getVoltage() : bL;
+
+	// --- Outputs ---
+	outputs[OUTL_OUTPUT].setVoltage(gainA * aL + gainB * bL);
+	outputs[OUTR_OUTPUT].setVoltage(gainA * aR + gainB * bR);
+}
 };
 
 struct StereoCrossfaderWidget : ModuleWidget {
