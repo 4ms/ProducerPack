@@ -38,45 +38,52 @@ struct Decay : Module {
 	float envelope = 0.0f;
 
 	void process(const ProcessArgs& args) override {
-		const float sampleRate = args.sampleRate;
-	
-		float maxDecayMs = 200.0f;
-		switch ((int)params[RANGE_PARAM].getValue()) {
-			case 0: maxDecayMs = 30.0f; break;
-			case 1: maxDecayMs = 200.0f; break;
-			case 2: maxDecayMs = 5000.0f; break;
-		}
-	
-		float trig = inputs[TRIGIN_INPUT].getVoltage();
-		float decayParam = params[DECAY_PARAM].getValue();
-		float decayCV = inputs[DECAYCVIN_INPUT].isConnected() ? inputs[DECAYCVIN_INPUT].getVoltage() / 5.0f : 0.0f;
-		float decayControl = clamp(decayParam + decayCV, 0.0f, 1.0f);
-	
-		float decayTimeSec = (decayControl * maxDecayMs) / 1000.0f;
-		if (decayTimeSec < 0.001f) decayTimeSec = 0.001f;
-	
-		bool trigRising = (trig >= 1.0f) && (lastTrig < 1.0f);
-		lastTrig = trig;
-	
-		float decayCoeff = expf(-1.0f / (decayTimeSec * sampleRate));
-	
-		if (trigRising) {
-			envelope = 5.0f;
-		} else {
-			envelope *= decayCoeff;
-			if (envelope < 0.001f) envelope = 0.0f;
-		}
-	
-		outputs[DECAYOUT_OUTPUT].setVoltage(envelope);
-	
-		float audioIn = inputs[AUDIOIN_INPUT].getVoltage();
-		float audioOut = audioIn * (envelope / 5.0f);
-		audioOut = clamp(audioOut, -5.0f, 5.0f);
-	
-		outputs[AUDIOOUT_OUTPUT].setVoltage(audioOut);
-	
-		lights[LED_LIGHT].setBrightnessSmooth(envelope, args.sampleTime);
+
+	// Determine maxDecayMs only when the range param changes
+	float maxDecayMs = 200.f;
+	switch ((int)params[RANGE_PARAM].getValue()) {
+		case 0: maxDecayMs = 30.f; break;
+		case 1: maxDecayMs = 200.f; break;
+		case 2: maxDecayMs = 5000.f; break;
 	}
+
+	// Cache input voltages and parameter values
+	const float trig = inputs[TRIGIN_INPUT].getVoltage();
+	const float decayParam = params[DECAY_PARAM].getValue();
+	const float decayCV = inputs[DECAYCVIN_INPUT].isConnected() ? inputs[DECAYCVIN_INPUT].getVoltage() * 0.2f : 0.f; // /5.0f
+	const float decayControl = clamp(decayParam + decayCV, 0.f, 1.f);
+	
+	// Avoid recalculating if decayControl is 0 (envelope decays immediately)
+	float decayTimeSec = decayControl * maxDecayMs * 0.001f;
+	if (decayTimeSec < 0.001f)
+		decayTimeSec = 0.001f;
+
+	// Calculate the decay coefficient only once
+	const float decayCoeff = std::exp(-1.f / (decayTimeSec * args.sampleRate));
+
+	// Detect rising edge trigger
+	const bool trigRising = (trig >= 1.f && lastTrig < 1.f);
+	lastTrig = trig;
+
+	// Envelope logic
+	if (trigRising) {
+		envelope = 5.f;
+	} else {
+		envelope *= decayCoeff;
+		if (envelope < 0.001f)
+			envelope = 0.f;
+	}
+
+	outputs[DECAYOUT_OUTPUT].setVoltage(envelope);
+
+	// Audio output with envelope applied
+	const float audioIn = inputs[AUDIOIN_INPUT].getVoltage();
+	float audioOut = audioIn * (envelope * 0.2f); // /5.0f
+	outputs[AUDIOOUT_OUTPUT].setVoltage(clamp(audioOut, -5.f, 5.f));
+
+	// LED update
+	lights[LED_LIGHT].setBrightnessSmooth(envelope, args.sampleTime);
+}
 };	
 
 struct DecayWidget : ModuleWidget {
