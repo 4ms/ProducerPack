@@ -89,111 +89,96 @@ struct Spatializer : Module {
 		}
 	
 		void process(const ProcessArgs& args) override {
-			float inL = inputs[INL_INPUT].getVoltage();
-			float inR = inputs[INR_INPUT].isConnected() ? inputs[INR_INPUT].getVoltage() : inL;
-		
-			// Get the current time parameter value and adjust based on CV input if connected
-			float targetTime = clamp(params[TIME_PARAM].getValue() + (inputs[TIMECV_INPUT].isConnected() ? inputs[TIMECV_INPUT].getVoltage() / 10.f : 0.f), 0.f, 1.f);
-			slewedTime += (targetTime - slewedTime) * clamp(timeSlewRate, 0.f, 1.f);
-		
-			// Range Switch: check if we're in milliseconds or samples mode
-			bool isMillisecondsMode = params[RANGE_PARAM].getValue() < 0.5f; // < 0.5 means milliseconds
-			float time = slewedTime;
-		
-			int delaySamples = 0;
-			if (isMillisecondsMode) {
-				// Milliseconds Mode: map time to 1ms to 30ms
-				float timeMs = rescale(time, 0.f, 1.f, 1.f, 30.f);
-				delaySamples = clamp((int)(timeMs * args.sampleRate * 0.001f), 1, maxDelaySamples - 1);
-			} else {
-				// Samples Mode: map time to 1 to 50 samples
-				delaySamples = clamp((int)(rescale(time, 0.f, 1.f, 1.f, 50.f)), 1, maxDelaySamples - 1);
-			}
-		
-			// Width and Pan Calculation
-			float width = clamp(params[WIDTH_PARAM].getValue() + (inputs[WIDTHCV_INPUT].isConnected() ? inputs[WIDTHCV_INPUT].getVoltage() / 10.f : 0.f), 0.f, 1.f);
-			bool isStereo = inputs[INR_INPUT].isConnected();
-			
-			// Mid/Side Mix Calculation
-			float mix = clamp(params[MIDSIDE_PARAM].getValue() + (inputs[MIDSIDECV_INPUT].isConnected() ? inputs[MIDSIDECV_INPUT].getVoltage() / 10.f : 0.f), 0.f, 1.f);
-			
-			// Delay Line Write
-			delayBufferL[delayIndex] = inL;
-			delayBufferR[delayIndex] = isStereo ? inR : inL;
-			
-			// Read Delayed Samples
-			int readIndex = delayIndex - delaySamples;
-			if (readIndex < 0) readIndex += maxDelaySamples;
-			float delayedL = delayBufferL[readIndex];
-			float delayedR = -delayBufferR[readIndex];
-			delayIndex = (delayIndex + 1) % maxDelaySamples;
-			
-			// Wet Signal Panning
-			float wetL = 0.f;
-			float wetR = 0.f;
-		
-			if (isStereo) {
-				// Stereo mode: same as before
-				float panWidth = (width <= 0.5f) ? (width / 0.5f) : 1.f;
-				wetL = delayedL * (0.5f * (1.f - panWidth) + panWidth) + delayedR * 0.5f * (1.f - panWidth);
-				wetR = delayedR * (0.5f * (1.f - panWidth) + panWidth) + delayedL * 0.5f * (1.f - panWidth);
-			} else {
-				// Mono: Apply width to spatialize L and R delay lines
-				float centerAmt = 1.f - width;
-				float sideAmt = width;
-		
-				// DelayL → more L as width increases
-				// DelayR → more R as width increases
-				wetL = delayedL * (0.5f * centerAmt + sideAmt);
-				wetR = delayedR * (0.5f * centerAmt + sideAmt);
-			}
-		
-			// --- Send Outputs ---
-			if (isStereo) {
-				// Stereo Mode
-				outputs[SENDL_OUTPUT].setVoltage(wetL);
-				outputs[SENDR_OUTPUT].setVoltage(wetR);
-				outputs[SENDM_OUTPUT].setVoltage((inL + inR) * 0.5f);  // Dry sum, halved
-			}
-			else {
-				// Mono Mode
-				outputs[SENDL_OUTPUT].setVoltage(wetL);
-				outputs[SENDR_OUTPUT].setVoltage(wetR);
-				outputs[SENDM_OUTPUT].setVoltage(inL);
-			}
-		
-			// Mid Signal Calculation
-			float dryM = inL + inR;
-			dryM *= 0.33f;
-			float wetM = wetL + wetR;
-			float midSignal = crossfade(dryM, wetM, mix);
-		
-			// Return Signals
-			float returnL = inputs[RETURNL_INPUT].isConnected() ? inputs[RETURNL_INPUT].getVoltage() : wetL;
-			float returnR = inputs[RETURNR_INPUT].isConnected() ? inputs[RETURNR_INPUT].getVoltage() : wetR;
-			float returnM = inputs[RETURNM_INPUT].isConnected() ? inputs[RETURNM_INPUT].getVoltage() : (isStereo ? (returnL + returnR) * 0.5f : inL);
-			midSignal = inputs[RETURNM_INPUT].isConnected() ? returnM : midSignal;
-		
-			// Final Output Mixing
-			float wetLFinal = inputs[RETURNL_INPUT].isConnected() ? returnL : wetL;
-			float wetRFinal = inputs[RETURNR_INPUT].isConnected() ? returnR : wetR;
-			float outL = crossfade(midSignal, wetLFinal, mix);
-			float outR = crossfade(midSignal, wetRFinal, mix);
-			outputs[OUTL_OUTPUT].setVoltage(outL);
-			outputs[OUTR_OUTPUT].setVoltage(outR);
-		
-			// LED Signal Display
-			float attenuator = 1.f / 5.f;
-			float leftSignal = fabs(returnL) * attenuator;
-			float rightSignal = fabs(returnR) * attenuator;
-			float midSignalLevel = fabs(midSignal) * attenuator;
-			float midLedBrightness = (1.f - mix) * 1.0f;
-			lights[LEDM_LIGHT].setBrightnessSmooth((midSignalLevel * midLedBrightness) * 2.f, args.sampleTime);
-		
-			float sideLedBrightness = mix;
-			lights[LEDL_LIGHT].setBrightnessSmooth((leftSignal * sideLedBrightness) * 2.f, args.sampleTime);
-			lights[LEDR_LIGHT].setBrightnessSmooth((rightSignal * sideLedBrightness) * 2.f, args.sampleTime);
-		}		
+	const float sampleRate = args.sampleRate;
+
+	// Inputs
+	const float inL = inputs[INL_INPUT].getVoltage();
+	const bool stereoIn = inputs[INR_INPUT].isConnected();
+	const float inR = stereoIn ? inputs[INR_INPUT].getVoltage() : inL;
+
+	// Params & CVs
+	const float timeCV = inputs[TIMECV_INPUT].getVoltage() * 0.1f; // /10
+	const float targetTime = clamp(params[TIME_PARAM].getValue() + timeCV, 0.f, 1.f);
+	slewedTime += (targetTime - slewedTime) * timeSlewRate;
+
+	const bool useMilliseconds = params[RANGE_PARAM].getValue() < 0.5f;
+	int delaySamples = useMilliseconds ?
+		clamp((int)(rescale(slewedTime, 0.f, 1.f, 1.f, 30.f) * sampleRate * 0.001f), 1, maxDelaySamples - 1) :
+		clamp((int)(rescale(slewedTime, 0.f, 1.f, 1.f, 50.f)), 1, maxDelaySamples - 1);
+
+	const float widthCV = inputs[WIDTHCV_INPUT].getVoltage() * 0.1f;
+	const float width = clamp(params[WIDTH_PARAM].getValue() + widthCV, 0.f, 1.f);
+
+	const float mixCV = inputs[MIDSIDECV_INPUT].getVoltage() * 0.1f;
+	const float mix = clamp(params[MIDSIDE_PARAM].getValue() + mixCV, 0.f, 1.f);
+
+	// Delay
+	delayBufferL[delayIndex] = inL;
+	delayBufferR[delayIndex] = stereoIn ? inR : inL;
+
+	int readIndex = delayIndex - delaySamples;
+	if (readIndex < 0) readIndex += maxDelaySamples;
+	delayIndex = (delayIndex + 1) % maxDelaySamples;
+
+	const float delayedL = delayBufferL[readIndex];
+	const float delayedR = -delayBufferR[readIndex];
+
+	// Spatial panning
+	float wetL, wetR;
+	if (stereoIn) {
+		const float panWidth = (width <= 0.5f) ? (width * 2.f) : 1.f;
+		const float center = 0.5f * (1.f - panWidth);
+		wetL = delayedL * (center + panWidth) + delayedR * center;
+		wetR = delayedR * (center + panWidth) + delayedL * center;
+	} else {
+		const float centerAmt = 1.f - width;
+		const float sideAmt = width;
+		const float blend = 0.5f * centerAmt + sideAmt;
+		wetL = delayedL * blend;
+		wetR = delayedR * blend;
+	}
+
+	// --- Sends ---
+	const float dryMid = stereoIn ? (inL + inR) * 0.5f : inL;
+	outputs[SENDL_OUTPUT].setVoltage(wetL);
+	outputs[SENDR_OUTPUT].setVoltage(wetR);
+	outputs[SENDM_OUTPUT].setVoltage(dryMid);
+
+	// --- Mid signal ---
+	float midSignal = crossfade(dryMid * 0.66f, wetL + wetR, mix); // Scale dry for balance
+
+	// --- Returns ---
+	const bool retLConnected = inputs[RETURNL_INPUT].isConnected();
+	const bool retRConnected = inputs[RETURNR_INPUT].isConnected();
+	const bool retMConnected = inputs[RETURNM_INPUT].isConnected();
+
+	const float returnL = retLConnected ? inputs[RETURNL_INPUT].getVoltage() : wetL;
+	const float returnR = retRConnected ? inputs[RETURNR_INPUT].getVoltage() : wetR;
+
+	const float defaultMid = stereoIn ? (returnL + returnR) * 0.5f : inL;
+	const float returnM = retMConnected ? inputs[RETURNM_INPUT].getVoltage() : defaultMid;
+
+	midSignal = retMConnected ? returnM : midSignal;
+
+	// --- Output mix ---
+	const float outL = crossfade(midSignal, returnL, mix);
+	const float outR = crossfade(midSignal, returnR, mix);
+	outputs[OUTL_OUTPUT].setVoltage(outL);
+	outputs[OUTR_OUTPUT].setVoltage(outR);
+
+	// --- LED metering ---
+	const float ledScale = 0.2f; // == 1/5
+	const float leftSignal = fabsf(returnL) * ledScale;
+	const float rightSignal = fabsf(returnR) * ledScale;
+	const float midSignalLevel = fabsf(midSignal) * ledScale;
+
+	const float midLedBrightness = (1.f - mix) * 2.f;
+	const float sideLedBrightness = mix * 2.f;
+
+	lights[LEDM_LIGHT].setBrightnessSmooth(midSignalLevel * midLedBrightness, args.sampleTime);
+	lights[LEDL_LIGHT].setBrightnessSmooth(leftSignal * sideLedBrightness, args.sampleTime);
+	lights[LEDR_LIGHT].setBrightnessSmooth(rightSignal * sideLedBrightness, args.sampleTime);
+}	
 };
 
 struct SpatializerWidget : ModuleWidget {
