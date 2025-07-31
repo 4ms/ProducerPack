@@ -99,41 +99,47 @@ struct DrumBus : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-		float leftMix = 0.f;
-		float rightMix = 0.f;
-	
-		for (int ch = 0; ch < 8; ++ch) {
-			int volParam = CH1VOL_PARAM + ch * 3;
-			int panParam = CH1PAN_PARAM + ch * 3;
-			int muteParam = CH1MUTE_PARAM + ch * 3;
-			int inputId = CH1IN_INPUT + ch;
-	
-			if (!inputs[inputId].isConnected()) continue;
-			if (params[muteParam].getValue() > 0.5f) continue; // muted
-	
-			float in = inputs[inputId].getVoltage();
-			float vol = params[volParam].getValue();
-			float pan = params[panParam].getValue() / 100.f; // -0.5 to 0.5
-	
-			// Simple constant power pan law
-			float leftGain = cosf((0.5f + pan) * M_PI_2);
-			float rightGain = sinf((0.5f + pan) * M_PI_2);
-	
-			leftMix += in * vol * leftGain;
-			rightMix += in * vol * rightGain;
-		}
-	
-		float masterVol = params[MASTERVOL_PARAM].getValue();
-		leftMix *= masterVol;
-		rightMix *= masterVol;
-	
-		// Clamp to ±10V
-		leftMix = clamp(leftMix, -10.f, 10.f);
-		rightMix = clamp(rightMix, -10.f, 10.f);
-	
-		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(leftMix);
-		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(rightMix);
-	}	
+	float leftMix = 0.f;
+	float rightMix = 0.f;
+
+	const float masterVol = params[MASTERVOL_PARAM].getValue();
+	if (masterVol <= 0.f) {
+		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(0.f);
+		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(0.f);
+		return;
+	}
+
+	for (int ch = 0; ch < 8; ++ch) {
+		const int baseParam = CH1VOL_PARAM + ch * 3;
+		const int inputId = CH1IN_INPUT + ch;
+
+		if (!inputs[inputId].isConnected()) continue;
+
+		const float vol = params[baseParam].getValue();
+		if (vol <= 0.f) continue;
+
+		if (params[baseParam + 2].getValue() > 0.5f) continue; // muted
+
+		const float in = inputs[inputId].getVoltage();
+		const float panNorm = params[baseParam + 1].getValue() * 0.01f + 0.5f;  // -50 to 50 -> 0 to 1
+
+		// Precompute pan law (constant power)
+		float panAngle = panNorm * (float)M_PI_2;
+		float leftGain = cosf(panAngle);
+		float rightGain = sinf(panAngle);
+
+		const float scaledIn = in * vol;
+		leftMix += scaledIn * leftGain;
+		rightMix += scaledIn * rightGain;
+	}
+
+	// Apply master volume
+	leftMix *= masterVol;
+	rightMix *= masterVol;
+
+	outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(leftMix, -10.f, 10.f));
+	outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(rightMix, -10.f, 10.f));
+}
 };
 
 struct DrumBusWidget : ModuleWidget {
