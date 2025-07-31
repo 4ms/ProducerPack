@@ -94,69 +94,94 @@ struct DJFilter : Module {
 	SVF svfL[4], svfR[4];
 
 	void process(const ProcessArgs& args) override {
-		float inL = inputs[INL_INPUT].getVoltage();
-		float inR = inputs[INR_INPUT].isConnected() ? inputs[INR_INPUT].getVoltage() : inL;
+	const float sampleRate = args.sampleRate;
 
-		float morph = clamp(params[CUTOFF_PARAM].getValue() + (inputs[CUTOFFCV_INPUT].getVoltage() / 10.f), 0.f, 1.f);
-		float resonanceParam = clamp(params[RESONANCE_PARAM].getValue() + (inputs[RESONANCECV_INPUT].getVoltage() / 10.f), 0.f, 1.f);
-		int stages = (int)params[SLOPE_PARAM].getValue();
+	// Cache inputs
+	float inL = inputs[INL_INPUT].getVoltage();
+	float inR = inputs[INR_INPUT].isConnected() ? inputs[INR_INPUT].getVoltage() : inL;
 
-		float cutoffHz;
-		if (morph < 0.5f) {
-			float t = morph / 0.5f;
-			cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(20.f), std::log2(7000.f)));
-		} else {
-			float t = (morph - 0.5f) / 0.5f;
-			cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(300.f), std::log2(7000.f)));
-		}
+	// Parameters + CV (cutoff and resonance)
+	float cutoffVal = params[CUTOFF_PARAM].getValue();
+	float cutoffCV = inputs[CUTOFFCV_INPUT].isConnected() ? inputs[CUTOFFCV_INPUT].getVoltage() * 0.1f : 0.f; // /10
+	float morph = clamp(cutoffVal + cutoffCV, 0.f, 1.f);
 
-		float q = rescale(resonanceParam, 0.f, 1.f, 0.707f, 3.f);
+	float resVal = params[RESONANCE_PARAM].getValue();
+	float resCV = inputs[RESONANCECV_INPUT].isConnected() ? inputs[RESONANCECV_INPUT].getVoltage() * 0.1f : 0.f;
+	float resonanceParam = clamp(resVal + resCV, 0.f, 1.f);
 
-		float dryL = inL;
-		float dryR = inR;
+	int stages = clamp((int)params[SLOPE_PARAM].getValue(), 1, 4);
 
-		for (int i = 0; i < stages; ++i) {
-			svfL[i].process(inL, cutoffHz, q, args.sampleRate);
-			svfR[i].process(inR, cutoffHz, q, args.sampleRate);
-			inL = svfL[i].low;
-			inR = svfR[i].low;
-		}
-
-		float lowL = inL;
-		float lowR = inR;
-		float highL = svfL[stages - 1].high;
-		float highR = svfR[stages - 1].high;
-
-		float lowMix = 0.f;
-		float dryMix = 0.f;
-		float highMix = 0.f;
-
-		const float dryStart = 0.45f;
-		const float dryEnd = 0.55f;
-		const float fadeWidth = 0.02f;
-
-		if (morph <= dryStart - fadeWidth) {
-			lowMix = 1.f;
-		} else if (morph < dryStart + fadeWidth) {
-			float t = (morph - (dryStart - fadeWidth)) / (2.f * fadeWidth);
-			lowMix = 1.f - t;
-			dryMix = t;
-		} else if (morph < dryEnd - fadeWidth) {
-			dryMix = 1.f;
-		} else if (morph < dryEnd + fadeWidth) {
-			float t = (morph - (dryEnd - fadeWidth)) / (2.f * fadeWidth);
-			dryMix = 1.f - t;
-			highMix = t;
-		} else {
-			highMix = 1.f;
-		}
-
-		float outL = lowL * lowMix + dryL * dryMix + highL * highMix;
-		float outR = lowR * lowMix + dryR * dryMix + highR * highMix;
-
-		outputs[OUT_L_OUTPUT].setVoltage(clamp(outL, -5.f, 5.f));
-		outputs[OUT_R_OUTPUT].setVoltage(clamp(outR, -5.f, 5.f));
+	// Cutoff frequency calculation (log scale)
+	float cutoffHz;
+	if (morph < 0.5f) {
+		float t = morph * 2.f;
+		cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(20.f), std::log2(7000.f)));
+	} else {
+		float t = (morph - 0.5f) * 2.f;
+		cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(300.f), std::log2(7000.f)));
 	}
+
+	float q = rescale(resonanceParam, 0.f, 1.f, 0.707f, 3.f);
+	float f = 2.f * sinf(M_PI * cutoffHz / sampleRate);
+	float damp = 1.f / q;
+
+	// Dry input saved for mix
+	float dryL = inL;
+	float dryR = inR;
+
+	// Apply cascaded SVFs
+	for (int i = 0; i < stages; ++i) {
+		DJFilter::SVF& svfL = this->svfL[i];
+		DJFilter::SVF& svfR = this->svfR[i];
+
+		// Left
+		svfL.high = inL - svfL.low - damp * svfL.band;
+		svfL.band += f * svfL.high;
+		svfL.low += f * svfL.band;
+		inL = svfL.low;
+
+		// Right
+		svfR.high = inR - svfR.low - damp * svfR.band;
+		svfR.band += f * svfR.high;
+		svfR.low += f * svfR.band;
+		inR = svfR.low;
+	}
+
+	// Mix logic
+	const float fadeWidth = 0.02f;
+	const float dryStart = 0.45f;
+	const float dryEnd = 0.55f;
+
+	float lowMix = 0.f;
+	float dryMix = 0.f;
+	float highMix = 0.f;
+
+	if (morph <= dryStart - fadeWidth) {
+		lowMix = 1.f;
+	} else if (morph < dryStart + fadeWidth) {
+		float t = (morph - (dryStart - fadeWidth)) / (2.f * fadeWidth);
+		lowMix = 1.f - t;
+		dryMix = t;
+	} else if (morph < dryEnd - fadeWidth) {
+		dryMix = 1.f;
+	} else if (morph < dryEnd + fadeWidth) {
+		float t = (morph - (dryEnd - fadeWidth)) / (2.f * fadeWidth);
+		dryMix = 1.f - t;
+		highMix = t;
+	} else {
+		highMix = 1.f;
+	}
+
+	// Output mixing
+	DJFilter::SVF& svfLOut = svfL[stages - 1];
+	DJFilter::SVF& svfROut = svfR[stages - 1];
+
+	float outL = svfLOut.low * lowMix + dryL * dryMix + svfLOut.high * highMix;
+	float outR = svfROut.low * lowMix + dryR * dryMix + svfROut.high * highMix;
+
+	outputs[OUT_L_OUTPUT].setVoltage(clamp(outL, -5.f, 5.f));
+	outputs[OUT_R_OUTPUT].setVoltage(clamp(outR, -5.f, 5.f));
+}
 };
 
 struct DJFilterWidget : ModuleWidget {
