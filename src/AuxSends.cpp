@@ -93,98 +93,96 @@ struct AuxSends : Module {
 		configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
 	}
 void process(const ProcessArgs& args) override {
-	// --- Helper to compute modulated amount from knob + CV ---
-	auto computeAmount = [](float knob, Input& cvInput) {
-		float cv = clamp(cvInput.getVoltage(), -5.f, 5.f) / 5.f; // -1..1
-		return clamp(knob + cv, 0.f, 1.f);
-	};
-
-	// --- Helper to select Pre (raw input) or Post (dry-level-scaled input) ---
-	auto selectPrePost = [](bool isPre, float raw, float post) {
-		return isPre ? raw : post;
-	};
-
-	// --- Raw input from jacks ---
+	// --- Read raw audio input ---
 	float rawInL = inputs[AUDIOLEFTIN_INPUT].getVoltage();
 	float rawInR = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : rawInL;
- 
-	// --- Dry level control ---
-	float dryLevel = computeAmount(params[DRYLEVEL_PARAM].getValue(), inputs[DRYLEVELCVIN_INPUT]);
+
+	// --- Dry level ---
+	float dryCV = clamp(inputs[DRYLEVELCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f;
+	float dryLevel = clamp(params[DRYLEVEL_PARAM].getValue() + dryCV, 0.f, 1.f);
 	float inL = rawInL * dryLevel;
 	float inR = rawInR * dryLevel;
 
-	// --- Output dry signal initialized to dry-level-scaled input ---
 	float outL = inL;
 	float outR = inR;
 
+	// --- Shared CV helpers (cached values) ---
+	auto computeCV = [](Input& in) {
+		return clamp(in.getVoltage(), -5.f, 5.f) / 5.f;
+	};
+
 	// === SEND A ===
-	bool preA = params[PREPOST1_PARAM].getValue() > 0.5f;
-	float sendAInL = selectPrePost(preA, rawInL, inL);
-	float sendAInR = selectPrePost(preA, rawInR, inR);
-	float sendA = computeAmount(params[ASEND_PARAM].getValue(), inputs[ASENDCVIN_INPUT]);
-	float sendAL = sendAInL * sendA;
-	float sendAR = sendAInR * sendA;
-	outputs[ASENDLEFTOUT_OUTPUT].setVoltage(sendAL);
-	outputs[ASENDRIGHTOUT_OUTPUT].setVoltage(sendAR);
-	lights[ASENDLED_LIGHT].setBrightnessSmooth(fabsf(sendAL + sendAR) * 0.1f, args.sampleTime);
+	if (outputs[ASENDLEFTOUT_OUTPUT].isConnected() || outputs[ASENDRIGHTOUT_OUTPUT].isConnected()) {
+		float sendCV = computeCV(inputs[ASENDCVIN_INPUT]);
+		float sendA = clamp(params[ASEND_PARAM].getValue() + sendCV, 0.f, 1.f);
+		bool pre = params[PREPOST1_PARAM].getValue() > 0.5f;
+		float sendL = (pre ? rawInL : inL) * sendA;
+		float sendR = (pre ? rawInR : inR) * sendA;
+		outputs[ASENDLEFTOUT_OUTPUT].setVoltage(sendL);
+		outputs[ASENDRIGHTOUT_OUTPUT].setVoltage(sendR);
+		lights[ASENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
+	}
 
 	// === RETURN A ===
-	float returnAL = inputs[ARETURNLEFTIN_INPUT].getVoltage();
-	float returnAR = inputs[ARETURNRIGHTIN_INPUT].isConnected() ? inputs[ARETURNRIGHTIN_INPUT].getVoltage() : returnAL;
-	float returnA = computeAmount(params[ARETURN_PARAM].getValue(), inputs[ARETURNCVIN_INPUT]);
-	returnAL *= returnA;
-	returnAR *= returnA;
-	outL += returnAL;
-	outR += returnAR;
-	lights[ARETURNLED_LIGHT].setBrightnessSmooth(fabsf(returnAL + returnAR) * 0.1f, args.sampleTime);
+	if (inputs[ARETURNLEFTIN_INPUT].isConnected()) {
+		float returnCV = computeCV(inputs[ARETURNCVIN_INPUT]);
+		float gain = clamp(params[ARETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
+		float returnL = inputs[ARETURNLEFTIN_INPUT].getVoltage() * gain;
+		float returnR = inputs[ARETURNRIGHTIN_INPUT].isConnected() ? inputs[ARETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
+		outL += returnL;
+		outR += returnR;
+		lights[ARETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
+	}
 
 	// === SEND B ===
-	bool preB = params[PREPOST2_PARAM].getValue() > 0.5f;
-	float sendBInL = selectPrePost(preB, rawInL, inL);
-	float sendBInR = selectPrePost(preB, rawInR, inR);
-	float sendB = computeAmount(params[BSEND_PARAM].getValue(), inputs[BSENDCVIN_INPUT]);
-	float sendBL = sendBInL * sendB;
-	float sendBR = sendBInR * sendB;
-	outputs[BSENDLEFTOUT_OUTPUT].setVoltage(sendBL);
-	outputs[BSENDRIGHTOUT_OUTPUT].setVoltage(sendBR);
-	lights[BSENDLED_LIGHT].setBrightnessSmooth(fabsf(sendBL + sendBR) * 0.1f, args.sampleTime);
+	if (outputs[BSENDLEFTOUT_OUTPUT].isConnected() || outputs[BSENDRIGHTOUT_OUTPUT].isConnected()) {
+		float sendCV = computeCV(inputs[BSENDCVIN_INPUT]);
+		float sendB = clamp(params[BSEND_PARAM].getValue() + sendCV, 0.f, 1.f);
+		bool pre = params[PREPOST2_PARAM].getValue() > 0.5f;
+		float sendL = (pre ? rawInL : inL) * sendB;
+		float sendR = (pre ? rawInR : inR) * sendB;
+		outputs[BSENDLEFTOUT_OUTPUT].setVoltage(sendL);
+		outputs[BSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
+		lights[BSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
+	}
 
 	// === RETURN B ===
-	float returnBL = inputs[BRETURNLEFTIN_INPUT].getVoltage();
-	float returnBR = inputs[BRETURNRIGHTIN_INPUT].isConnected() ? inputs[BRETURNRIGHTIN_INPUT].getVoltage() : returnBL;
-	float returnB = computeAmount(params[BRETURN_PARAM].getValue(), inputs[BRETURNCVIN_INPUT]);
-	returnBL *= returnB;
-	returnBR *= returnB;
-	outL += returnBL;
-	outR += returnBR;
-	lights[BRETURNLED_LIGHT].setBrightnessSmooth(fabsf(returnBL + returnBR) * 0.1f, args.sampleTime);
+	if (inputs[BRETURNLEFTIN_INPUT].isConnected()) {
+		float returnCV = computeCV(inputs[BRETURNCVIN_INPUT]);
+		float gain = clamp(params[BRETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
+		float returnL = inputs[BRETURNLEFTIN_INPUT].getVoltage() * gain;
+		float returnR = inputs[BRETURNRIGHTIN_INPUT].isConnected() ? inputs[BRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
+		outL += returnL;
+		outR += returnR;
+		lights[BRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
+	}
 
 	// === SEND C ===
-	bool preC = params[PREPOST3_PARAM].getValue() > 0.5f;
-	float sendCInL = selectPrePost(preC, rawInL, inL);
-	float sendCInR = selectPrePost(preC, rawInR, inR);
-	float sendC = computeAmount(params[CSEND_PARAM].getValue(), inputs[CSENDCVIN_INPUT]);
-	float sendCL = sendCInL * sendC;
-	float sendCR = sendCInR * sendC;
-	outputs[CSENDLEFTOUT_OUTPUT].setVoltage(sendCL);
-	outputs[CSENDRIGHTOUT_OUTPUT].setVoltage(sendCR);
-	lights[CSENDLED_LIGHT].setBrightnessSmooth(fabsf(sendCL + sendCR) * 0.1f, args.sampleTime);
+	if (outputs[CSENDLEFTOUT_OUTPUT].isConnected() || outputs[CSENDRIGHTOUT_OUTPUT].isConnected()) {
+		float sendCV = computeCV(inputs[CSENDCVIN_INPUT]);
+		float sendC = clamp(params[CSEND_PARAM].getValue() + sendCV, 0.f, 1.f);
+		bool pre = params[PREPOST3_PARAM].getValue() > 0.5f;
+		float sendL = (pre ? rawInL : inL) * sendC;
+		float sendR = (pre ? rawInR : inR) * sendC;
+		outputs[CSENDLEFTOUT_OUTPUT].setVoltage(sendL);
+		outputs[CSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
+		lights[CSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
+	}
 
 	// === RETURN C ===
-	float returnCL = inputs[CRETURNLEFTIN_INPUT].getVoltage();
-	float returnCR = inputs[CRETURNRIGHTIN_INPUT].isConnected() ? inputs[CRETURNRIGHTIN_INPUT].getVoltage() : returnCL;
-	float returnC = computeAmount(params[CRETURN_PARAM].getValue(), inputs[CRETURNCVIN_INPUT]);
-	returnCL *= returnC;
-	returnCR *= returnC;
-	outL += returnCL;
-	outR += returnCR;
-	lights[CRETURNLED_LIGHT].setBrightnessSmooth(fabsf(returnCL + returnCR) * 0.1f, args.sampleTime);
+	if (inputs[CRETURNLEFTIN_INPUT].isConnected()) {
+		float returnCV = computeCV(inputs[CRETURNCVIN_INPUT]);
+		float gain = clamp(params[CRETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
+		float returnL = inputs[CRETURNLEFTIN_INPUT].getVoltage() * gain;
+		float returnR = inputs[CRETURNRIGHTIN_INPUT].isConnected() ? inputs[CRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
+		outL += returnL;
+		outR += returnR;
+		lights[CRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
+	}
 
-	// --- Final output clamp ---
-	outL = clamp(outL, -10.f, 10.f);
-	outR = clamp(outR, -10.f, 10.f);
-	outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(outL);
-	outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(outR);
+	// Final output
+	outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f));
+	outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f));
 }
 };
 
