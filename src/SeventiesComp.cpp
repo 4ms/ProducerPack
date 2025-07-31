@@ -39,70 +39,62 @@ struct SeventiesComp : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-		float inL = inputs[AUDIO_L_INPUT].getVoltage();
-		float inR = inputs[AUDIO_R_INPUT].isConnected() ? inputs[AUDIO_R_INPUT].getVoltage() : inL;
-	
-		float peakReduction = params[PEAK_REDUCTION_PARAM].getValue();
-		float gainParam = params[GAIN_PARAM].getValue();
-		float dryWet = params[DRY_WET_PARAM].getValue();
-		bool isLimiter = params[RATIO_PARAM].getValue() > 0.5f;
-		bool bypass = params[BYPASS_PARAM].getValue() > 0.5f;
-	
-		float ratio = isLimiter ? 10.f : 3.f;
-		float inputMono = 0.5f * (inL + inR);
-	
-		static float env = 0.f;
-		float rectified = std::fabs(inputMono);
-	
-		float sampleRate = args.sampleRate;
-		const float attackTime = 0.01f;
-		const float releaseFast = 0.06f;
-		const float releaseSlow = 1.5f;
-	
-		float coeffAtk = std::exp(-1.f / (attackTime * sampleRate));
-		float coeffRelFast = std::exp(-1.f / (releaseFast * sampleRate));
-		float coeffRelSlow = std::exp(-1.f / (releaseSlow * sampleRate));
-	
-		if (rectified > env) {
-			env = coeffAtk * env + (1.f - coeffAtk) * rectified;
-		} else {
-			float relCoeff = (env > 0.1f) ? coeffRelFast : coeffRelSlow;
-			env = relCoeff * env + (1.f - relCoeff) * rectified;
-		}
-	
-		float threshold = 1.f - peakReduction;
-		float gainReduction = 1.f;
-		if (env > threshold) {
-			float over = env - threshold;
-			gainReduction = 1.f / (1.f + over * (ratio - 1.f));
-		}
-	
-		float compressedL = inL * gainReduction;
-		float compressedR = inR * gainReduction;
-	
-		float gainDb = gainParam * 40.f;
-		float gain = std::pow(10.f, gainDb / 20.f);
-		compressedL *= gain;
-		compressedR *= gain;
-	
-		float outL = inL * (1.f - dryWet) + compressedL * dryWet;
-		float outR = inR * (1.f - dryWet) + compressedR * dryWet;
-	
-		if (bypass) {
-			outL = inL;
-			outR = inR;
-		}
-	
-		outL = clamp(outL, -5.f, 5.f);
-		outR = clamp(outR, -5.f, 5.f);
-	
-		outputs[AUDIO_L_OUTPUT].setVoltage(outL);
-		outputs[AUDIO_R_OUTPUT].setVoltage(outR);
-	
-		float clipThreshold = 4.9f;
-		bool clipping = !bypass && (std::fabs(outL) >= clipThreshold || std::fabs(outR) >= clipThreshold);
-		lights[CLIPLED_LIGHT].setBrightnessSmooth(clipping ? 1.f : 0.f, args.sampleTime);		
-	}	
+	float inL = inputs[AUDIO_L_INPUT].getVoltage();
+	float inR = inputs[AUDIO_R_INPUT].isConnected() ? inputs[AUDIO_R_INPUT].getVoltage() : inL;
+
+	const float peakReduction = params[PEAK_REDUCTION_PARAM].getValue();
+	const float gainParam = params[GAIN_PARAM].getValue();
+	const float dryWet = params[DRY_WET_PARAM].getValue();
+	const bool isLimiter = params[RATIO_PARAM].getValue() > 0.5f;
+	const bool bypass = params[BYPASS_PARAM].getValue() > 0.5f;
+
+	if (bypass) {
+		// Early exit for bypass
+		outputs[AUDIO_L_OUTPUT].setVoltage(clamp(inL, -5.f, 5.f));
+		outputs[AUDIO_R_OUTPUT].setVoltage(clamp(inR, -5.f, 5.f));
+		lights[CLIPLED_LIGHT].setBrightnessSmooth((std::fabs(inL) >= 4.9f || std::fabs(inR) >= 4.9f) ? 1.f : 0.f, args.sampleTime);
+		return;
+	}
+
+	const float ratio = isLimiter ? 10.f : 3.f;
+	const float inputMono = 0.5f * (inL + inR);
+
+	// Envelope follower
+	static float env = 0.f;
+	const float rectified = std::fabs(inputMono);
+
+	// Pre-compute smoothing coefficients once per call
+	const float sampleRate = args.sampleRate;
+	const float coeffAtk = std::exp(-1.f / (0.01f * sampleRate));
+	const float coeffRelFast = std::exp(-1.f / (0.06f * sampleRate));
+	const float coeffRelSlow = std::exp(-1.f / (1.5f * sampleRate));
+
+	const float releaseCoeff = (env > 0.1f) ? coeffRelFast : coeffRelSlow;
+	env = (rectified > env)
+		? coeffAtk * env + (1.f - coeffAtk) * rectified
+		: releaseCoeff * env + (1.f - releaseCoeff) * rectified;
+
+	// Compression gain calculation
+	const float threshold = 1.f - peakReduction;
+	float gainReduction = 1.f;
+	if (env > threshold) {
+		const float over = env - threshold;
+		gainReduction = 1.f / (1.f + over * (ratio - 1.f));
+	}
+
+	// Apply compression and gain
+	const float gain = std::pow(10.f, gainParam * 2.f);  // db = 0–40, divide by 20 inline
+	float outL = inL * (1.f - dryWet) + inL * gainReduction * gain * dryWet;
+	float outR = inR * (1.f - dryWet) + inR * gainReduction * gain * dryWet;
+
+	outL = clamp(outL, -5.f, 5.f);
+	outR = clamp(outR, -5.f, 5.f);
+	outputs[AUDIO_L_OUTPUT].setVoltage(outL);
+	outputs[AUDIO_R_OUTPUT].setVoltage(outR);
+
+	const bool clipping = (std::fabs(outL) >= 4.9f || std::fabs(outR) >= 4.9f);
+	lights[CLIPLED_LIGHT].setBrightnessSmooth(clipping ? 1.f : 0.f, args.sampleTime);
+}
 };	
 
 
