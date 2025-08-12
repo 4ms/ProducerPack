@@ -90,6 +90,12 @@
       "name": "DrumBus",
       "description": "8 channel mono to stereo mixer with mute per channel",
       "tags": ["Stereo", "Mixer", "Drum", "Utility"]
+    },
+    {
+      "slug": "Octopush",
+      "name": "Octopush",
+      "description": "8 button macro controller",
+      "tags": ["Utility", "Controller"]
     }
   ]
 }
