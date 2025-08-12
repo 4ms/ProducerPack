@@ -1,6 +1,5 @@
 #include "plugin.hpp"
 
-
 struct Octopush : Module {
 	enum ParamId {
 		CH1RANGE_PARAM,
@@ -146,10 +145,11 @@ struct Octopush : Module {
 			sumVoltages += voltageOut;
 		}
 
-		outputs[SUMOUT_OUTPUT].setVoltage(sumVoltages);
-		outputs[INVERSEOUT_OUTPUT].setVoltage(sumVoltages != 0.f ? 1.f / sumVoltages : 0.f);
-		outputs[POSITIVEOUT_OUTPUT].setVoltage(sumVoltages > 0.f ? sumVoltages : 0.f);
-		outputs[NEGATIVEOUT_OUTPUT].setVoltage(sumVoltages < 0.f ? sumVoltages : 0.f);
+		outputs[SUMOUT_OUTPUT].setVoltage(clamp(sumVoltages, -5.f, 5.f));
+		outputs[INVERSEOUT_OUTPUT].setVoltage(sumVoltages != 0.f ? clamp(1.f / sumVoltages, -5.f, 5.f) : 0.f);
+		outputs[POSITIVEOUT_OUTPUT].setVoltage(sumVoltages > 0.f ? clamp(sumVoltages, 0.f, 5.f) : 0.f);
+		outputs[NEGATIVEOUT_OUTPUT].setVoltage(sumVoltages < 0.f ? clamp(sumVoltages, -5.f, 0.f) : 0.f);
+		
 	}
 private:
 	bool prevButtonState[8] = {};
