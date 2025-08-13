@@ -78,8 +78,8 @@ struct Octopush : Module {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
 		for (int i = 0; i < 8; i++) {
-			configSwitch(CH1RANGE_PARAM + i, 0.f, 2.f, 0.f, "Ch. " + std::to_string(i+1) + " Range", {"0-1v", "0-5v", "-5v/+5v"});
-			configParam(CH1OFFSET_PARAM + i, 0.f, 1.f, 0.f, "Ch. " + std::to_string(i+1) + " Offset", "%", 0.f, 100.f);
+			configSwitch(CH1RANGE_PARAM + i, 0.f, 2.f, 2.f, "Ch. " + std::to_string(i+1) + " Range", {"0-1v", "0-5v", "-5v/+5v"});
+			configParam(CH1OFFSET_PARAM + i, 0.f, 1.f, 1.0f, "Ch. " + std::to_string(i+1) + " Offset", "%", 0.f, 100.f);
 			configSwitch(CH1BEHAVIOR_PARAM + i, 0.f, 2.f, 0.f, "Ch. " + std::to_string(i+1) + " Behavior", {"Gate", "Toggle", "Trig"});
 			configSwitch(CH1PUSH_PARAM + i, 0.f, 1.f, 0.f, "Ch. " + std::to_string(i+1), {"0", "1"});
 			configOutput(CH1VOLTAGEOUT_OUTPUT + i, "Ch. " + std::to_string(i+1) + " Voltage");
