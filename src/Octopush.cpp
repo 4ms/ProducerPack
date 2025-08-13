@@ -76,8 +76,6 @@ struct Octopush : Module {
 
 	Octopush() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		static constexpr float rangeScale[3] = {1.f, 5.f, 10.f};
-		static constexpr float rangeBias[3] = {0.f, 0.f, -5.f};
 
 		for (int i = 0; i < 8; i++) {
 			configSwitch(CH1RANGE_PARAM + i, 0.f, 2.f, 0.f, "Ch. " + std::to_string(i+1) + " Range", {"0-1v", "0-5v", "-5v/+5v"});
