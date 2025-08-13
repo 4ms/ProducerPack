@@ -18,6 +18,7 @@ struct SoloPush : Module {
 		OUTPUTS_LEN
 	};
 	enum LightId {
+		CH1_LIGHT, 
 		LIGHTS_LEN
 	};
 
@@ -41,15 +42,14 @@ struct SoloPushWidget : ModuleWidget {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/SoloPush_info.svg")));
 
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.16, 55.629)), module, SoloPush::CH1RANGE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.16, 74.637)), module, SoloPush::CH1OFFSET_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.16, 93.644)), module, SoloPush::CH1BEHAVIOR_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.16, 112.652)), module, SoloPush::CH1PUSH_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(10.16, 55.629)), module, SoloPush::CH1RANGE_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.16, 74.637)), module, SoloPush::CH1OFFSET_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(10.16, 93.644)), module, SoloPush::CH1BEHAVIOR_PARAM));
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(10.16, 112.652)), module, SoloPush::CH1PUSH_PARAM));
+		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(10.16, 112.652)), module, SoloPush::CH1_LIGHT));
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(10.16, 17.614)), module, SoloPush::CH1VOLTAGEOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(10.16, 36.622)), module, SoloPush::CH1BUTTONOUT_OUTPUT));
