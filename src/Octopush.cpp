@@ -90,6 +90,8 @@ struct Octopush : Module {
 		configOutput(INVERSEOUT_OUTPUT, "Inverse");
 		configOutput(POSITIVEOUT_OUTPUT, "Positive");
 		configOutput(NEGATIVEOUT_OUTPUT, "Negative");
+
+		std::fill(std::begin(prevBehaviorMode), std::end(prevBehaviorMode), -1);
 	}
 
 	void process(const ProcessArgs& args) override {
@@ -101,6 +103,19 @@ struct Octopush : Module {
 			const float buttonValue = params[CH1PUSH_PARAM + ch].getValue();
 			const bool buttonPressed = buttonValue > 0.5f;
 			const int mode = (int)params[CH1BEHAVIOR_PARAM + ch].getValue();
+
+			if (mode != prevBehaviorMode[ch]) {
+				toggleState[ch] = false;
+				trigState[ch] = false;
+				trigTimeRemaining[ch] = 0.f;
+				trigLightTimeRemaining[ch] = 0.f;
+				prevButtonState[ch] = false;
+				outputs[CH1BUTTONOUT_OUTPUT + ch].setVoltage(0.f);
+				outputs[CH1VOLTAGEOUT_OUTPUT + ch].setVoltage(0.f);
+				lights[CH1_LIGHT + ch].setBrightness(0.f);
+				prevBehaviorMode[ch] = mode;
+				continue;
+			}
 
 			const bool prevPressed = prevButtonState[ch];
 			prevButtonState[ch] = buttonPressed;
@@ -117,25 +132,18 @@ struct Octopush : Module {
 						toggleState[ch] = !toggleState[ch];
 					logicOut = toggleState[ch] ? 5.f : 0.f;
 					break;
-					case 2: {
-						if (risingEdge) {
-							trigState[ch] = true;
-							trigTimeRemaining[ch] = 0.005f;         
-							trigLightTimeRemaining[ch] = 0.1f;       
-						}
-						if (trigState[ch]) {
-							trigTimeRemaining[ch] -= args.sampleTime;
-							if (trigTimeRemaining[ch] <= 0.f)
-								trigState[ch] = false;
-							else
-								logicOut = 5.f;
-						}
-						break;
+				case 2:
+					if (risingEdge) {
+						trigState[ch] = true;
+						trigTimeRemaining[ch] = 0.005f;
+						trigLightTimeRemaining[ch] = 0.1f;
 					}
 					if (trigState[ch]) {
 						trigTimeRemaining[ch] -= args.sampleTime;
-						if (trigTimeRemaining[ch] <= 0.f) trigState[ch] = false;
-						else logicOut = 5.f;
+						if (trigTimeRemaining[ch] <= 0.f)
+							trigState[ch] = false;
+						else
+							logicOut = 5.f;
 					}
 					break;
 			}
@@ -148,6 +156,7 @@ struct Octopush : Module {
 			} else {
 				lights[CH1_LIGHT + ch].setBrightnessSmooth((logicOut > 0.f ? 1.f : 0.f), args.sampleTime);
 			}
+
 			const int range = (int)params[CH1RANGE_PARAM + ch].getValue();
 			const float offset = params[CH1OFFSET_PARAM + ch].getValue();
 			const float offsetVoltage = offset * rangeScale[range] + rangeBias[range];
@@ -162,14 +171,15 @@ struct Octopush : Module {
 		outputs[INVERSEOUT_OUTPUT].setVoltage(sumVoltages != 0.f ? clamp(1.f / sumVoltages, -5.f, 5.f) : 0.f);
 		outputs[POSITIVEOUT_OUTPUT].setVoltage(sumVoltages > 0.f ? clamp(sumVoltages, 0.f, 5.f) : 0.f);
 		outputs[NEGATIVEOUT_OUTPUT].setVoltage(sumVoltages < 0.f ? clamp(sumVoltages, -5.f, 0.f) : 0.f);
-		
 	}
+
 private:
 	bool prevButtonState[8] = {};
 	bool toggleState[8] = {};
 	bool trigState[8] = {};
 	float trigTimeRemaining[8] = {};
 	float trigLightTimeRemaining[8] = {};
+	int prevBehaviorMode[8] = {};
 };
 
 struct OctopushWidget : ModuleWidget {

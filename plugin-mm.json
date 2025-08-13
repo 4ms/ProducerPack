@@ -59,6 +59,10 @@
 	{
 		"slug": "DrumBus",
 		"name": "DrumBus"
+	},
+	{
+		"slug": "Octopush",
+		"name": "Octopush"
 	}
 ]
 }
