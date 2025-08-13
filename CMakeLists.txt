@@ -33,7 +33,8 @@ target_sources(4ms-ProducerPack PRIVATE
     ${SOURCE_DIR}/src/AuxSends.cpp      
     ${SOURCE_DIR}/src/Bitcrusher.cpp     
     ${SOURCE_DIR}/src/DrumBus.cpp     
-    ${SOURCE_DIR}/src/Octopush.cpp     
+    ${SOURCE_DIR}/src/OctoPush.cpp     
+    ${SOURCE_DIR}/src/SoloPush.cpp     
     ${SOURCE_DIR}/src/plugin.cpp        
     ${SOURCE_DIR}/src/plugin.hpp        
     ) 

@@ -92,9 +92,15 @@
       "tags": ["Stereo", "Mixer", "Drum", "Utility"]
     },
     {
-      "slug": "Octopush",
-      "name": "Octopush",
+      "slug": "OctoPush",
+      "name": "OctoPush",
       "description": "8 button macro controller",
+      "tags": ["Utility", "Controller"]
+    },
+    {
+      "slug": "SoloPush",
+      "name": "SoloPush",
+      "description": "Single button macro controller",
       "tags": ["Utility", "Controller"]
     }
   ]

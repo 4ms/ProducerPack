@@ -1,6 +1,6 @@
 #include "plugin.hpp"
 
-struct Octopush : Module {
+struct OctoPush : Module {
 	enum ParamId {
 		CH1RANGE_PARAM,
 		CH2RANGE_PARAM,
@@ -74,7 +74,7 @@ struct Octopush : Module {
 		LIGHTS_LEN
 	};
 
-	Octopush() {
+	OctoPush() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
 		for (int i = 0; i < 8; i++) {
@@ -182,90 +182,90 @@ private:
 	int prevBehaviorMode[8] = {};
 };
 
-struct OctopushWidget : ModuleWidget {
-	OctopushWidget(Octopush* module) {
+struct OctoPushWidget : ModuleWidget {
+	OctoPushWidget(OctoPush* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/Octopush_info.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/OctoPush_info.svg")));
 
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(7.188, 55.629)), module, Octopush::CH1RANGE_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(20.656, 55.629)), module, Octopush::CH2RANGE_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(34.124, 55.629)), module, Octopush::CH3RANGE_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(47.592, 55.629)), module, Octopush::CH4RANGE_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(61.061, 55.629)), module, Octopush::CH5RANGE_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(74.529, 55.629)), module, Octopush::CH6RANGE_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(87.997, 55.629)), module, Octopush::CH7RANGE_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(101.465, 55.629)), module, Octopush::CH8RANGE_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(7.188, 55.629)), module, OctoPush::CH1RANGE_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(20.656, 55.629)), module, OctoPush::CH2RANGE_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(34.124, 55.629)), module, OctoPush::CH3RANGE_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(47.592, 55.629)), module, OctoPush::CH4RANGE_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(61.061, 55.629)), module, OctoPush::CH5RANGE_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(74.529, 55.629)), module, OctoPush::CH6RANGE_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(87.997, 55.629)), module, OctoPush::CH7RANGE_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(101.465, 55.629)), module, OctoPush::CH8RANGE_PARAM));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.188, 74.637)), module, Octopush::CH1OFFSET_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(20.656, 74.637)), module, Octopush::CH2OFFSET_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(34.124, 74.637)), module, Octopush::CH3OFFSET_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(47.592, 74.637)), module, Octopush::CH4OFFSET_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(61.061, 74.637)), module, Octopush::CH5OFFSET_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(74.529, 74.637)), module, Octopush::CH6OFFSET_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(87.997, 74.637)), module, Octopush::CH7OFFSET_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(101.465, 74.637)), module, Octopush::CH8OFFSET_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.188, 74.637)), module, OctoPush::CH1OFFSET_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(20.656, 74.637)), module, OctoPush::CH2OFFSET_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(34.124, 74.637)), module, OctoPush::CH3OFFSET_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(47.592, 74.637)), module, OctoPush::CH4OFFSET_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(61.061, 74.637)), module, OctoPush::CH5OFFSET_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(74.529, 74.637)), module, OctoPush::CH6OFFSET_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(87.997, 74.637)), module, OctoPush::CH7OFFSET_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(101.465, 74.637)), module, OctoPush::CH8OFFSET_PARAM));
 
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(7.188, 93.644)), module, Octopush::CH1BEHAVIOR_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(20.656, 93.644)), module, Octopush::CH2BEHAVIOR_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(34.124, 93.644)), module, Octopush::CH3BEHAVIOR_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(47.592, 93.644)), module, Octopush::CH4BEHAVIOR_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(61.061, 93.644)), module, Octopush::CH5BEHAVIOR_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(74.529, 93.644)), module, Octopush::CH6BEHAVIOR_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(87.997, 93.644)), module, Octopush::CH7BEHAVIOR_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(101.465, 93.644)), module, Octopush::CH8BEHAVIOR_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(7.188, 93.644)), module, OctoPush::CH1BEHAVIOR_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(20.656, 93.644)), module, OctoPush::CH2BEHAVIOR_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(34.124, 93.644)), module, OctoPush::CH3BEHAVIOR_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(47.592, 93.644)), module, OctoPush::CH4BEHAVIOR_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(61.061, 93.644)), module, OctoPush::CH5BEHAVIOR_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(74.529, 93.644)), module, OctoPush::CH6BEHAVIOR_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(87.997, 93.644)), module, OctoPush::CH7BEHAVIOR_PARAM));
+		addParam(createParamCentered<_3Pos>(mm2px(Vec(101.465, 93.644)), module, OctoPush::CH8BEHAVIOR_PARAM));
 
-		addParam(createParamCentered<LEDBezel>(mm2px(Vec(7.188, 112.652)), module, Octopush::CH1PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(7.188, 112.652)), module, Octopush::CH1_LIGHT));
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(7.188, 112.652)), module, OctoPush::CH1PUSH_PARAM));
+		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(7.188, 112.652)), module, OctoPush::CH1_LIGHT));
 
-		addParam(createParamCentered<LEDBezel>(mm2px(Vec(20.656, 112.652)), module, Octopush::CH2PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(20.656, 112.652)), module, Octopush::CH2_LIGHT));
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(20.656, 112.652)), module, OctoPush::CH2PUSH_PARAM));
+		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(20.656, 112.652)), module, OctoPush::CH2_LIGHT));
 
-		addParam(createParamCentered<LEDBezel>(mm2px(Vec(34.124, 112.652)), module, Octopush::CH3PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(34.124, 112.652)), module, Octopush::CH3_LIGHT));
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(34.124, 112.652)), module, OctoPush::CH3PUSH_PARAM));
+		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(34.124, 112.652)), module, OctoPush::CH3_LIGHT));
 
-		addParam(createParamCentered<LEDBezel>(mm2px(Vec(47.592, 112.652)), module, Octopush::CH4PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(47.592, 112.652)), module, Octopush::CH4_LIGHT));
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(47.592, 112.652)), module, OctoPush::CH4PUSH_PARAM));
+		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(47.592, 112.652)), module, OctoPush::CH4_LIGHT));
 
-		addParam(createParamCentered<LEDBezel>(mm2px(Vec(61.061, 112.652)), module, Octopush::CH5PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(61.061, 112.652)), module, Octopush::CH5_LIGHT));
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(61.061, 112.652)), module, OctoPush::CH5PUSH_PARAM));
+		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(61.061, 112.652)), module, OctoPush::CH5_LIGHT));
 
-		addParam(createParamCentered<LEDBezel>(mm2px(Vec(74.529, 112.652)), module, Octopush::CH6PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(74.529, 112.652)), module, Octopush::CH6_LIGHT));
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(74.529, 112.652)), module, OctoPush::CH6PUSH_PARAM));
+		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(74.529, 112.652)), module, OctoPush::CH6_LIGHT));
 
-		addParam(createParamCentered<LEDBezel>(mm2px(Vec(87.997, 112.652)), module, Octopush::CH7PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(87.997, 112.652)), module, Octopush::CH7_LIGHT));
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(87.997, 112.652)), module, OctoPush::CH7PUSH_PARAM));
+		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(87.997, 112.652)), module, OctoPush::CH7_LIGHT));
 
-		addParam(createParamCentered<LEDBezel>(mm2px(Vec(101.465, 112.652)), module, Octopush::CH8PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(101.465, 112.652)), module, Octopush::CH8_LIGHT));
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(101.465, 112.652)), module, OctoPush::CH8PUSH_PARAM));
+		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(101.465, 112.652)), module, OctoPush::CH8_LIGHT));
 
 
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.188, 17.614)), module, Octopush::CH1VOLTAGEOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(20.656, 17.614)), module, Octopush::CH2VOLTAGEOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(34.124, 17.614)), module, Octopush::CH3VOLTAGEOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(47.592, 17.614)), module, Octopush::CH4VOLTAGEOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(61.061, 17.614)), module, Octopush::CH5VOLTAGEOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(74.529, 17.614)), module, Octopush::CH6VOLTAGEOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(87.997, 17.614)), module, Octopush::CH7VOLTAGEOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(101.465, 17.614)), module, Octopush::CH8VOLTAGEOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.188, 36.622)), module, Octopush::CH1BUTTONOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(20.656, 36.622)), module, Octopush::CH2BUTTONOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(34.124, 36.622)), module, Octopush::CH3BUTTONOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(47.592, 36.622)), module, Octopush::CH4BUTTONOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(61.061, 36.622)), module, Octopush::CH5BUTTONOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(74.529, 36.622)), module, Octopush::CH6BUTTONOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(87.997, 36.622)), module, Octopush::CH7BUTTONOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(101.465, 36.622)), module, Octopush::CH8BUTTONOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(112.187, 55.629)), module, Octopush::SUMOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(124.268, 55.629)), module, Octopush::INVERSEOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(112.187, 74.637)), module, Octopush::POSITIVEOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(124.268, 74.637)), module, Octopush::NEGATIVEOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.188, 17.614)), module, OctoPush::CH1VOLTAGEOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(20.656, 17.614)), module, OctoPush::CH2VOLTAGEOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(34.124, 17.614)), module, OctoPush::CH3VOLTAGEOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(47.592, 17.614)), module, OctoPush::CH4VOLTAGEOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(61.061, 17.614)), module, OctoPush::CH5VOLTAGEOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(74.529, 17.614)), module, OctoPush::CH6VOLTAGEOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(87.997, 17.614)), module, OctoPush::CH7VOLTAGEOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(101.465, 17.614)), module, OctoPush::CH8VOLTAGEOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.188, 36.622)), module, OctoPush::CH1BUTTONOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(20.656, 36.622)), module, OctoPush::CH2BUTTONOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(34.124, 36.622)), module, OctoPush::CH3BUTTONOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(47.592, 36.622)), module, OctoPush::CH4BUTTONOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(61.061, 36.622)), module, OctoPush::CH5BUTTONOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(74.529, 36.622)), module, OctoPush::CH6BUTTONOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(87.997, 36.622)), module, OctoPush::CH7BUTTONOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(101.465, 36.622)), module, OctoPush::CH8BUTTONOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(112.187, 55.629)), module, OctoPush::SUMOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(124.268, 55.629)), module, OctoPush::INVERSEOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(112.187, 74.637)), module, OctoPush::POSITIVEOUT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(124.268, 74.637)), module, OctoPush::NEGATIVEOUT_OUTPUT));
 	}
 };
 
 
-Model* modelOctopush = createModel<Octopush, OctopushWidget>("Octopush");
+Model* modelOctoPush = createModel<OctoPush, OctoPushWidget>("OctoPush");

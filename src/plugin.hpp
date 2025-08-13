@@ -21,7 +21,8 @@ extern Model* modelDecay;
 extern Model* modelAuxSends;
 extern Model* modelBitcrusher;
 extern Model* modelDrumBus;
-extern Model* modelOctopush;
+extern Model* modelOctoPush;
+extern Model* modelSoloPush;
 
 struct _9mmKnob : RoundKnob {
     _9mmKnob() {

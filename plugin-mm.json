@@ -61,8 +61,12 @@
 		"name": "DrumBus"
 	},
 	{
-		"slug": "Octopush",
-		"name": "Octopush"
+		"slug": "OctoPush",
+		"name": "OctoPush"
+	},
+	{
+		"slug": "SoloPush",
+		"name": "SoloPush"
 	}
 ]
 }
