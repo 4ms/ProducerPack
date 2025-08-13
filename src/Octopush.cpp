@@ -117,10 +117,20 @@ struct Octopush : Module {
 						toggleState[ch] = !toggleState[ch];
 					logicOut = toggleState[ch] ? 5.f : 0.f;
 					break;
-				case 2:
-					if (risingEdge) {
-						trigState[ch] = true;
-						trigTimeRemaining[ch] = 0.005f;
+					case 2: {
+						if (risingEdge) {
+							trigState[ch] = true;
+							trigTimeRemaining[ch] = 0.005f;         
+							trigLightTimeRemaining[ch] = 0.1f;       
+						}
+						if (trigState[ch]) {
+							trigTimeRemaining[ch] -= args.sampleTime;
+							if (trigTimeRemaining[ch] <= 0.f)
+								trigState[ch] = false;
+							else
+								logicOut = 5.f;
+						}
+						break;
 					}
 					if (trigState[ch]) {
 						trigTimeRemaining[ch] -= args.sampleTime;
@@ -131,8 +141,13 @@ struct Octopush : Module {
 			}
 
 			outputs[CH1BUTTONOUT_OUTPUT + ch].setVoltage(logicOut);
-			lights[CH1_LIGHT + ch].setBrightness(logicOut > 0.f ? 1.f : 0.f);
 
+			if (trigLightTimeRemaining[ch] > 0.f) {
+				trigLightTimeRemaining[ch] -= args.sampleTime;
+				lights[CH1_LIGHT + ch].setBrightnessSmooth(1.f, args.sampleTime);
+			} else {
+				lights[CH1_LIGHT + ch].setBrightnessSmooth((logicOut > 0.f ? 1.f : 0.f), args.sampleTime);
+			}
 			const int range = (int)params[CH1RANGE_PARAM + ch].getValue();
 			const float offset = params[CH1OFFSET_PARAM + ch].getValue();
 			const float offsetVoltage = offset * rangeScale[range] + rangeBias[range];
@@ -154,6 +169,7 @@ private:
 	bool toggleState[8] = {};
 	bool trigState[8] = {};
 	float trigTimeRemaining[8] = {};
+	float trigLightTimeRemaining[8] = {};
 };
 
 struct OctopushWidget : ModuleWidget {
