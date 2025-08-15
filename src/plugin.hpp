@@ -23,6 +23,7 @@ extern Model* modelBitcrusher;
 extern Model* modelDrumBus;
 extern Model* modelOctoPush;
 extern Model* modelSoloPush;
+extern Model* modelRouter;
 
 struct _9mmKnob : RoundKnob {
     _9mmKnob() {

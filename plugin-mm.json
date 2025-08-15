@@ -67,6 +67,10 @@
 	{
 		"slug": "SoloPush",
 		"name": "SoloPush"
+	},
+	{
+		"slug": "Router",
+		"name": "Router"
 	}
 ]
 }

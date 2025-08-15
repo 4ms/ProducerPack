@@ -102,6 +102,12 @@
       "name": "SoloPush",
       "description": "Single button macro controller",
       "tags": ["Utility", "Controller"]
+    },
+    {
+      "slug": "Router",
+      "name": "Router",
+      "description": "VCAM scene selector",
+      "tags": ["Utility", "Controller"]
     }
   ]
 }
