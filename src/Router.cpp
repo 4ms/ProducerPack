@@ -35,24 +35,24 @@ struct Router : Module {
 
 	Router() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(SELECT_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(INTERP_PARAM, 0.f, 1.f, 0.f, "");
-		configOutput(A1_OUTPUT, "");
-		configOutput(C1_OUTPUT, "");
-		configOutput(A2_OUTPUT, "");
-		configOutput(C2_OUTPUT, "");
-		configOutput(A3_OUTPUT, "");
-		configOutput(C3_OUTPUT, "");
-		configOutput(A4_OUTPUT, "");
-		configOutput(C4_OUTPUT, "");
-		configOutput(B1_OUTPUT, "");
-		configOutput(D1_OUTPUT, "");
-		configOutput(B2_OUTPUT, "");
-		configOutput(D2_OUTPUT, "");
-		configOutput(B3_OUTPUT, "");
-		configOutput(D3_OUTPUT, "");
-		configOutput(B4_OUTPUT, "");
-		configOutput(D4_OUTPUT, "");
+		configSwitch(SELECT_PARAM, 0.f, 5.f, 1.f, "Routing", {"Crush,Dist,Verb","Crush,Verb,Dist","Dist,Crush,Verb","Dist,Verb,Crush","Verb,Crush,Dist","Verb,Dist,Crush"});
+		configSwitch(INTERP_PARAM, 0.f, 1.f, 0.f, "Stepped/Morph", {"Stepped", "Morph"});
+		configOutput(A1_OUTPUT, "A1");
+		configOutput(C1_OUTPUT, "C1");
+		configOutput(A2_OUTPUT, "A2");
+		configOutput(C2_OUTPUT, "C2");
+		configOutput(A3_OUTPUT, "A3");
+		configOutput(C3_OUTPUT, "C3");
+		configOutput(A4_OUTPUT, "A4");
+		configOutput(C4_OUTPUT, "C4");
+		configOutput(B1_OUTPUT, "B1");
+		configOutput(D1_OUTPUT, "D1");
+		configOutput(B2_OUTPUT, "B2");
+		configOutput(D2_OUTPUT, "D2");
+		configOutput(B3_OUTPUT, "B3");
+		configOutput(D3_OUTPUT, "D3");
+		configOutput(B4_OUTPUT, "B4");
+		configOutput(D4_OUTPUT, "D4");
 	}
 
 	void process(const ProcessArgs& args) override {
@@ -65,13 +65,11 @@ struct RouterWidget : ModuleWidget {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/Router.svg")));
 
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(5.165, 18.027)), module, Router::SELECT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.155, 18.027)), module, Router::INTERP_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(5.165, 18.027)), module, Router::SELECT_PARAM));
+		addParam(createParamCentered<_2Pos>(mm2px(Vec(15.155, 18.027)), module, Router::INTERP_PARAM));
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(5.165, 33.352)), module, Router::A1_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.155, 33.352)), module, Router::C1_OUTPUT));
