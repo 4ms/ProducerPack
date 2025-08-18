@@ -1,6 +1,5 @@
 #include "plugin.hpp"
 
-
 struct Router : Module {
 	enum ParamId {
 		SELECT_PARAM,
@@ -8,25 +7,14 @@ struct Router : Module {
 		PARAMS_LEN
 	};
 	enum InputId {
+		SELECTCV_INPUT,
 		INPUTS_LEN
 	};
 	enum OutputId {
-		A1_OUTPUT,
-		C1_OUTPUT,
-		A2_OUTPUT,
-		C2_OUTPUT,
-		A3_OUTPUT,
-		C3_OUTPUT,
-		A4_OUTPUT,
-		C4_OUTPUT,
-		B1_OUTPUT,
-		D1_OUTPUT,
-		B2_OUTPUT,
-		D2_OUTPUT,
-		B3_OUTPUT,
-		D3_OUTPUT,
-		B4_OUTPUT,
-		D4_OUTPUT,
+		A1_OUTPUT, A2_OUTPUT, A3_OUTPUT, A4_OUTPUT,
+		B1_OUTPUT, B2_OUTPUT, B3_OUTPUT, B4_OUTPUT,
+		C1_OUTPUT, C2_OUTPUT, C3_OUTPUT, C4_OUTPUT,
+		D1_OUTPUT, D2_OUTPUT, D3_OUTPUT, D4_OUTPUT,
 		OUTPUTS_LEN
 	};
 	enum LightId {
@@ -35,28 +23,52 @@ struct Router : Module {
 
 	Router() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configSwitch(SELECT_PARAM, 0.f, 5.f, 1.f, "Routing", {"Crush,Dist,Verb","Crush,Verb,Dist","Dist,Crush,Verb","Dist,Verb,Crush","Verb,Crush,Dist","Verb,Dist,Crush"});
+		configInput(SELECTCV_INPUT, "Select CV");
+		configParam(SELECT_PARAM, 0.f, 5.f, 0.f, "Routing");
 		configSwitch(INTERP_PARAM, 0.f, 1.f, 0.f, "Stepped/Morph", {"Stepped", "Morph"});
-		configOutput(A1_OUTPUT, "A1");
-		configOutput(C1_OUTPUT, "C1");
-		configOutput(A2_OUTPUT, "A2");
-		configOutput(C2_OUTPUT, "C2");
-		configOutput(A3_OUTPUT, "A3");
-		configOutput(C3_OUTPUT, "C3");
-		configOutput(A4_OUTPUT, "A4");
-		configOutput(C4_OUTPUT, "C4");
-		configOutput(B1_OUTPUT, "B1");
-		configOutput(D1_OUTPUT, "D1");
-		configOutput(B2_OUTPUT, "B2");
-		configOutput(D2_OUTPUT, "D2");
-		configOutput(B3_OUTPUT, "B3");
-		configOutput(D3_OUTPUT, "D3");
-		configOutput(B4_OUTPUT, "B4");
-		configOutput(D4_OUTPUT, "D4");
+
+		for (int i = 0; i < OUTPUTS_LEN; i++) {
+			configOutput(i, "Matrix Out " + std::to_string(i + 1));
+		}
 	}
 
-	void process(const ProcessArgs& args) override {
+	float routingValues[16] = {}; // Final output voltages
+
+void process(const ProcessArgs& args) override {
+	float selectParam = params[SELECT_PARAM].getValue();
+	float selectCV = inputs[SELECTCV_INPUT].isConnected() ? inputs[SELECTCV_INPUT].getVoltage() * 0.5 : 0.f; 
+	float select = clamp(selectParam + selectCV, 0.f, 5.f);
+
+	bool morph = params[INTERP_PARAM].getValue() > 0.5f;
+
+	int routeA = clamp((int)std::floor(select), 0, 5);
+	int routeB = clamp(routeA + 1, 0, 5);
+	float t = morph ? clamp(select - routeA, 0.f, 1.f) : 0.f;
+
+	// Routing matrix: [route][input][output]
+	static const int routingStates[6][4][4] = {
+		{ {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1} }, // 0: A → B → C
+		{ {1,0,0,0}, {0,0,1,0}, {0,0,0,1}, {0,1,0,0} }, // 1: A → C → B
+		{ {0,1,0,0}, {0,0,1,0}, {1,0,0,0}, {0,0,0,1} }, // 2: B → A → C
+		{ {0,1,0,0}, {0,0,0,1}, {0,0,1,0}, {1,0,0,0} }, // 3: B → C → A
+		{ {0,0,1,0}, {0,1,0,0}, {0,0,0,1}, {1,0,0,0} }, // 4: C → A → B
+		{ {0,0,1,0}, {0,0,0,1}, {1,0,0,0}, {0,1,0,0} }  // 5: C → B → A
+	};
+
+	int index = 0;
+	for (int input = 0; input < 4; ++input) {
+		for (int output = 0; output < 4; ++output) {
+			int valueA = routingStates[routeA][input][output];
+			int valueB = routingStates[routeB][input][output];
+
+			// Interpolate voltage
+			float voltage = 5.f * ((1.f - t) * valueA + t * valueB);
+			routingValues[index] = voltage;
+			outputs[index].setVoltage(voltage);
+			++index;
+		}
 	}
+}
 };
 
 
@@ -70,6 +82,8 @@ struct RouterWidget : ModuleWidget {
 
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(5.165, 18.027)), module, Router::SELECT_PARAM));
 		addParam(createParamCentered<_2Pos>(mm2px(Vec(15.155, 18.027)), module, Router::INTERP_PARAM));
+
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 10.64)), module, Router::SELECTCV_INPUT));
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(5.165, 33.352)), module, Router::A1_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.155, 33.352)), module, Router::C1_OUTPUT));
