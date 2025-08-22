@@ -26,7 +26,7 @@ struct Router : Module {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		configInput(SELECTCV_INPUT, "Select CV");
 		configParam(SELECT_PARAM, 0.f, 5.f, 0.f, "Routing");
-		configParam(SLEW_PARAM, 0.f, 1.f, 0.f, "Slew");
+		configParam(SLEW_PARAM, 0.f, 5000.f, 0.f, "Slew", "ms");
 		configSwitch(INTERP_PARAM, 0.f, 1.f, 0.f, "Stepped/Morph", {"Stepped", "Morph"});
 
 		for (int i = 0; i < OUTPUTS_LEN; i++) {
@@ -35,17 +35,25 @@ struct Router : Module {
 	}
 
 	float routingValues[16] = {}; // Final output voltages
+	float slewedSelect = 0.f;
 
 void process(const ProcessArgs& args) override {
 	float selectParam = params[SELECT_PARAM].getValue();
-	float selectCV = inputs[SELECTCV_INPUT].isConnected() ? inputs[SELECTCV_INPUT].getVoltage() * 0.5 : 0.f; 
-	float select = clamp(selectParam + selectCV, 0.f, 5.f);
+	float selectCV = inputs[SELECTCV_INPUT].isConnected() ? inputs[SELECTCV_INPUT].getVoltage() * 0.5f : 0.f; 
+
+	float rawSelect = clamp(selectParam + selectCV, 0.f, 5.f);
+
+	float slewControlMs = clamp(params[SLEW_PARAM].getValue(), 0.f, 5000.f);
+	float slewTimeSec = slewControlMs / 1000.f;
+	float alpha = (slewTimeSec <= 0.f) ? 1.f : clamp(args.sampleTime / slewTimeSec, 0.f, 1.f);
+
+	slewedSelect += (rawSelect - slewedSelect) * alpha;
 
 	bool morph = params[INTERP_PARAM].getValue() > 0.5f;
 
-	int routeA = clamp((int)std::floor(select), 0, 5);
+	int routeA = clamp((int)std::floor(slewedSelect), 0, 5);
 	int routeB = clamp(routeA + 1, 0, 5);
-	float t = morph ? clamp(select - routeA, 0.f, 1.f) : 0.f;
+	float t = morph ? clamp(slewedSelect - routeA, 0.f, 1.f) : 0.f;
 
 	// Routing matrix: [route][input][output]
 	static const int routingStates[6][4][4] = {
