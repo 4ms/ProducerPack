@@ -3,6 +3,7 @@
 struct Router : Module {
 	enum ParamId {
 		SELECT_PARAM,
+		SLEW_PARAM,
 		INTERP_PARAM,
 		PARAMS_LEN
 	};
@@ -25,6 +26,7 @@ struct Router : Module {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		configInput(SELECTCV_INPUT, "Select CV");
 		configParam(SELECT_PARAM, 0.f, 5.f, 0.f, "Routing");
+		configParam(SLEW_PARAM, 0.f, 1.f, 0.f, "Slew");
 		configSwitch(INTERP_PARAM, 0.f, 1.f, 0.f, "Stepped/Morph", {"Stepped", "Morph"});
 
 		for (int i = 0; i < OUTPUTS_LEN; i++) {
@@ -80,10 +82,11 @@ struct RouterWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(5.165, 18.027)), module, Router::SELECT_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(15.155, 18.027)), module, Router::INTERP_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(5.165, 13.794)), module, Router::SELECT_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(14.729, 13.794)), module, Router::SLEW_PARAM));
+		addParam(createParamCentered<_2PosHorizontal>(mm2px(Vec(10.16, 21.202)), module, Router::INTERP_PARAM));
 
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 10.64)), module, Router::SELECTCV_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 7.465)), module, Router::SELECTCV_INPUT));
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(5.165, 33.352)), module, Router::A1_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.155, 33.352)), module, Router::C1_OUTPUT));
