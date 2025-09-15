@@ -92,98 +92,140 @@ struct AuxSends : Module {
 		configOutput(AUDIOLEFTOUT_OUTPUT, "Audio Left");
 		configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
 	}
-void process(const ProcessArgs& args) override {
-	// --- Read raw audio input ---
-	float rawInL = inputs[AUDIOLEFTIN_INPUT].getVoltage();
-	float rawInR = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : rawInL;
 
-	// --- Dry level ---
-	float dryCV = clamp(inputs[DRYLEVELCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f;
-	float dryLevel = clamp(params[DRYLEVEL_PARAM].getValue() + dryCV, 0.f, 1.f);
-	float inL = rawInL * dryLevel;
-	float inR = rawInR * dryLevel;
-
-	float outL = inL;
-	float outR = inR;
-
-	// --- Shared CV helpers (cached values) ---
-	auto computeCV = [](Input& in) {
-		return clamp(in.getVoltage(), -5.f, 5.f) / 5.f;
-	};
-
-	// === SEND A ===
-	if (outputs[ASENDLEFTOUT_OUTPUT].isConnected() || outputs[ASENDRIGHTOUT_OUTPUT].isConnected()) {
-		float sendCV = computeCV(inputs[ASENDCVIN_INPUT]);
-		float sendA = clamp(params[ASEND_PARAM].getValue() + sendCV, 0.f, 1.f);
-		bool pre = params[PREPOST1_PARAM].getValue() > 0.5f;
-		float sendL = (pre ? rawInL : inL) * sendA;
-		float sendR = (pre ? rawInR : inR) * sendA;
-		outputs[ASENDLEFTOUT_OUTPUT].setVoltage(sendL);
-		outputs[ASENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-		lights[ASENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
+	inline float getNormalizedCV(Input& in) {
+		return clamp(in.getVoltage(), -5.f, 5.f) * 0.2f;
 	}
-
-	// === RETURN A ===
-	if (inputs[ARETURNLEFTIN_INPUT].isConnected()) {
-		float returnCV = computeCV(inputs[ARETURNCVIN_INPUT]);
-		float gain = clamp(params[ARETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
-		float returnL = inputs[ARETURNLEFTIN_INPUT].getVoltage() * gain;
-		float returnR = inputs[ARETURNRIGHTIN_INPUT].isConnected() ? inputs[ARETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
-		outL += returnL;
-		outR += returnR;
-		lights[ARETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
+	
+	inline float getParamWithCV(Param& param, Input& cvInput) {
+		return clamp(param.getValue() + (cvInput.isConnected() ? getNormalizedCV(cvInput) : 0.f), 0.f, 1.f);
 	}
-
-	// === SEND B ===
-	if (outputs[BSENDLEFTOUT_OUTPUT].isConnected() || outputs[BSENDRIGHTOUT_OUTPUT].isConnected()) {
-		float sendCV = computeCV(inputs[BSENDCVIN_INPUT]);
-		float sendB = clamp(params[BSEND_PARAM].getValue() + sendCV, 0.f, 1.f);
-		bool pre = params[PREPOST2_PARAM].getValue() > 0.5f;
-		float sendL = (pre ? rawInL : inL) * sendB;
-		float sendR = (pre ? rawInR : inR) * sendB;
-		outputs[BSENDLEFTOUT_OUTPUT].setVoltage(sendL);
-		outputs[BSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-		lights[BSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
+	
+	inline void processSend(bool isConnectedL, bool isConnectedR,
+							Output& outL, Output& outR,
+							Light& light, float sendAmount, bool pre,
+							float preL, float preR, float postL, float postR,
+							float sampleTime) {
+		if (isConnectedL || isConnectedR) {
+			float sendL = (pre ? preL : postL) * sendAmount;
+			float sendR = (pre ? preR : postR) * sendAmount;
+			outL.setVoltage(sendL);
+			outR.setVoltage(sendR);
+			light.setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, sampleTime);
+		}
 	}
-
-	// === RETURN B ===
-	if (inputs[BRETURNLEFTIN_INPUT].isConnected()) {
-		float returnCV = computeCV(inputs[BRETURNCVIN_INPUT]);
-		float gain = clamp(params[BRETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
-		float returnL = inputs[BRETURNLEFTIN_INPUT].getVoltage() * gain;
-		float returnR = inputs[BRETURNRIGHTIN_INPUT].isConnected() ? inputs[BRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
-		outL += returnL;
-		outR += returnR;
-		lights[BRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
+	
+	inline void processReturn(Input& inL, Input& inR,
+							  float returnAmount, float& outL, float& outR,
+							  Light& light, float sampleTime) {
+		if (inL.isConnected()) {
+			float left = inL.getVoltage() * returnAmount;
+			float right = inR.isConnected() ? inR.getVoltage() * returnAmount : left;
+			outL += left;
+			outR += right;
+			light.setBrightnessSmooth(std::fabs(left + right) * 0.1f, sampleTime);
+		}
 	}
-
-	// === SEND C ===
-	if (outputs[CSENDLEFTOUT_OUTPUT].isConnected() || outputs[CSENDRIGHTOUT_OUTPUT].isConnected()) {
-		float sendCV = computeCV(inputs[CSENDCVIN_INPUT]);
-		float sendC = clamp(params[CSEND_PARAM].getValue() + sendCV, 0.f, 1.f);
-		bool pre = params[PREPOST3_PARAM].getValue() > 0.5f;
-		float sendL = (pre ? rawInL : inL) * sendC;
-		float sendR = (pre ? rawInR : inR) * sendC;
-		outputs[CSENDLEFTOUT_OUTPUT].setVoltage(sendL);
-		outputs[CSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-		lights[CSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
-	}
-
-	// === RETURN C ===
-	if (inputs[CRETURNLEFTIN_INPUT].isConnected()) {
-		float returnCV = computeCV(inputs[CRETURNCVIN_INPUT]);
-		float gain = clamp(params[CRETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
-		float returnL = inputs[CRETURNLEFTIN_INPUT].getVoltage() * gain;
-		float returnR = inputs[CRETURNRIGHTIN_INPUT].isConnected() ? inputs[CRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
-		outL += returnL;
-		outR += returnR;
-		lights[CRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
-	}
-
-	// Final output
-	outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f));
-	outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f));
-}
+		
+	void process(const ProcessArgs& args) override {
+		// === Input Audio ===
+		bool stereoIn = inputs[AUDIORIGHTIN_INPUT].isConnected();
+		float rawInL = inputs[AUDIOLEFTIN_INPUT].getVoltage();
+		float rawInR = stereoIn ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : rawInL;
+	
+		// === Dry Level ===
+		float dryLevel = getParamWithCV(params[DRYLEVEL_PARAM], inputs[DRYLEVELCVIN_INPUT]);
+	
+		// Pre and post fader versions of the signal
+		float postL = rawInL * dryLevel;
+		float postR = rawInR * dryLevel;
+	
+		// Final output buffers
+		float outL = postL;
+		float outR = postR;
+	
+		// === SEND A ===
+		float sendA = getParamWithCV(params[ASEND_PARAM], inputs[ASENDCVIN_INPUT]);
+		bool preA = params[PREPOST1_PARAM].getValue() > 0.5f;
+		processSend(
+			outputs[ASENDLEFTOUT_OUTPUT].isConnected(),
+			outputs[ASENDRIGHTOUT_OUTPUT].isConnected(),
+			outputs[ASENDLEFTOUT_OUTPUT],
+			outputs[ASENDRIGHTOUT_OUTPUT],
+			lights[ASENDLED_LIGHT],
+			sendA, preA,
+			rawInL, rawInR,
+			postL, postR,
+			args.sampleTime
+		);
+	
+		// === RETURN A ===
+		float retA = getParamWithCV(params[ARETURN_PARAM], inputs[ARETURNCVIN_INPUT]);
+		processReturn(
+			inputs[ARETURNLEFTIN_INPUT],
+			inputs[ARETURNRIGHTIN_INPUT],
+			retA,
+			outL, outR,
+			lights[ARETURNLED_LIGHT],
+			args.sampleTime
+		);
+	
+		// === SEND B ===
+		float sendB = getParamWithCV(params[BSEND_PARAM], inputs[BSENDCVIN_INPUT]);
+		bool preB = params[PREPOST2_PARAM].getValue() > 0.5f;
+		processSend(
+			outputs[BSENDLEFTOUT_OUTPUT].isConnected(),
+			outputs[BSENDRIGHTOUT_OUTPUT].isConnected(),
+			outputs[BSENDLEFTOUT_OUTPUT],
+			outputs[BSENDRIGHTOUT_OUTPUT],
+			lights[BSENDLED_LIGHT],
+			sendB, preB,
+			rawInL, rawInR,
+			postL, postR,
+			args.sampleTime
+		);
+	
+		// === RETURN B ===
+		float retB = getParamWithCV(params[BRETURN_PARAM], inputs[BRETURNCVIN_INPUT]);
+		processReturn(
+			inputs[BRETURNLEFTIN_INPUT],
+			inputs[BRETURNRIGHTIN_INPUT],
+			retB,
+			outL, outR,
+			lights[BRETURNLED_LIGHT],
+			args.sampleTime
+		);
+	
+		// === SEND C ===
+		float sendC = getParamWithCV(params[CSEND_PARAM], inputs[CSENDCVIN_INPUT]);
+		bool preC = params[PREPOST3_PARAM].getValue() > 0.5f;
+		processSend(
+			outputs[CSENDLEFTOUT_OUTPUT].isConnected(),
+			outputs[CSENDRIGHTOUT_OUTPUT].isConnected(),
+			outputs[CSENDLEFTOUT_OUTPUT],
+			outputs[CSENDRIGHTOUT_OUTPUT],
+			lights[CSENDLED_LIGHT],
+			sendC, preC,
+			rawInL, rawInR,
+			postL, postR,
+			args.sampleTime
+		);
+	
+		// === RETURN C ===
+		float retC = getParamWithCV(params[CRETURN_PARAM], inputs[CRETURNCVIN_INPUT]);
+		processReturn(
+			inputs[CRETURNLEFTIN_INPUT],
+			inputs[CRETURNRIGHTIN_INPUT],
+			retC,
+			outL, outR,
+			lights[CRETURNLED_LIGHT],
+			args.sampleTime
+		);
+	
+		// === Final Output ===
+		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f));
+		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f));
+	}	
 };
 
 struct AuxSendsWidget : ModuleWidget {
