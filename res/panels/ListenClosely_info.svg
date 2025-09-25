@@ -20,15 +20,15 @@
      inkscape:pageopacity="0.0"
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="0.97936959"
-     inkscape:cx="50.542717"
-     inkscape:cy="282.835"
+     inkscape:zoom="5.540151"
+     inkscape:cx="133.57037"
+     inkscape:cy="148.55191"
      inkscape:window-width="1200"
      inkscape:window-height="1027"
      inkscape:window-x="0"
      inkscape:window-y="25"
      inkscape:window-maximized="0"
-     inkscape:current-layer="components"
+     inkscape:current-layer="Makeup_Gain_Graphics"
      inkscape:document-units="mm" />
   <defs
      id="defs4">
@@ -159,8 +159,7 @@
   <g
      id="artwork"
      transform="translate(0.13999999,0.5)"
-     style="display:inline"
-     sodipodi:insensitive="true">
+     style="display:inline">
     <g
        id="Comp_switch_graphics"
        data-name="Comp switch graphics">
@@ -904,7 +903,8 @@
            id="path157" />
       </g>
       <g
-         id="g160">
+         id="g160"
+         transform="translate(1.4990557)">
         <path
            class="cls-8"
            d="m 98.27,86.94 c 0,0.35 -0.04,0.66 -0.13,0.93 -0.09,0.27 -0.2,0.48 -0.35,0.65 -0.15,0.17 -0.32,0.29 -0.51,0.38 -0.19,0.08 -0.39,0.12 -0.61,0.12 -0.22,0 -0.41,-0.04 -0.6,-0.12 -0.19,-0.08 -0.36,-0.21 -0.5,-0.38 -0.14,-0.17 -0.26,-0.39 -0.35,-0.65 -0.09,-0.26 -0.13,-0.57 -0.13,-0.93 0,-0.36 0.04,-0.67 0.13,-0.93 0.09,-0.26 0.2,-0.48 0.35,-0.65 0.15,-0.17 0.31,-0.3 0.5,-0.38 0.19,-0.08 0.39,-0.12 0.6,-0.12 0.21,0 0.42,0.04 0.6,0.12 0.18,0.08 0.36,0.21 0.51,0.38 0.15,0.17 0.26,0.39 0.35,0.66 0.09,0.27 0.13,0.57 0.13,0.93 z m -1.16,0 c 0,-0.36 -0.02,-0.65 -0.07,-0.88 -0.05,-0.23 -0.17,-0.35 -0.35,-0.35 -0.13,0 -0.22,0.06 -0.29,0.19 -0.07,0.13 -0.1,0.28 -0.12,0.45 -0.02,0.17 -0.02,0.37 -0.02,0.59 0,0.38 0.02,0.68 0.07,0.9 0.05,0.21 0.17,0.32 0.35,0.32 0.18,0 0.31,-0.11 0.36,-0.32 0.05,-0.21 0.07,-0.51 0.07,-0.9 z"
@@ -1041,6 +1041,11 @@
            d="m 110.47,112.8 1.09,0.91 c -0.26,0.33 -0.53,0.65 -0.82,0.97 l -1.09,-0.91 c 0.29,-0.31 0.57,-0.63 0.82,-0.97 z"
            id="path192" />
       </g>
+      <path
+         style="font-weight:bold;font-size:5.99622px;line-height:2.9981px;font-family:'Gill Sans';-inkscape-font-specification:'Gill Sans Bold';text-align:center;letter-spacing:-0.599622px;word-spacing:-0.374764px;text-anchor:middle;fill:#1a1a1a;stroke-width:0.991501;stroke-linecap:square;stroke-linejoin:round;paint-order:markers fill stroke"
+         d="m 93.253901,87.303052 h -1.282395 v 1.282395 h -0.726105 v -1.282395 h -1.282394 v -0.726105 h 1.282394 v -1.282394 h 0.726105 v 1.282394 h 1.282395 z"
+         id="text2"
+         aria-label="+" />
     </g>
     <g
        id="Dry_Wet_graphics"
@@ -1302,6 +1307,11 @@
            d="m 106.67,206.82001 h 4.82 v 1 h -4.82 z" />
       </g>
     </g>
+    <path
+       style="font-weight:bold;font-size:5.99622px;line-height:2.9981px;font-family:'Gill Sans';-inkscape-font-specification:'Gill Sans Bold';text-align:center;letter-spacing:-0.599622px;word-spacing:-0.374764px;text-anchor:middle;fill:#1a1a1a;stroke-width:0.991501;stroke-linecap:square;stroke-linejoin:round;paint-order:markers fill stroke"
+       d="m 96.562052,88.99681 h -3.083017 v -0.07905 q 0.178598,-0.172742 0.392331,-0.412825 0.213732,-0.240083 0.550434,-0.635342 0.155176,-0.178598 0.289856,-0.351341 0.137609,-0.172742 0.234228,-0.333775 0.09662,-0.163959 0.163959,-0.360124 0.06734,-0.196164 0.06734,-0.401114 0,-0.281073 -0.163959,-0.453816 -0.161031,-0.17567 -0.412826,-0.17567 -0.497733,0 -0.98961,0.5153 v -0.957405 q 0.172743,-0.111258 0.284001,-0.178597 0.111258,-0.06734 0.254722,-0.131754 0.146392,-0.06441 0.345485,-0.111258 0.199093,-0.04685 0.430393,-0.04685 0.371836,0 0.676331,0.152248 0.304496,0.149321 0.477239,0.436249 0.17567,0.284001 0.17567,0.66462 0,0.269362 -0.07905,0.503589 -0.07905,0.234227 -0.163959,0.377692 -0.08491,0.143464 -0.225444,0.354268 -0.251794,0.374764 -0.538723,0.714394 h 1.314601 z"
+       id="text1"
+       aria-label="2" />
     <g
        id="Highshelf_graphics"
        data-name="Highshelf graphics">

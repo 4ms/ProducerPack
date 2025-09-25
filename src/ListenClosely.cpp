@@ -60,24 +60,30 @@ struct ListenClosely : Module {
 
 	ListenClosely() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(RATIO_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PEAKREDUCTION_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(DRYWET_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(GAIN_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(LOWSHELF_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(HIGHSHELF_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MID_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(LOWFREQSELECT_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(HIGHPASSFREQSELECT_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MIDFREQSELECT_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(WIDTH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(OUTPUTVOL_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PREPOST_PARAM, 0.f, 1.f, 0.f, "");
-		configInput(INL_INPUT, "");
-		configInput(INR_INPUT, "");
-		configInput(WIDTHCV_INPUT, "");
-		configOutput(OUTL_OUTPUT, "");
-		configOutput(OUTR_OUTPUT, "");
+		configSwitch(RATIO_PARAM, 0.f, 2.f, 0.f, "Ratio", {"Compressor", "Bypass", "Limiter"});
+		configSwitch(PREPOST_PARAM, 0.f, 2.f, 0.f, "EQ", {"Pre", "Bypass", "Post"});
+
+		configSwitch(LOWFREQSELECT_PARAM, 0.f, 1.f, 0.f, "Low Frequency Select");
+		configSwitch(MIDFREQSELECT_PARAM, 0.f, 1.f, 0.f, "Mid Frequency Select");
+		configSwitch(HIGHPASSFREQSELECT_PARAM, 0.f, 1.f, 0.f, "Highpass Frequency Select");
+
+        configParam(PEAKREDUCTION_PARAM, 0.f, 1.f, 0.5f, "Amount", "%", 0.f, 100.f);
+		configParam(DRYWET_PARAM, 0.f, 1.f, 1.f, "Dry/Wet", "%", 0.f, 100.f);
+        configParam(GAIN_PARAM, 0.f, 1.f, 0.25f, "Gain", "db", 0.f, 40.f);
+
+        configParam(LOWSHELF_PARAM, -15.f, 15.f, 0.f, "Low Shelf Gain", "dB");
+		configParam(MID_PARAM, -15.f, 15.f, 0.f, "Mid Gain", "dB");
+        configParam(HIGHSHELF_PARAM, -15.f, 15.f, 0.f, "High Shelf Gain", "dB");
+
+		configParam(WIDTH_PARAM, 0.f, 1.f, 0.5f, "Width", "%", 0.f, 200.f);
+
+        configParam(OUTPUTVOL_PARAM, 0.f, 1.f, 0.25f, "Output Level", "x");
+
+		configInput(INL_INPUT, "Audio Left");
+		configInput(INR_INPUT, "Audio Right");
+		configInput(WIDTHCV_INPUT, "Width CV");
+		configOutput(OUTL_OUTPUT, "Audio Left");
+		configOutput(OUTR_OUTPUT, "Audio Right");
 	}
 
 	void process(const ProcessArgs& args) override {
@@ -90,29 +96,31 @@ struct ListenCloselyWidget : ModuleWidget {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/ListenClosely_info.svg")));
 
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(35.381, 22.267)), module, ListenClosely::RATIO_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(12.256, 26.45)), module, ListenClosely::PEAKREDUCTION_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(58.538, 26.45)), module, ListenClosely::DRYWET_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(35.487, 37.026)), module, ListenClosely::GAIN_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(12.164, 47.733)), module, ListenClosely::LOWSHELF_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(58.693, 47.733)), module, ListenClosely::HIGHSHELF_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(35.582, 64.355)), module, ListenClosely::MID_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(12.221, 69.566)), module, ListenClosely::LOWFREQSELECT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(58.376, 69.573)), module, ListenClosely::HIGHPASSFREQSELECT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(35.572, 86.054)), module, ListenClosely::MIDFREQSELECT_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(12.299, 93.217)), module, ListenClosely::WIDTH_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(58.414, 93.263)), module, ListenClosely::OUTPUTVOL_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(35.402, 100.566)), module, ListenClosely::PREPOST_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(12.256, 26.45)), module, ListenClosely::PEAKREDUCTION_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(58.538, 26.45)), module, ListenClosely::DRYWET_PARAM));
+		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(35.487, 37.026)), module, ListenClosely::GAIN_PARAM));
+		
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(12.164, 47.733)), module, ListenClosely::LOWSHELF_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(58.693, 47.733)), module, ListenClosely::HIGHSHELF_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(35.582, 64.355)), module, ListenClosely::MID_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(12.299, 93.217)), module, ListenClosely::WIDTH_PARAM));
+		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(58.414, 93.263)), module, ListenClosely::OUTPUTVOL_PARAM));
+
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(12.221, 69.566)), module, ListenClosely::LOWFREQSELECT_PARAM));
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(58.376, 69.573)), module, ListenClosely::HIGHPASSFREQSELECT_PARAM));
+		addParam(createParamCentered<LEDBezel>(mm2px(Vec(35.572, 86.054)), module, ListenClosely::MIDFREQSELECT_PARAM));
+
+		addParam(createParamCentered<_3PosHorizontal>(mm2px(Vec(35.402, 100.566)), module, ListenClosely::PREPOST_PARAM));
+		addParam(createParamCentered<_3PosHorizontal>(mm2px(Vec(35.381, 22.267)), module, ListenClosely::RATIO_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.963, 113.811)), module, ListenClosely::INL_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(19.969, 113.811)), module, ListenClosely::INR_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(35.529, 113.811)), module, ListenClosely::WIDTHCV_INPUT));
-
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(51.107, 113.811)), module, ListenClosely::OUTL_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(62.117, 113.811)), module, ListenClosely::OUTR_OUTPUT));
 
