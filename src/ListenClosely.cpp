@@ -125,9 +125,14 @@ struct ListenClosely : Module {
 	
 		if (bypass) {
 			// Early exit for bypass
-			outputs[OUTL_OUTPUT].setVoltage(clamp(outLWidth, -5.f, 5.f));
-			outputs[OUTR_OUTPUT].setVoltage(clamp(outRWidth, -5.f, 5.f));
-			lights[CLIPLED_LIGHT].setBrightnessSmooth((std::fabs(outLWidth) >= 4.9f || std::fabs(outRWidth) >= 4.9f) ? 1.f : 0.f, args.sampleTime);
+			outputs[OUTL_OUTPUT].setVoltage(clamp(outLWidth, -10.f, 10.f));
+			outputs[OUTR_OUTPUT].setVoltage(clamp(outRWidth, -10.f, 10.f));
+			lights[CLIPLED_LIGHT].setBrightness(0);
+
+			// Shutoff graph
+			for (int i = GRAPH1_LIGHT; i <= GRAPH9_LIGHT; ++i) {
+				lights[i].setBrightness(0);
+			}		
 			return;
 		}
 	
@@ -162,13 +167,34 @@ struct ListenClosely : Module {
 		float outL = outLWidth * (1.f - dryWet) + outLWidth * gainReduction * gain * dryWet;
 		float outR = outRWidth * (1.f - dryWet) + outRWidth * gainReduction * gain * dryWet;
 	
-		outL = clamp(outL, -5.f, 5.f);
-		outR = clamp(outR, -5.f, 5.f);
+		outL = clamp(outL, -10.f, 10.f);
+		outR = clamp(outR, -10.f, 10.f);
+
 		outputs[OUTL_OUTPUT].setVoltage(outL);
 		outputs[OUTR_OUTPUT].setVoltage(outR);
 	
-		const bool clipping = (std::fabs(outL) >= 4.9f || std::fabs(outR) >= 4.9f);
+		const bool clipping = (std::fabs(outL) >= 9.9f || std::fabs(outR) >= 9.9f);
 		lights[CLIPLED_LIGHT].setBrightnessSmooth(clipping ? 1.f : 0.f, args.sampleTime);
+
+		// --- Peak Reduction Display (Graph1 to Graph9, scaled and reversed) ---
+		float reductionDb = 20.f * std::log10(clamp(gainReduction, 1e-6f, 1.f));  // Avoid log(0)
+
+		// Scale: 0 dB (no compression) → -24 dB (max compression)
+		const float minDb = -24.f;  // Adjust based on actual compression range
+		const float maxDb = 0.f;
+
+		float normalized = clamp((reductionDb - maxDb) / (minDb - maxDb), 0.f, 1.f);
+		int numSegments = (int)std::round(normalized * 9.f);
+		numSegments = clamp(numSegments, 0, 9);
+
+		// Light LEDs in reverse (GRAPH1 = max reduction)
+		for (int i = 0; i < 9; ++i) {
+			int lightIndex = GRAPH9_LIGHT - i;
+			bool lit = i < numSegments;
+			lights[lightIndex].setBrightnessSmooth(lit ? 1.f : 0.f, args.sampleTime);
+		}
+
+
 	}
 };
 
