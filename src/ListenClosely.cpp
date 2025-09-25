@@ -295,9 +295,14 @@ float prevMidButton = 0.f;
 float prevLowButton = 0.f;
 
 int hpSel = 0;
+int midSel = 0;
+int lowSel = 0;
 
 int highpassLEDs[5] = {OFFLED_LIGHT, _50LED_LIGHT, _80LED_LIGHT, _160LED_LIGHT, _300LED_LIGHT};
 
+int lowShelfLEDs[4] = {_35LED_LIGHT, _60LED_LIGHT, _110LED_LIGHT, _220LED_LIGHT};
+
+int midLEDs[6] = {_360LED_LIGHT, _700LED_LIGHT, _16KLED_LIGHT, _32KLED_LIGHT, _48KLED_LIGHT, _72KLED_LIGHT};
 
 	void process(const ProcessArgs& args) override {
 		float inL = inputs[INL_INPUT].getVoltage();
@@ -336,12 +341,10 @@ int highpassLEDs[5] = {OFFLED_LIGHT, _50LED_LIGHT, _80LED_LIGHT, _160LED_LIGHT, 
 
 // HIGH PASS SELECT BUTTON
 float currHighpassButton = params[HIGHPASSFREQSELECT_PARAM].getValue();
-
 if (prevHighpassButton <= 0.5f && currHighpassButton > 0.5f) {
 	hpSel = (hpSel + 1) % 5;  // +1 to include 0 ("off")
 }
 prevHighpassButton = currHighpassButton;
-
 for (int i = 0; i < 5; i++) {
 	lights[highpassLEDs[i]].setBrightness(i == hpSel ? 1.f : 0.f);
 }
@@ -369,11 +372,20 @@ for (int i = 0; i < 5; i++) {
     float eqOutL = outLWidth;
     float eqOutR = outRWidth;
 
+	//Mid band SELECT BUTTON
+float currMidButton = params[MIDFREQSELECT_PARAM].getValue();
+if (prevMidButton <= 0.5f && currMidButton > 0.5f) {
+	midSel = (midSel + 1) % 6;  
+}
+prevMidButton = currMidButton;
+for (int i = 0; i < 6; i++) {
+	lights[midLEDs[i]].setBrightness(i == midSel ? 1.f : 0.f);
+}
+
     if (!bypassEQ) {
         // --- Mid band ---
         static float prevMidFreq = -1.f, prevMidGain = -999.f;
-        int midSel = (int)params[MIDFREQSELECT_PARAM].getValue();
-        static constexpr float midFreqs[7] = {0.f, 360.f, 700.f, 1600.f, 3200.f, 4800.f, 7200.f};
+        static constexpr float midFreqs[6] = {360.f, 700.f, 1600.f, 3200.f, 4800.f, 7200.f};
         float midFreq = midFreqs[midSel];
         float midGainDB = params[MID_PARAM].getValue();
 
