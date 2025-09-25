@@ -373,14 +373,24 @@ for (int i = 0; i < 5; i++) {
     float eqOutR = outRWidth;
 
 	//Mid band SELECT BUTTON
-float currMidButton = params[MIDFREQSELECT_PARAM].getValue();
-if (prevMidButton <= 0.5f && currMidButton > 0.5f) {
-	midSel = (midSel + 1) % 6;  
-}
-prevMidButton = currMidButton;
-for (int i = 0; i < 6; i++) {
-	lights[midLEDs[i]].setBrightness(i == midSel ? 1.f : 0.f);
-}
+	float currMidButton = params[MIDFREQSELECT_PARAM].getValue();
+	if (prevMidButton <= 0.5f && currMidButton > 0.5f) {
+		midSel = (midSel + 1) % 6;  
+	}
+	prevMidButton = currMidButton;
+	for (int i = 0; i < 6; i++) {
+		lights[midLEDs[i]].setBrightness(i == midSel ? 1.f : 0.f);
+	}
+
+	//Low shelf SELECT BUTTON
+	float currLowButton = params[LOWFREQSELECT_PARAM].getValue();
+	if (prevLowButton <= 0.5f && currLowButton > 0.5f) {
+		lowSel = (lowSel + 1) % 4;  
+	}
+	prevLowButton = currLowButton;
+	for (int i = 0; i < 4; i++) {
+		lights[lowShelfLEDs[i]].setBrightness(i == lowSel ? 1.f : 0.f);
+	}
 
     if (!bypassEQ) {
         // --- Mid band ---
@@ -421,8 +431,7 @@ for (int i = 0; i < 6; i++) {
 
         // --- Low shelf ---
         static float prevLowFreq = -1.f, prevLowGain = -999.f;
-        int lowSel = (int)params[LOWFREQSELECT_PARAM].getValue();
-        static constexpr float lowFreqs[5] = {0.f, 35.f, 60.f, 110.f, 220.f};
+        static constexpr float lowFreqs[4] = {35.f, 60.f, 110.f, 220.f};
         float lowFreq = lowFreqs[lowSel];
         float lowGainDB = params[LOWSHELF_PARAM].getValue();
 
