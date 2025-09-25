@@ -90,6 +90,33 @@ struct ListenClosely : Module {
 		float inL = inputs[INL_INPUT].getVoltage();
 		float inR = inputs[INR_INPUT].isConnected() ? inputs[INR_INPUT].getVoltage() : inL;
 	
+	//Stereo Width
+	float width = params[WIDTH_PARAM].getValue();
+	if (inputs[WIDTHCV_INPUT].isConnected())
+		width += inputs[WIDTHCV_INPUT].getVoltage() * 0.1f; // same as /10.f
+
+	width = clamp(width, 0.f, 1.f);
+
+	float outLWidth = 0.f, outRWidth = 0.f;
+
+	if (width <= 0.5f) {
+		// Blend mono → stereo
+		float t = width * 2.f;
+		float mono = 0.5f * (inL + inR);
+		outLWidth = crossfade(mono, inL, t);
+		outRWidth = crossfade(mono, inR, t);
+	} else {
+		// Stereo widening
+		float t = (width <= 0.75f) ? (width - 0.5f) * 4.f : 1.f;
+		float boost = (width > 0.75f) ? (width - 0.75f) * 4.f : 0.f;
+		float gain = 1.f + boost;
+
+		float diff = 0.5f * (inL - inR);
+		outLWidth = inL + t * gain * diff;
+		outRWidth = inR - t * gain * diff;
+	}
+
+	// Compressor	
 		const float peakReduction = params[PEAKREDUCTION_PARAM].getValue();
 		const float gainParam = params[GAIN_PARAM].getValue();
 		const float dryWet = params[DRYWET_PARAM].getValue();
@@ -98,14 +125,14 @@ struct ListenClosely : Module {
 	
 		if (bypass) {
 			// Early exit for bypass
-			outputs[OUTL_OUTPUT].setVoltage(clamp(inL, -5.f, 5.f));
-			outputs[OUTR_OUTPUT].setVoltage(clamp(inR, -5.f, 5.f));
-			lights[CLIPLED_LIGHT].setBrightnessSmooth((std::fabs(inL) >= 4.9f || std::fabs(inR) >= 4.9f) ? 1.f : 0.f, args.sampleTime);
+			outputs[OUTL_OUTPUT].setVoltage(clamp(outLWidth, -5.f, 5.f));
+			outputs[OUTR_OUTPUT].setVoltage(clamp(outRWidth, -5.f, 5.f));
+			lights[CLIPLED_LIGHT].setBrightnessSmooth((std::fabs(outLWidth) >= 4.9f || std::fabs(outRWidth) >= 4.9f) ? 1.f : 0.f, args.sampleTime);
 			return;
 		}
 	
 		const float ratio = isLimiter ? 10.f : 3.f;
-		const float inputMono = 0.5f * (inL + inR);
+		const float inputMono = 0.5f * (outLWidth + outRWidth);
 	
 		// Envelope follower
 		static float env = 0.f;
@@ -131,9 +158,9 @@ struct ListenClosely : Module {
 		}
 	
 		// Apply compression and gain
-		const float gain = std::pow(10.f, gainParam * 2.f);  // db = 0–40, divide by 20 inline
-		float outL = inL * (1.f - dryWet) + inL * gainReduction * gain * dryWet;
-		float outR = inR * (1.f - dryWet) + inR * gainReduction * gain * dryWet;
+		const float gain = std::pow(10.f, gainParam * 2.f);  // db = 0–40, divide by 20 outLWidthine
+		float outL = outLWidth * (1.f - dryWet) + outLWidth * gainReduction * gain * dryWet;
+		float outR = outRWidth * (1.f - dryWet) + outRWidth * gainReduction * gain * dryWet;
 	
 		outL = clamp(outL, -5.f, 5.f);
 		outR = clamp(outR, -5.f, 5.f);
@@ -142,32 +169,6 @@ struct ListenClosely : Module {
 	
 		const bool clipping = (std::fabs(outL) >= 4.9f || std::fabs(outR) >= 4.9f);
 		lights[CLIPLED_LIGHT].setBrightnessSmooth(clipping ? 1.f : 0.f, args.sampleTime);
-
-		lights[GRAPH1_LIGHT].setBrightness(5.f);
-		lights[GRAPH2_LIGHT].setBrightness(5.f);
-		lights[GRAPH3_LIGHT].setBrightness(5.f);
-		lights[GRAPH4_LIGHT].setBrightness(5.f);
-		lights[GRAPH5_LIGHT].setBrightness(5.f);
-		lights[GRAPH6_LIGHT].setBrightness(5.f);
-		lights[GRAPH7_LIGHT].setBrightness(5.f);
-		lights[GRAPH8_LIGHT].setBrightness(5.f);
-		lights[GRAPH9_LIGHT].setBrightness(5.f);
-		lights[CLIPLED_LIGHT].setBrightness(5.f);
-		lights[_110LED_LIGHT].setBrightness(5.f);
-		lights[_80LED_LIGHT].setBrightness(5.f);
-		lights[_160LED_LIGHT].setBrightness(5.f);
-		lights[_220LED_LIGHT].setBrightness(5.f);
-		lights[_50LED_LIGHT].setBrightness(5.f);
-		lights[_300LED_LIGHT].setBrightness(5.f);
-		lights[_60LED_LIGHT].setBrightness(5.f);
-		lights[OFFLED_LIGHT].setBrightness(5.f);
-		lights[_35LED_LIGHT].setBrightness(5.f);
-		lights[_32KLED_LIGHT].setBrightness(5.f);
-		lights[_16KLED_LIGHT].setBrightness(5.f);
-		lights[_700LED_LIGHT].setBrightness(5.f);
-		lights[_48KLED_LIGHT].setBrightness(5.f);
-		lights[_360LED_LIGHT].setBrightness(5.f);
-		lights[_72KLED_LIGHT].setBrightness(5.f);
 	}
 };
 
