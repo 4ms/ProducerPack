@@ -142,6 +142,32 @@ struct ListenClosely : Module {
 	
 		const bool clipping = (std::fabs(outL) >= 4.9f || std::fabs(outR) >= 4.9f);
 		lights[CLIPLED_LIGHT].setBrightnessSmooth(clipping ? 1.f : 0.f, args.sampleTime);
+
+		lights[GRAPH1_LIGHT].setBrightness(5.f);
+		lights[GRAPH2_LIGHT].setBrightness(5.f);
+		lights[GRAPH3_LIGHT].setBrightness(5.f);
+		lights[GRAPH4_LIGHT].setBrightness(5.f);
+		lights[GRAPH5_LIGHT].setBrightness(5.f);
+		lights[GRAPH6_LIGHT].setBrightness(5.f);
+		lights[GRAPH7_LIGHT].setBrightness(5.f);
+		lights[GRAPH8_LIGHT].setBrightness(5.f);
+		lights[GRAPH9_LIGHT].setBrightness(5.f);
+		lights[CLIPLED_LIGHT].setBrightness(5.f);
+		lights[_110LED_LIGHT].setBrightness(5.f);
+		lights[_80LED_LIGHT].setBrightness(5.f);
+		lights[_160LED_LIGHT].setBrightness(5.f);
+		lights[_220LED_LIGHT].setBrightness(5.f);
+		lights[_50LED_LIGHT].setBrightness(5.f);
+		lights[_300LED_LIGHT].setBrightness(5.f);
+		lights[_60LED_LIGHT].setBrightness(5.f);
+		lights[OFFLED_LIGHT].setBrightness(5.f);
+		lights[_35LED_LIGHT].setBrightness(5.f);
+		lights[_32KLED_LIGHT].setBrightness(5.f);
+		lights[_16KLED_LIGHT].setBrightness(5.f);
+		lights[_700LED_LIGHT].setBrightness(5.f);
+		lights[_48KLED_LIGHT].setBrightness(5.f);
+		lights[_360LED_LIGHT].setBrightness(5.f);
+		lights[_72KLED_LIGHT].setBrightness(5.f);
 	}
 };
 
@@ -179,31 +205,37 @@ struct ListenCloselyWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(51.107, 113.811)), module, ListenClosely::OUTL_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(62.117, 113.811)), module, ListenClosely::OUTR_OUTPUT));
 
+		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(32.518, 49.664)), module, ListenClosely::CLIPLED_LIGHT));
+
 		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(15.56, 14.72)), module, ListenClosely::GRAPH1_LIGHT));
 		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(20.562, 14.72)), module, ListenClosely::GRAPH2_LIGHT));
 		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(25.568, 14.72)), module, ListenClosely::GRAPH3_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(30.57, 14.72)), module, ListenClosely::GRAPH4_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(35.572, 14.72)), module, ListenClosely::GRAPH5_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(40.577, 14.72)), module, ListenClosely::GRAPH6_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(45.579, 14.72)), module, ListenClosely::GRAPH7_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(50.581, 14.72)), module, ListenClosely::GRAPH8_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(55.587, 14.72)), module, ListenClosely::GRAPH9_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(32.518, 49.664)), module, ListenClosely::CLIPLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(7.85, 61.391)), module, ListenClosely::_110LED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(53.802, 61.548)), module, ListenClosely::_80LED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(63.081, 61.51)), module, ListenClosely::_160LED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(20.182, 65.837)), module, ListenClosely::_220LED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(50.807, 69.049)), module, ListenClosely::_50LED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(65.551, 69.013)), module, ListenClosely::_300LED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(4.365, 72.754)), module, ListenClosely::_60LED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(52.871, 76.901)), module, ListenClosely::OFFLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(16.457, 77.355)), module, ListenClosely::_35LED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(41.518, 77.913)), module, ListenClosely::_32KLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(30.163, 78.104)), module, ListenClosely::_16KLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(28.171, 85.468)), module, ListenClosely::_700LED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(42.723, 85.395)), module, ListenClosely::_48KLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(30.67, 93.354)), module, ListenClosely::_360LED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(40.754, 93.671)), module, ListenClosely::_72KLED_LIGHT));
+
+		addChild(createLightCentered<MediumLight<YellowLight>>(mm2px(Vec(30.57, 14.72)), module, ListenClosely::GRAPH4_LIGHT));
+		addChild(createLightCentered<MediumLight<YellowLight>>(mm2px(Vec(35.572, 14.72)), module, ListenClosely::GRAPH5_LIGHT));
+		addChild(createLightCentered<MediumLight<YellowLight>>(mm2px(Vec(40.577, 14.72)), module, ListenClosely::GRAPH6_LIGHT));
+
+		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(45.579, 14.72)), module, ListenClosely::GRAPH7_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(50.581, 14.72)), module, ListenClosely::GRAPH8_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(55.587, 14.72)), module, ListenClosely::GRAPH9_LIGHT));
+
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(16.457, 77.355)), module, ListenClosely::_35LED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(4.365, 72.754)), module, ListenClosely::_60LED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(7.85, 61.391)), module, ListenClosely::_110LED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(20.182, 65.837)), module, ListenClosely::_220LED_LIGHT));
+
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(52.871, 76.901)), module, ListenClosely::OFFLED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(50.807, 69.049)), module, ListenClosely::_50LED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(53.802, 61.548)), module, ListenClosely::_80LED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(63.081, 61.51)), module, ListenClosely::_160LED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(65.551, 69.013)), module, ListenClosely::_300LED_LIGHT));
+
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(30.67, 93.354)), module, ListenClosely::_360LED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(28.171, 85.468)), module, ListenClosely::_700LED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(30.163, 78.104)), module, ListenClosely::_16KLED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(41.518, 77.913)), module, ListenClosely::_32KLED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(42.723, 85.395)), module, ListenClosely::_48KLED_LIGHT));
+		addChild(createLightCentered<MediumLight<BlueLight>>(mm2px(Vec(40.754, 93.671)), module, ListenClosely::_72KLED_LIGHT));
 	}
 };
 
