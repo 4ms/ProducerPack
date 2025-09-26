@@ -128,7 +128,7 @@ struct LowShelf {
         float cosw0 = cosf(w0);
         float sinw0 = sinf(w0);
 
-        float alpha = sinw0 / 1.5f;  // approx 6dB/oct broad Q for Neve 1073 style
+        float alpha = sinw0 / 1.5f;  // approx 6dB/oct broad Q
 
         float sqrtA = sqrtf(A);
 
@@ -257,285 +257,193 @@ struct ListenClosely : Module {
 		configOutput(OUTR_OUTPUT, "Audio Right");
 	}
 
-	float freqSelectToFreq(int sel, bool isMid) {
-        if (isMid) {
-            switch(sel) {
-                case 1: return 360.f;
-                case 2: return 700.f;
-                case 3: return 1600.f;
-                case 4: return 3200.f;
-                case 5: return 4800.f;
-                case 6: return 7200.f;
-                default: return 0.f;
-            }
-        } else {
-            switch(sel) {
-                case 1: return 35.f;
-                case 2: return 60.f;
-                case 3: return 110.f;
-                case 4: return 220.f;
-                default: return 0.f;
-            }
-        }
-    }
-
-    float highpassFreqSelectToFreq(int sel) {
-        switch(sel) {
-            case 1: return 50.f;
-            case 2: return 80.f;
-            case 3: return 160.f;
-            case 4: return 300.f;
-            default: return 0.f;
-        }
-    }
-
 	// Rising edge detection state
-float prevHighpassButton = 0.f;
-float prevMidButton = 0.f;
-float prevLowButton = 0.f;
+	float prevHighpassButton = 0.f;
+	float prevMidButton = 0.f;
+	float prevLowButton = 0.f;
 
-int hpSel = 0;
-int midSel = 0;
-int lowSel = 0;
+	int hpSel = 0;
+	int midSel = 0;
+	int lowSel = 0;
 
-int highpassLEDs[5] = {OFFLED_LIGHT, _50LED_LIGHT, _80LED_LIGHT, _160LED_LIGHT, _300LED_LIGHT};
+	int highpassLEDs[5] = {OFFLED_LIGHT, _50LED_LIGHT, _80LED_LIGHT, _160LED_LIGHT, _300LED_LIGHT};
+	int lowShelfLEDs[4] = {_35LED_LIGHT, _60LED_LIGHT, _110LED_LIGHT, _220LED_LIGHT};
+	int midLEDs[6] = {_360LED_LIGHT, _700LED_LIGHT, _16KLED_LIGHT, _32KLED_LIGHT, _48KLED_LIGHT, _72KLED_LIGHT};
 
-int lowShelfLEDs[4] = {_35LED_LIGHT, _60LED_LIGHT, _110LED_LIGHT, _220LED_LIGHT};
-
-int midLEDs[6] = {_360LED_LIGHT, _700LED_LIGHT, _16KLED_LIGHT, _32KLED_LIGHT, _48KLED_LIGHT, _72KLED_LIGHT};
+	float EQOutL = 0;
+	float EQOutR = 0;
+	float compOutL = 0;
+	float compOutR = 0; 
 
 	void process(const ProcessArgs& args) override {
 		float inL = inputs[INL_INPUT].getVoltage();
 		float inR = inputs[INR_INPUT].isConnected() ? inputs[INR_INPUT].getVoltage() : inL;
 	
-	//Stereo Width
-	float width = params[WIDTH_PARAM].getValue();
-	if (inputs[WIDTHCV_INPUT].isConnected())
-		width += inputs[WIDTHCV_INPUT].getVoltage() * 0.1f; // same as /10.f
+		// Stereo Width
+		float width = params[WIDTH_PARAM].getValue();
+		if (inputs[WIDTHCV_INPUT].isConnected())
+			width += inputs[WIDTHCV_INPUT].getVoltage() * 0.1f;
+		width = clamp(width, 0.f, 1.f);
 
-	width = clamp(width, 0.f, 1.f);
-
-	float outLWidth = 0.f, outRWidth = 0.f;
-
-	if (width <= 0.5f) {
-		// Blend mono → stereo
-		float t = width * 2.f;
-		float mono = 0.5f * (inL + inR);
-		outLWidth = crossfade(mono, inL, t);
-		outRWidth = crossfade(mono, inR, t);
-	} else {
-		// Stereo widening
-		float t = (width <= 0.75f) ? (width - 0.5f) * 4.f : 1.f;
-		float boost = (width > 0.75f) ? (width - 0.75f) * 4.f : 0.f;
-		float gain = 1.f + boost;
-
-		float diff = 0.5f * (inL - inR);
-		outLWidth = inL + t * gain * diff;
-		outRWidth = inR - t * gain * diff;
-	}
-
-	// EQ 
-
-    float outputVol = params[OUTPUTVOL_PARAM].getValue(); // 0..1
-    bool bypassEQ = params[PREPOST_PARAM].getValue() == 1;
-
-// HIGH PASS SELECT BUTTON
-float currHighpassButton = params[HIGHPASSFREQSELECT_PARAM].getValue();
-if (prevHighpassButton <= 0.5f && currHighpassButton > 0.5f) {
-	hpSel = (hpSel + 1) % 5;  // +1 to include 0 ("off")
-}
-prevHighpassButton = currHighpassButton;
-for (int i = 0; i < 5; i++) {
-	lights[highpassLEDs[i]].setBrightness(i == hpSel ? 1.f : 0.f);
-}
-
-	static float prevHpFreq = -1.f;
-    static float hpAlpha = 0.f;
-
-    float hpFreq = highpassFreqSelectToFreq(hpSel);
-    if (hpFreq > 0.f) {
-        if (hpFreq != prevHpFreq) {
-            float rc = 1.f / (2.f * M_PI * hpFreq);
-            float dt = 1.f / args.sampleRate;
-            hpAlpha = rc / (rc + dt);
-            prevHpFreq = hpFreq;
-        }
-
-        outLWidth = highpassL1.process(outLWidth, hpAlpha);
-        outLWidth = highpassL2.process(outLWidth, hpAlpha);
-        outLWidth = highpassL3.process(outLWidth, hpAlpha);
-        outRWidth = highpassR1.process(outRWidth, hpAlpha);
-        outRWidth = highpassR2.process(outRWidth, hpAlpha);
-        outRWidth = highpassR3.process(outRWidth, hpAlpha);
-    }
-
-    float eqOutL = outLWidth;
-    float eqOutR = outRWidth;
-
-	//Mid band SELECT BUTTON
-	float currMidButton = params[MIDFREQSELECT_PARAM].getValue();
-	if (prevMidButton <= 0.5f && currMidButton > 0.5f) {
-		midSel = (midSel + 1) % 6;  
-	}
-	prevMidButton = currMidButton;
-	for (int i = 0; i < 6; i++) {
-		lights[midLEDs[i]].setBrightness(i == midSel ? 1.f : 0.f);
-	}
-
-	//Low shelf SELECT BUTTON
-	float currLowButton = params[LOWFREQSELECT_PARAM].getValue();
-	if (prevLowButton <= 0.5f && currLowButton > 0.5f) {
-		lowSel = (lowSel + 1) % 4;  
-	}
-	prevLowButton = currLowButton;
-	for (int i = 0; i < 4; i++) {
-		lights[lowShelfLEDs[i]].setBrightness(i == lowSel ? 1.f : 0.f);
-	}
-
-    if (!bypassEQ) {
-        // --- Mid band ---
-        static float prevMidFreq = -1.f, prevMidGain = -999.f;
-        static constexpr float midFreqs[6] = {360.f, 700.f, 1600.f, 3200.f, 4800.f, 7200.f};
-        float midFreq = midFreqs[midSel];
-        float midGainDB = params[MID_PARAM].getValue();
-
-        if (midFreq > 0.f && (midFreq != prevMidFreq || midGainDB != prevMidGain)) {
-            midBandL.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
-            midBandR.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
-            prevMidFreq = midFreq;
-            prevMidGain = midGainDB;
-        }
-
-        if (midFreq > 0.f) {
-            midBandL.smoothCoeffs();
-            midBandR.smoothCoeffs();
-            eqOutL = midBandL.process(eqOutL);
-            eqOutR = midBandR.process(eqOutR);
-        }
-
-        // --- High shelf ---
-        static float prevHighGain = -999.f;
-        float highGainDB = params[HIGHSHELF_PARAM].getValue();
-        float highShelfFreq = 10000.f;
-
-        if (highGainDB != prevHighGain) {
-            highShelfL.calcTargetCoeffs(args.sampleRate, highShelfFreq, highGainDB);
-            highShelfR.calcTargetCoeffs(args.sampleRate, highShelfFreq, highGainDB);
-            prevHighGain = highGainDB;
-        }
-
-        highShelfL.smoothCoeffs();
-        highShelfR.smoothCoeffs();
-        eqOutL = highShelfL.process(eqOutL);
-        eqOutR = highShelfR.process(eqOutR);
-
-        // --- Low shelf ---
-        static float prevLowFreq = -1.f, prevLowGain = -999.f;
-        static constexpr float lowFreqs[4] = {35.f, 60.f, 110.f, 220.f};
-        float lowFreq = lowFreqs[lowSel];
-        float lowGainDB = params[LOWSHELF_PARAM].getValue();
-
-        if (lowFreq > 0.f && (lowFreq != prevLowFreq || lowGainDB != prevLowGain)) {
-            lowShelfL.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
-            lowShelfR.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
-            prevLowFreq = lowFreq;
-            prevLowGain = lowGainDB;
-        }
-
-        if (lowFreq > 0.f) {
-            lowShelfL.smoothCoeffs();
-            lowShelfR.smoothCoeffs();
-            eqOutL = lowShelfL.process(eqOutL);
-            eqOutR = lowShelfR.process(eqOutR);
-        }
-    }
-
-    // Output volume
-    float outEQL = clamp(eqOutL * outputVol, -10.f, 10.f);
-    float outEQR = clamp(eqOutR * outputVol, -10.f, 10.f);
-
-	// Compressor	
-		const float peakReduction = params[PEAKREDUCTION_PARAM].getValue();
-		const float gainParam = params[GAIN_PARAM].getValue();
-		const float dryWet = params[DRYWET_PARAM].getValue();
-		const bool isLimiter = params[RATIO_PARAM].getValue() > 0.5f;
-		const bool bypass = params[RATIO_PARAM].getValue() == 1.f;
-	
-		if (bypass) {
-			// Early exit for bypass
-			outputs[OUTL_OUTPUT].setVoltage(clamp(outEQL, -10.f, 10.f));
-			outputs[OUTR_OUTPUT].setVoltage(clamp(outEQR, -10.f, 10.f));
-			lights[CLIPLED_LIGHT].setBrightness(0);
-
-			// Shutoff graph
-			for (int i = GRAPH1_LIGHT; i <= GRAPH9_LIGHT; ++i) {
-				lights[i].setBrightness(0);
-			}		
-			return;
+		float outLWidth = 0.f, outRWidth = 0.f;
+		if (width <= 0.5f) {
+			float t = width * 2.f;
+			float mono = 0.5f * (inL + inR);
+			outLWidth = crossfade(mono, inL, t);
+			outRWidth = crossfade(mono, inR, t);
+		} else {
+			float t = (width <= 0.75f) ? (width - 0.5f) * 4.f : 1.f;
+			float boost = (width > 0.75f) ? (width - 0.75f) * 4.f : 0.f;
+			float gain = 1.f + boost;
+			float diff = 0.5f * (inL - inR);
+			outLWidth = inL + t * gain * diff;
+			outRWidth = inR - t * gain * diff;
 		}
-	
-		const float ratio = isLimiter ? 10.f : 3.f;
-		const float inputMono = 0.5f * (outEQL + outEQR);
-	
-		// Envelope follower
-		static float env = 0.f;
-		const float rectified = std::fabs(inputMono);
-	
-		// Pre-compute smoothing coefficients once per call
-		const float sampleRate = args.sampleRate;
-		const float coeffAtk = std::exp(-1.f / (0.01f * sampleRate));
-		const float coeffRelFast = std::exp(-1.f / (0.06f * sampleRate));
-		const float coeffRelSlow = std::exp(-1.f / (1.5f * sampleRate));
-	
-		const float releaseCoeff = (env > 0.1f) ? coeffRelFast : coeffRelSlow;
-		env = (rectified > env)
-			? coeffAtk * env + (1.f - coeffAtk) * rectified
-			: releaseCoeff * env + (1.f - releaseCoeff) * rectified;
-	
-		// Compression gain calculation
-		const float threshold = 1.f - peakReduction;
-		float gainReduction = 1.f;
-		if (env > threshold) {
-			const float over = env - threshold;
-			gainReduction = 1.f / (1.f + over * (ratio - 1.f));
+
+		// --- EQ selector buttons ---
+		float currHighpassButton = params[HIGHPASSFREQSELECT_PARAM].getValue();
+		if (prevHighpassButton <= 0.5f && currHighpassButton > 0.5f) hpSel = (hpSel + 1) % 5;
+		prevHighpassButton = currHighpassButton;
+		for (int i = 0; i < 5; i++) lights[highpassLEDs[i]].setBrightness(i == hpSel ? 1.f : 0.f);
+
+		float currMidButton = params[MIDFREQSELECT_PARAM].getValue();
+		if (prevMidButton <= 0.5f && currMidButton > 0.5f) midSel = (midSel + 1) % 6;
+		prevMidButton = currMidButton;
+		for (int i = 0; i < 6; i++) lights[midLEDs[i]].setBrightness(i == midSel ? 1.f : 0.f);
+
+		float currLowButton = params[LOWFREQSELECT_PARAM].getValue();
+		if (prevLowButton <= 0.5f && currLowButton > 0.5f) lowSel = (lowSel + 1) % 4;
+		prevLowButton = currLowButton;
+		for (int i = 0; i < 4; i++) lights[lowShelfLEDs[i]].setBrightness(i == lowSel ? 1.f : 0.f);
+
+		// --- Routing: Pre / Bypass / Post ---
+		int prepostMode = (int) std::round(params[PREPOST_PARAM].getValue());
+		float eqVol = params[OUTPUTVOL_PARAM].getValue();
+
+		auto applyEQ = [&](float &L, float &R, const ProcessArgs &a) {
+			// Highpass
+			float hpFreq = 0.f;
+			switch(hpSel){case 1:hpFreq=50.f;break;case 2:hpFreq=80.f;break;case 3:hpFreq=160.f;break;case 4:hpFreq=300.f;break;}
+			static float prevHpFreq=-1.f, hpAlpha=0.f;
+			if(hpFreq>0.f){
+				if(hpFreq!=prevHpFreq){float rc=1.f/(2.f*M_PI*hpFreq);float dt=1.f/a.sampleRate;hpAlpha=rc/(rc+dt);prevHpFreq=hpFreq;}
+				L=highpassL1.process(L,hpAlpha);L=highpassL2.process(L,hpAlpha);L=highpassL3.process(L,hpAlpha);
+				R=highpassR1.process(R,hpAlpha);R=highpassR2.process(R,hpAlpha);R=highpassR3.process(R,hpAlpha);
+			}
+			// Mid band
+			static float prevMidFreq=-1.f, prevMidGain=-999.f;
+			static constexpr float midFreqs[6]={360.f,700.f,1600.f,3200.f,4800.f,7200.f};
+			float midFreq=midFreqs[midSel]; float midGainDB=params[MID_PARAM].getValue();
+			if(midFreq!=prevMidFreq||midGainDB!=prevMidGain){
+				midBandL.calcTargetCoeffs(a.sampleRate,midFreq,midGainDB,0.5f);
+				midBandR.calcTargetCoeffs(a.sampleRate,midFreq,midGainDB,0.5f);
+				prevMidFreq=midFreq; prevMidGain=midGainDB;
+			}
+			midBandL.smoothCoeffs();midBandR.smoothCoeffs();
+			L=midBandL.process(L);R=midBandR.process(R);
+			// High shelf
+			static float prevHighGain=-999.f;
+			float highGainDB=params[HIGHSHELF_PARAM].getValue();
+			if(highGainDB!=prevHighGain){
+				highShelfL.calcTargetCoeffs(a.sampleRate,10000.f,highGainDB);
+				highShelfR.calcTargetCoeffs(a.sampleRate,10000.f,highGainDB);
+				prevHighGain=highGainDB;
+			}
+			highShelfL.smoothCoeffs();highShelfR.smoothCoeffs();
+			L=highShelfL.process(L);R=highShelfR.process(R);
+			// Low shelf
+			static float prevLowFreq=-1.f, prevLowGain=-999.f;
+			static constexpr float lowFreqs[4]={35.f,60.f,110.f,220.f};
+			float lowFreq=lowFreqs[lowSel]; float lowGainDB=params[LOWSHELF_PARAM].getValue();
+			if(lowFreq!=prevLowFreq||lowGainDB!=prevLowGain){
+				lowShelfL.calcTargetCoeffs(a.sampleRate,lowFreq,lowGainDB);
+				lowShelfR.calcTargetCoeffs(a.sampleRate,lowFreq,lowGainDB);
+				prevLowFreq=lowFreq; prevLowGain=lowGainDB;
+			}
+			lowShelfL.smoothCoeffs();lowShelfR.smoothCoeffs();
+			L=lowShelfL.process(L);R=lowShelfR.process(R);
+		};
+
+		float compInL=0.f, compInR=0.f;
+
+		if (prepostMode == 0) {
+			// --- EQ Pre ---
+			float L = outLWidth, R = outRWidth;
+			applyEQ(L, R, args);
+			L *= eqVol;
+			R *= eqVol;
+			compInL = L;
+			compInR = R;
+
+		} else if (prepostMode == 1) {
+			// --- EQ Bypass ---
+			// Direct pass-through, no EQ and no EQ output volume
+			compInL = outLWidth;
+			compInR = outRWidth;
+
+		} else {
+			// --- EQ Post ---
+			compInL = outLWidth;
+			compInR = outRWidth;
 		}
-	
-		// Apply compression and gain
-		const float gain = std::pow(10.f, gainParam * 2.f);  // db = 0–40, divide by 20 outLWidthine
-		float outL = outEQL * (1.f - dryWet) + outEQL * gainReduction * gain * dryWet;
-		float outR = outEQR * (1.f - dryWet) + outEQR * gainReduction * gain * dryWet;
-	
-		outL = clamp(outL, -10.f, 10.f);
-		outR = clamp(outR, -10.f, 10.f);
 
-		outputs[OUTL_OUTPUT].setVoltage(outL);
-		outputs[OUTR_OUTPUT].setVoltage(outR);
-	
-		// Compressor LEDs
-		const bool clipping = (std::fabs(outL) >= 9.9f || std::fabs(outR) >= 9.9f);
-		lights[CLIPLED_LIGHT].setBrightnessSmooth(clipping ? 1.f : 0.f, args.sampleTime);
-
-		// --- Peak Reduction Display (Graph1 to Graph9, scaled and reversed) ---
-		float reductionDb = 20.f * std::log10(clamp(gainReduction, 1e-6f, 1.f));  // Avoid log(0)
-
-		// Scale: 0 dB (no compression) → -24 dB (max compression)
-		const float minDb = -24.f;  // Adjust based on actual compression range
-		const float maxDb = 0.f;
-
-		float normalized = clamp((reductionDb - maxDb) / (minDb - maxDb), 0.f, 1.f);
-		int numSegments = (int)std::round(normalized * 9.f);
-		numSegments = clamp(numSegments, 0, 9);
-
-		// Light LEDs in reverse (GRAPH1 = max reduction)
-		for (int i = 0; i < 9; ++i) {
-			int lightIndex = GRAPH9_LIGHT - i;
-			bool lit = i < numSegments;
-			lights[lightIndex].setBrightnessSmooth(lit ? 1.f : 0.f, args.sampleTime);
+		// --- Compressor ---
+		{
+			const float peakReduction=params[PEAKREDUCTION_PARAM].getValue();
+			const float gainParam=params[GAIN_PARAM].getValue();
+			const float dryWet=params[DRYWET_PARAM].getValue();
+			const bool isLimiter=params[RATIO_PARAM].getValue()>0.5f;
+			const bool bypass=params[RATIO_PARAM].getValue()==1.f;
+			if(bypass){
+				compOutL=compInL;compOutR=compInR;
+			}else{
+				const float ratio=isLimiter?10.f:3.f;
+				const float inputMono=0.5f*(compInL+compInR);
+				static float env=0.f;
+				const float rectified=fabsf(inputMono);
+				const float sampleRate=args.sampleRate;
+				const float coeffAtk=expf(-1.f/(0.01f*sampleRate));
+				const float coeffRelFast=expf(-1.f/(0.06f*sampleRate));
+				const float coeffRelSlow=expf(-1.f/(1.5f*sampleRate));
+				const float releaseCoeff=(env>0.1f)?coeffRelFast:coeffRelSlow;
+				env=(rectified>env)?coeffAtk*env+(1.f-coeffAtk)*rectified:releaseCoeff*env+(1.f-releaseCoeff)*rectified;
+				const float threshold=1.f-peakReduction;
+				float gainReduction=1.f;
+				if(env>threshold){const float over=env-threshold;gainReduction=1.f/(1.f+over*(ratio-1.f));}
+				const float gain=powf(10.f,gainParam*2.f);
+				compOutL=compInL*(1.f-dryWet)+compInL*gainReduction*gain*dryWet;
+				compOutR=compInR*(1.f-dryWet)+compInR*gainReduction*gain*dryWet;
+				compOutL=clamp(compOutL,-10.f,10.f);compOutR=clamp(compOutR,-10.f,10.f);
+				const bool clipping=(fabsf(compOutL)>=9.9f||fabsf(compOutR)>=9.9f);
+				lights[CLIPLED_LIGHT].setBrightnessSmooth(clipping?1.f:0.f,args.sampleTime);
+				float reductionDb=20.f*log10f(clamp(gainReduction,1e-6f,1.f));
+				float normalized=clamp((reductionDb-0.f)/(-24.f-0.f),0.f,1.f);
+				int numSegments=(int)roundf(normalized*9.f);
+				numSegments=clamp(numSegments,0,9);
+				for(int i=0;i<9;i++){int idx=GRAPH9_LIGHT-i;lights[idx].setBrightnessSmooth(i<numSegments?1.f:0.f,args.sampleTime);}
+			}
 		}
+
+		if (prepostMode == 2) {
+			// --- EQ Post ---
+			float L = compOutL, R = compOutR;
+			applyEQ(L, R, args);
+			L *= eqVol;
+			R *= eqVol;
+			EQOutL = L;
+			EQOutR = R;
+		} else {
+			EQOutL = compOutL;
+			EQOutR = compOutR;
+		}
+
+		float finalL = clamp(EQOutL, -10.f, 10.f);
+		float finalR = clamp(EQOutR, -10.f, 10.f);
+
+		outputs[OUTL_OUTPUT].setVoltage(finalL);
+		outputs[OUTR_OUTPUT].setVoltage(finalR);
 	}
-
 };
-
 
 struct ListenCloselyWidget : ModuleWidget {
 	ListenCloselyWidget(ListenClosely* module) {
