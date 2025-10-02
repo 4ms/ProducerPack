@@ -198,18 +198,18 @@ struct AuxSendsWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(17.681, 13.501)), module, AuxSends::ASEND_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(40.678, 13.501)), module, AuxSends::BSEND_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(63.58, 13.501)), module, AuxSends::CSEND_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(17.681, 13.501)), module, AuxSends::ASEND_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(40.678, 13.501)), module, AuxSends::BSEND_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(63.58, 13.501)), module, AuxSends::CSEND_PARAM));
 
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(6.699, 14.702)), module, AuxSends::PREPOST1_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(29.7, 14.702)), module, AuxSends::PREPOST2_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(52.701, 14.702)), module, AuxSends::PREPOST3_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(6.699, 14.702)), module, AuxSends::PREPOST1_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(29.7, 14.702)), module, AuxSends::PREPOST2_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(52.701, 14.702)), module, AuxSends::PREPOST3_PARAM));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(12.679, 61.499)), module, AuxSends::ARETURN_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(35.581, 61.499)), module, AuxSends::BRETURN_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(58.578, 61.499)), module, AuxSends::CRETURN_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(28.998, 111.0)), module, AuxSends::DRYLEVEL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(12.679, 61.499)), module, AuxSends::ARETURN_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(35.581, 61.499)), module, AuxSends::BRETURN_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(58.578, 61.499)), module, AuxSends::CRETURN_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(28.998, 111.0)), module, AuxSends::DRYLEVEL_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.7, 30.998)), module, AuxSends::ASENDCVIN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(35.581, 30.998)), module, AuxSends::BSENDCVIN_INPUT));

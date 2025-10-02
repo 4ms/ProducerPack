@@ -175,7 +175,7 @@ struct SpatializerWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(9.206, 19.076)), module, Spatializer::RANGE_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(9.206, 19.076)), module, Spatializer::RANGE_PARAM));
 		addParam(createParamCentered<Davies_large>(mm2px(Vec(30.514, 19.757)), module, Spatializer::MIDSIDE_PARAM));
 		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(13.507, 41.317)), module, Spatializer::TIME_PARAM));
 		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(47.522, 41.317)), module, Spatializer::WIDTH_PARAM));

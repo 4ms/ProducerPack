@@ -25,8 +25,8 @@ extern Model *modelOctoPush;
 extern Model *modelSoloPush;
 extern Model *modelRouter;
 
-struct _9mmKnob : RoundKnob {
-	_9mmKnob() {
+struct Knob9mm : RoundKnob {
+	Knob9mm() {
 		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/9mm_knob.svg")));
 	}
 };
@@ -43,24 +43,24 @@ struct Davies_large : RoundKnob {
 	}
 };
 
-struct _2Pos : SvgSwitch {
-	_2Pos() {
+struct Switch2Pos : SvgSwitch {
+	Switch2Pos() {
 		momentary = false; // true for momentary behavior
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggle_0.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggle_2.svg")));
 	}
 };
 
-struct _2PosHorizontal : SvgSwitch {
-	_2PosHorizontal() {
+struct Switch2PosHorizontal : SvgSwitch {
+	Switch2PosHorizontal() {
 		momentary = false; // true for momentary behavior
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggleH_0.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggleH_2.svg")));
 	}
 };
 
-struct _3Pos : SvgSwitch {
-	_3Pos() {
+struct Switch3Pos : SvgSwitch {
+	Switch3Pos() {
 		momentary = false; // true for momentary behavior
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggle_0.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggle_1.svg")));
@@ -68,8 +68,8 @@ struct _3Pos : SvgSwitch {
 	}
 };
 
-struct _3PosHorizontal : SvgSwitch {
-	_3PosHorizontal() {
+struct Switch3PosHorizontal : SvgSwitch {
+	Switch3PosHorizontal() {
 		momentary = false; // true for momentary behavior
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggleH_0.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/components/SubMiniToggleH_1.svg")));

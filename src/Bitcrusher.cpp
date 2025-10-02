@@ -264,8 +264,8 @@ struct BitcrusherWidget : ModuleWidget {
 		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(13.501, 58.998)), module, Bitcrusher::CUTOFF_PARAM));
 		addParam(
 			createParamCentered<Davies1900hBlack>(mm2px(Vec(47.502, 58.998)), module, Bitcrusher::RESONANCE_PARAM));
-		addParam(
-			createParamCentered<_2PosHorizontal>(mm2px(Vec(13.501, 95.002)), module, Bitcrusher::FILTERTYPE_PARAM));
+		addParam(createParamCentered<Switch2PosHorizontal>(
+			mm2px(Vec(13.501, 95.002)), module, Bitcrusher::FILTERTYPE_PARAM));
 		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(47.502, 94.999)), module, Bitcrusher::VOLUME_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(13.501, 41.751)), module, Bitcrusher::SAMPLERATECVIN_INPUT));

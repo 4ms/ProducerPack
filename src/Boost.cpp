@@ -94,9 +94,9 @@ struct BoostWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.16, 15.501)), module, Boost::GAIN_PARAM));
-		addParam(createParam<_3PosHorizontal>(mm2px(Vec(6.3, 24.501)), module, Boost::RANGE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.16, 42.5)), module, Boost::VOLUME_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(10.16, 15.501)), module, Boost::GAIN_PARAM));
+		addParam(createParam<Switch3PosHorizontal>(mm2px(Vec(6.3, 24.501)), module, Boost::RANGE_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(10.16, 42.5)), module, Boost::VOLUME_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 59.5)), module, Boost::LEFTIN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.16, 76.501)), module, Boost::RIGHTIN_INPUT));

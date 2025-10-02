@@ -97,11 +97,11 @@ struct TwoOpWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 19.502)), module, TwoOp::PITCH_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 38.499)), module, TwoOp::FMAMT_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 57.5)), module, TwoOp::RATIO_PARAM));
-		addParam(createParam<_3Pos>(mm2px(Vec(6.999, 73.502)), module, TwoOp::RANGE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.74, 76.501)), module, TwoOp::DECAY_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(22.74, 19.502)), module, TwoOp::PITCH_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(22.74, 38.499)), module, TwoOp::FMAMT_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(22.74, 57.5)), module, TwoOp::RATIO_PARAM));
+		addParam(createParam<Switch3Pos>(mm2px(Vec(6.999, 73.502)), module, TwoOp::RANGE_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(22.74, 76.501)), module, TwoOp::DECAY_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 19.502)), module, TwoOp::VOCTIN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.74, 38.499)), module, TwoOp::FMAMTCVIN_INPUT));

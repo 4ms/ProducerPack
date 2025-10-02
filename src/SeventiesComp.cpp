@@ -90,8 +90,8 @@ struct SeventiesCompWidget : ModuleWidget {
 
 		addParam(createParamCentered<Davies1900hBlack>(
 			mm2px(Vec(15.262, 18.804)), module, SeventiesComp::PEAK_REDUCTION_PARAM));
-		addParam(createParam<_2Pos>(mm2px(Vec(5.25, 35.77)), module, SeventiesComp::RATIO_PARAM));
-		addParam(createParam<_2Pos>(mm2px(Vec(19.268, 35.77)), module, SeventiesComp::BYPASS_PARAM));
+		addParam(createParam<Switch2Pos>(mm2px(Vec(5.25, 35.77)), module, SeventiesComp::RATIO_PARAM));
+		addParam(createParam<Switch2Pos>(mm2px(Vec(19.268, 35.77)), module, SeventiesComp::BYPASS_PARAM));
 		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.262, 56.014)), module, SeventiesComp::GAIN_PARAM));
 		addParam(
 			createParamCentered<Davies1900hBlack>(mm2px(Vec(15.262, 78.018)), module, SeventiesComp::DRY_WET_PARAM));

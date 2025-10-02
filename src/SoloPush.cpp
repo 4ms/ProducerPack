@@ -102,9 +102,9 @@ struct SoloPushWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(10.16, 55.629)), module, SoloPush::CH1RANGE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.16, 74.637)), module, SoloPush::CH1OFFSET_PARAM));
-		addParam(createParamCentered<_3Pos>(mm2px(Vec(10.16, 93.644)), module, SoloPush::CH1BEHAVIOR_PARAM));
+		addParam(createParamCentered<Switch3Pos>(mm2px(Vec(10.16, 55.629)), module, SoloPush::CH1RANGE_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(10.16, 74.637)), module, SoloPush::CH1OFFSET_PARAM));
+		addParam(createParamCentered<Switch3Pos>(mm2px(Vec(10.16, 93.644)), module, SoloPush::CH1BEHAVIOR_PARAM));
 		addParam(createParamCentered<LEDBezel>(mm2px(Vec(10.16, 112.652)), module, SoloPush::CH1PUSH_PARAM));
 		addChild(
 			createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(10.16, 112.652)), module, SoloPush::CH1_LIGHT));

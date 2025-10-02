@@ -432,15 +432,14 @@ struct SeventiesEQWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
 		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.286, 15.445)), module, SeventiesEQ::GAIN_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 31.53)), module, SeventiesEQ::HIGH_SHELF_PARAM));
-		addParam(createParam<_2Pos>(mm2px(Vec(20, 28.528)), module, SeventiesEQ::BYPASS_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 48.547)), module, SeventiesEQ::MID_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.819, 48.547)), module, SeventiesEQ::MIDFREQSELECT_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 65.563)), module, SeventiesEQ::LOW_SHELF_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.819, 65.563)), module, SeventiesEQ::LOWFREQSELECT_PARAM));
-		addParam(
-			createParamCentered<_9mmKnob>(mm2px(Vec(7.763, 82.58)), module, SeventiesEQ::HIGHPASSFREQSELECT_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(22.819, 82.58)), module, SeventiesEQ::OUTPUTVOL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(7.763, 31.53)), module, SeventiesEQ::HIGH_SHELF_PARAM));
+		addParam(createParam<Switch2Pos>(mm2px(Vec(20, 28.528)), module, SeventiesEQ::BYPASS_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(7.763, 48.547)), module, SeventiesEQ::MID_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(22.819, 48.547)), module, SeventiesEQ::MIDFREQSELECT_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(7.763, 65.563)), module, SeventiesEQ::LOW_SHELF_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(22.819, 65.563)), module, SeventiesEQ::LOWFREQSELECT_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(7.763, 82.58)), module, SeventiesEQ::HIGHPASSFREQSELECT_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(22.819, 82.58)), module, SeventiesEQ::OUTPUTVOL_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.321, 97.093)), module, SeventiesEQ::INL_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.07, 97.093)), module, SeventiesEQ::INR_INPUT));
