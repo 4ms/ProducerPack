@@ -84,13 +84,13 @@ struct DJFilter : Module {
 		// Parameters + CV (cutoff and resonance)
 		float cutoffVal = params[CUTOFF_PARAM].getValue();
 		float cutoffCV = inputs[CUTOFFCV_INPUT].isConnected() ? inputs[CUTOFFCV_INPUT].getVoltage() * 0.1f : 0.f; // /10
-		float morph = clamp(cutoffVal + cutoffCV, 0.f, 1.f);
+		float morph = std::clamp(cutoffVal + cutoffCV, 0.f, 1.f);
 
 		float resVal = params[RESONANCE_PARAM].getValue();
 		float resCV = inputs[RESONANCECV_INPUT].isConnected() ? inputs[RESONANCECV_INPUT].getVoltage() * 0.1f : 0.f;
-		float resonanceParam = clamp(resVal + resCV, 0.f, 1.f);
+		float resonanceParam = std::clamp(resVal + resCV, 0.f, 1.f);
 
-		int stages = clamp((int)params[SLOPE_PARAM].getValue(), 1, 4);
+		int stages = std::clamp((int)params[SLOPE_PARAM].getValue(), 1, 4);
 
 		// Cutoff frequency calculation (log scale)
 		float cutoffHz;

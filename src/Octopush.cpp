@@ -167,9 +167,9 @@ struct OctoPush : Module {
 		}
 
 		outputs[SUMOUT_OUTPUT].setVoltage(clamp(sumVoltages, -5.f, 5.f));
-		outputs[INVERSEOUT_OUTPUT].setVoltage(sumVoltages != 0.f ? clamp(1.f / sumVoltages, -5.f, 5.f) : 0.f);
-		outputs[POSITIVEOUT_OUTPUT].setVoltage(sumVoltages > 0.f ? clamp(sumVoltages, 0.f, 5.f) : 0.f);
-		outputs[NEGATIVEOUT_OUTPUT].setVoltage(sumVoltages < 0.f ? clamp(sumVoltages, -5.f, 0.f) : 0.f);
+		outputs[INVERSEOUT_OUTPUT].setVoltage(sumVoltages != 0.f ? std::clamp(1.f / sumVoltages, -5.f, 5.f) : 0.f);
+		outputs[POSITIVEOUT_OUTPUT].setVoltage(sumVoltages > 0.f ? std::clamp(sumVoltages, 0.f, 5.f) : 0.f);
+		outputs[NEGATIVEOUT_OUTPUT].setVoltage(sumVoltages < 0.f ? std::clamp(sumVoltages, -5.f, 0.f) : 0.f);
 	}
 
 private:
@@ -216,8 +216,7 @@ struct OctoPushWidget : ModuleWidget {
 		addParam(createParamCentered<Switch3Pos>(mm2px(Vec(61.061, 93.644)), module, OctoPush::CH5BEHAVIOR_PARAM));
 		addParam(createParamCentered<Switch3Pos>(mm2px(Vec(74.529, 93.644)), module, OctoPush::CH6BEHAVIOR_PARAM));
 		addParam(createParamCentered<Switch3Pos>(mm2px(Vec(87.997, 93.644)), module, OctoPush::CH7BEHAVIOR_PARAM));
-		addParam(
-			createParamCentered<Switch3Pos>(mm2px(Vec(101.465, 93.644)), module, OctoPush::CH8BEHAVIOR_PARAM));
+		addParam(createParamCentered<Switch3Pos>(mm2px(Vec(101.465, 93.644)), module, OctoPush::CH8BEHAVIOR_PARAM));
 
 		addParam(createParamCentered<LEDBezel>(mm2px(Vec(7.188, 112.652)), module, OctoPush::CH1PUSH_PARAM));
 		addChild(

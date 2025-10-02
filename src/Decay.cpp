@@ -41,7 +41,7 @@ struct Decay : Module {
 		const float decayParam = params[DECAY_PARAM].getValue();
 		const float decayCV =
 			inputs[DECAYCVIN_INPUT].isConnected() ? inputs[DECAYCVIN_INPUT].getVoltage() * 0.2f : 0.f; // /5.0f
-		const float decayControl = clamp(decayParam + decayCV, 0.f, 1.f);
+		const float decayControl = std::clamp(decayParam + decayCV, 0.f, 1.f);
 
 		// Avoid recalculating if decayControl is 0 (envelope decays immediately)
 		float decayTimeSec = decayControl * maxDecayMs * 0.001f;

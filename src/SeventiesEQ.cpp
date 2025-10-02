@@ -306,8 +306,8 @@ struct SeventiesEQ : Module {
 		float gainBrightness = gainPostAmpLevel / 5.f;
 		bool gainClipping = gainPostAmpLevel >= 5.f;
 
-		inL = clamp(inL, -5.f, 5.f);
-		inR = clamp(inR, -5.f, 5.f);
+		inL = std::clamp(inL, -5.f, 5.f);
+		inR = std::clamp(inR, -5.f, 5.f);
 
 		lights[GAINLED_LIGHT_GREEN].setBrightnessSmooth(gainClipping ? 0.f : gainBrightness, args.sampleTime);
 		lights[GAINLED_LIGHT_RED].setBrightnessSmooth(gainClipping ? gainBrightness : 0.f, args.sampleTime);
@@ -406,8 +406,8 @@ struct SeventiesEQ : Module {
 		lights[EQLED_LIGHT_RED].setBrightnessSmooth(eqClipping ? eqBrightness : 0.f, args.sampleTime);
 
 		// Output volume
-		float outL = clamp(eqOutL * outputVol, -5.f, 5.f);
-		float outR = clamp(eqOutR * outputVol, -5.f, 5.f);
+		float outL = std::clamp(eqOutL * outputVol, -5.f, 5.f);
+		float outR = std::clamp(eqOutR * outputVol, -5.f, 5.f);
 
 		float outLevel = std::max(std::fabs(outL), std::fabs(outR));
 		float outBrightness = outLevel / 5.f;

@@ -97,8 +97,8 @@ struct AuxSends : Module {
 		float rawInR = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : rawInL;
 
 		// --- Dry level ---
-		float dryCV = clamp(inputs[DRYLEVELCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f;
-		float dryLevel = clamp(params[DRYLEVEL_PARAM].getValue() + dryCV, 0.f, 1.f);
+		float dryCV = std::clamp(inputs[DRYLEVELCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f;
+		float dryLevel = std::clamp(params[DRYLEVEL_PARAM].getValue() + dryCV, 0.f, 1.f);
 		float inL = rawInL * dryLevel;
 		float inR = rawInR * dryLevel;
 
@@ -107,13 +107,13 @@ struct AuxSends : Module {
 
 		// --- Shared CV helpers (cached values) ---
 		auto computeCV = [](Input &in) {
-			return clamp(in.getVoltage(), -5.f, 5.f) / 5.f;
+			return std::clamp(in.getVoltage(), -5.f, 5.f) / 5.f;
 		};
 
 		// === SEND A ===
 		if (outputs[ASENDLEFTOUT_OUTPUT].isConnected() || outputs[ASENDRIGHTOUT_OUTPUT].isConnected()) {
 			float sendCV = computeCV(inputs[ASENDCVIN_INPUT]);
-			float sendA = clamp(params[ASEND_PARAM].getValue() + sendCV, 0.f, 1.f);
+			float sendA = std::clamp(params[ASEND_PARAM].getValue() + sendCV, 0.f, 1.f);
 			bool pre = params[PREPOST1_PARAM].getValue() > 0.5f;
 			float sendL = (pre ? rawInL : inL) * sendA;
 			float sendR = (pre ? rawInR : inR) * sendA;
@@ -125,7 +125,7 @@ struct AuxSends : Module {
 		// === RETURN A ===
 		if (inputs[ARETURNLEFTIN_INPUT].isConnected()) {
 			float returnCV = computeCV(inputs[ARETURNCVIN_INPUT]);
-			float gain = clamp(params[ARETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
+			float gain = std::clamp(params[ARETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
 			float returnL = inputs[ARETURNLEFTIN_INPUT].getVoltage() * gain;
 			float returnR =
 				inputs[ARETURNRIGHTIN_INPUT].isConnected() ? inputs[ARETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
@@ -137,7 +137,7 @@ struct AuxSends : Module {
 		// === SEND B ===
 		if (outputs[BSENDLEFTOUT_OUTPUT].isConnected() || outputs[BSENDRIGHTOUT_OUTPUT].isConnected()) {
 			float sendCV = computeCV(inputs[BSENDCVIN_INPUT]);
-			float sendB = clamp(params[BSEND_PARAM].getValue() + sendCV, 0.f, 1.f);
+			float sendB = std::clamp(params[BSEND_PARAM].getValue() + sendCV, 0.f, 1.f);
 			bool pre = params[PREPOST2_PARAM].getValue() > 0.5f;
 			float sendL = (pre ? rawInL : inL) * sendB;
 			float sendR = (pre ? rawInR : inR) * sendB;
@@ -149,7 +149,7 @@ struct AuxSends : Module {
 		// === RETURN B ===
 		if (inputs[BRETURNLEFTIN_INPUT].isConnected()) {
 			float returnCV = computeCV(inputs[BRETURNCVIN_INPUT]);
-			float gain = clamp(params[BRETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
+			float gain = std::clamp(params[BRETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
 			float returnL = inputs[BRETURNLEFTIN_INPUT].getVoltage() * gain;
 			float returnR =
 				inputs[BRETURNRIGHTIN_INPUT].isConnected() ? inputs[BRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
@@ -161,7 +161,7 @@ struct AuxSends : Module {
 		// === SEND C ===
 		if (outputs[CSENDLEFTOUT_OUTPUT].isConnected() || outputs[CSENDRIGHTOUT_OUTPUT].isConnected()) {
 			float sendCV = computeCV(inputs[CSENDCVIN_INPUT]);
-			float sendC = clamp(params[CSEND_PARAM].getValue() + sendCV, 0.f, 1.f);
+			float sendC = std::clamp(params[CSEND_PARAM].getValue() + sendCV, 0.f, 1.f);
 			bool pre = params[PREPOST3_PARAM].getValue() > 0.5f;
 			float sendL = (pre ? rawInL : inL) * sendC;
 			float sendR = (pre ? rawInR : inR) * sendC;
@@ -173,7 +173,7 @@ struct AuxSends : Module {
 		// === RETURN C ===
 		if (inputs[CRETURNLEFTIN_INPUT].isConnected()) {
 			float returnCV = computeCV(inputs[CRETURNCVIN_INPUT]);
-			float gain = clamp(params[CRETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
+			float gain = std::clamp(params[CRETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
 			float returnL = inputs[CRETURNLEFTIN_INPUT].getVoltage() * gain;
 			float returnR =
 				inputs[CRETURNRIGHTIN_INPUT].isConnected() ? inputs[CRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;

@@ -116,9 +116,9 @@ struct Monobass : Module {
 
 	float applyLowpassFilter(float input, float cutoffHz, float resonance, float sampleRate) {
 		// Calculate normalized cutoff
-		cutoffHz = clamp(cutoffHz, 20.f, 5000.f);
+		cutoffHz = std::clamp(cutoffHz, 20.f, 5000.f);
 		float f = cutoffHz / (sampleRate * 0.5f); // Normalize to Nyquist
-		f = clamp(f, 0.f, 0.99f);				  // Ensure stability
+		f = std::clamp(f, 0.f, 0.99f);			  // Ensure stability
 
 		// Pre-warp frequency using bilinear transform approximation
 		float g = tanf(float(M_PI) * f);
@@ -134,7 +134,7 @@ struct Monobass : Module {
 	}
 
 	inline float equalPowerCrossfade(float a, float b, float t) {
-		t = clamp(t, 0.f, 1.f);
+		t = std::clamp(t, 0.f, 1.f);
 		float angle = t * (float)M_PI / 2.f;
 		return a * std::cos(angle) + b * std::sin(angle);
 	}
@@ -180,9 +180,9 @@ struct Monobass : Module {
 		// === LFO Frequency Computation ===
 		float freqParam = params[LFOFREQ_PARAM].getValue(); // 0–1
 		float freqCV =
-			inputs[LFOCV_INPUT].isConnected() ? clamp(inputs[LFOCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+			inputs[LFOCV_INPUT].isConnected() ? std::clamp(inputs[LFOCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
 		float freqAtt = params[LFOFREQATT_PARAM].getValue() / 100.f;
-		float freqMod = clamp(freqParam + freqCV * freqAtt, 0.f, 1.f);
+		float freqMod = std::clamp(freqParam + freqCV * freqAtt, 0.f, 1.f);
 
 		bool LFORange = (params[LFO_RANGE_PARAM].getValue() > 0.5f);
 
@@ -266,10 +266,10 @@ struct Monobass : Module {
 		float outputValue;
 		if (LFOoffsetSwitch) {
 			// Unipolar: shift to 0–5V
-			outputValue = clamp(unipolarLFO, 0.f, 5.f);
+			outputValue = std::clamp(unipolarLFO, 0.f, 5.f);
 		} else {
 			// Bipolar: no shift
-			outputValue = clamp(bipolarLFO, -5.f, 5.f);
+			outputValue = std::clamp(bipolarLFO, -5.f, 5.f);
 		}
 
 		// Send to output
@@ -279,8 +279,8 @@ struct Monobass : Module {
 		float positiveHalf = std::max(outputValue, 0.f) / maxVoltage;
 		float negativeHalf = std::max(-outputValue, 0.f) / maxVoltage;
 
-		positiveHalf = clamp(positiveHalf, 0.f, 1.f);
-		negativeHalf = clamp(negativeHalf, 0.f, 1.f);
+		positiveHalf = std::clamp(positiveHalf, 0.f, 1.f);
+		negativeHalf = std::clamp(negativeHalf, 0.f, 1.f);
 
 		lights[LFOLEDRED_LIGHT].setBrightnessSmooth(negativeHalf, args.sampleTime);	  // Red
 		lights[LFOLEDGREEN_LIGHT].setBrightnessSmooth(positiveHalf, args.sampleTime); // Green
@@ -291,10 +291,10 @@ struct Monobass : Module {
 
 		float ampDecayParam = params[AMPDECAY_PARAM].getValue();
 		float ampDecayCV = inputs[AMPDECAYCV_INPUT].isConnected() ?
-							   clamp(inputs[AMPDECAYCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
+							   std::clamp(inputs[AMPDECAYCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
 							   outputValue;
 		float ampDecayAtt = params[AMPDECAYATT_PARAM].getValue() / 100.f;
-		float decayCombined = clamp(ampDecayParam + (ampDecayCV * ampDecayAtt), 0.f, 1.f);
+		float decayCombined = std::clamp(ampDecayParam + (ampDecayCV * ampDecayAtt), 0.f, 1.f);
 		float decayTime = 0.01f + decayCombined * 0.49f; // decayTime from 10ms to 500ms
 
 		// Coefficients for exponential envelope
@@ -304,10 +304,10 @@ struct Monobass : Module {
 		// === FILTER ENVELOPE DECAY ===
 		float filterDecayParam = params[FILTERDECAY_PARAM].getValue();
 		float filterDecayCV = inputs[FILTERDECAYCV_INPUT].isConnected() ?
-								  clamp(inputs[FILTERDECAYCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
+								  std::clamp(inputs[FILTERDECAYCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
 								  outputValue;
 		float filterDecayAtt = params[FILTERDECAYATT_PARAM].getValue() / 100.f;
-		float filterDecayCombined = clamp(filterDecayParam + (filterDecayCV * filterDecayAtt), 0.f, 1.f);
+		float filterDecayCombined = std::clamp(filterDecayParam + (filterDecayCV * filterDecayAtt), 0.f, 1.f);
 		float filterDecayTime = 0.01f + filterDecayCombined * 0.49f; // 10ms to 500ms
 		float filterDecayCoeff = std::exp(-1.f / (filterDecayTime * args.sampleRate));
 
@@ -400,7 +400,7 @@ struct Monobass : Module {
 		float octaveParam = params[OCTAVE_PARAM].getValue();
 		float freqOffset = octaveParam - 3.f;
 		float fmCVRaw = inputs[FMCV_INPUT].isConnected() ? inputs[FMCV_INPUT].getVoltage() : outputValue;
-		float fmCV = clamp(fmCVRaw / 5.f, -1.f, 1.f);
+		float fmCV = std::clamp(fmCVRaw / 5.f, -1.f, 1.f);
 		float fmAmount = params[FMATT_PARAM].getValue();
 		const float maxFMDepth = 0.1f;
 		float fmPitchOffset = fmCV * fmAmount * maxFMDepth;
@@ -411,10 +411,10 @@ struct Monobass : Module {
 
 		float detuneKnob = params[DETUNE_PARAM].getValue();
 		float detuneCV = inputs[DETUNECV_INPUT].isConnected() ?
-							 clamp(inputs[DETUNECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
+							 std::clamp(inputs[DETUNECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
 							 outputValue;
 		float detuneAtt = params[DETUNEATT_PARAM].getValue() / 100.f;
-		float totalDetuneControl = clamp(detuneKnob + detuneCV * detuneAtt, 0.f, 1.f);
+		float totalDetuneControl = std::clamp(detuneKnob + detuneCV * detuneAtt, 0.f, 1.f);
 		float detuneSemitones = totalDetuneControl * 0.5f;
 		float detunedPitch = basePitch + detuneSemitones / 12.f;
 
@@ -424,7 +424,7 @@ struct Monobass : Module {
 								clamp(inputs[WAVESHAPECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
 								outputValue;
 		float waveshapeAtt = params[WAVESHAPEATT_PARAM].getValue() / 100.f;
-		float shape = clamp(waveshapeParam + waveshapeCV * waveshapeAtt, 0.f, 1.f);
+		float shape = std::clamp(waveshapeParam + waveshapeCV * waveshapeAtt, 0.f, 1.f);
 
 		// Automatic Gain Compensation calculation
 		float shapeGain = 1.f;
@@ -449,7 +449,7 @@ struct Monobass : Module {
 							clamp(inputs[TIMBRECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
 							outputValue;
 		float phaseAtt = params[TIMBREATT_PARAM].getValue() / 100.f;
-		float timbre = clamp(phaseParam + phaseCV * phaseAtt, 0.f, 1.f);
+		float timbre = std::clamp(phaseParam + phaseCV * phaseAtt, 0.f, 1.f);
 
 		// === Frequencies ===
 		float freq1 = 261.626f * std::pow(2.f, basePitch);
@@ -521,12 +521,12 @@ struct Monobass : Module {
 							clamp(inputs[MIXERCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
 							outputValue;
 		float mixerAtt = params[MIXERATT_PARAM].getValue() / 100.f;
-		float mixerAmount = clamp(mixerKnob + (mixerCV * mixerAtt), 0.f, 1.f);
+		float mixerAmount = std::clamp(mixerKnob + (mixerCV * mixerAtt), 0.f, 1.f);
 
 		// Compute voice volumes
-		float vol1 = 1.f;										  // Voice 1 always full volume
-		float vol2 = clamp(mixerAmount * 2.f, 0.f, 1.f);		  // 0..0.5 maps to 0..1 fade-in for voice 2
-		float vol3 = clamp((mixerAmount - 0.5f) * 2.f, 0.f, 1.f); // 0.5..1 maps to 0..1 fade-in for voice 3
+		float vol1 = 1.f;											   // Voice 1 always full volume
+		float vol2 = std::clamp(mixerAmount * 2.f, 0.f, 1.f);		   // 0..0.5 maps to 0..1 fade-in for voice 2
+		float vol3 = std::clamp((mixerAmount - 0.5f) * 2.f, 0.f, 1.f); // 0.5..1 maps to 0..1 fade-in for voice 3
 
 		// Sum volumes for normalization
 		float sumVol = vol1 + vol2 + vol3;
@@ -556,17 +556,17 @@ struct Monobass : Module {
 
 		// Prevent divide by 0
 		float gain = (agcEnvelope > 1e-6f) ? (targetPeak / agcEnvelope) : 1.f;
-		gain = clamp(gain, 0.1f, 10.f); // Prevent wild gain swings
+		gain = std::clamp(gain, 0.1f, 10.f); // Prevent wild gain swings
 
 		finalOutput *= (gain * 0.5);
 
 		// Filter envelope as 0–10V (envelope 0–1 * depth 0–1 * 10V)
 		float envDepthParam = params[ENVDEPTH_PARAM].getValue();
 		float envDepthCV = inputs[ENVDEPTHCV_INPUT].isConnected() ?
-							   clamp(inputs[ENVDEPTHCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
+							   std::clamp(inputs[ENVDEPTHCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
 							   outputValue;
 		float envDepthAtt = params[ENVDEPTHATT_PARAM].getValue() / 100.f;
-		float envDepth = clamp(envDepthParam + (envDepthCV * envDepthAtt), 0.f, 1.f);
+		float envDepth = std::clamp(envDepthParam + (envDepthCV * envDepthAtt), 0.f, 1.f);
 		float envelopeV = filterEnvelope * envDepth * 10.f;
 
 		float cutoffParam = params[CUTOFF_PARAM].getValue();
@@ -574,12 +574,12 @@ struct Monobass : Module {
 		float cutoffCVRaw = inputs[CUTOFFCV_INPUT].isConnected() ? inputs[CUTOFFCV_INPUT].getVoltage() : outputValue;
 		float cutoffCV = cutoffCVRaw;
 		float cutoffAtt = params[CUTOFFATT_PARAM].getValue() / 100.f;
-		float cutoffControlV = clamp(cutoffOffsetV + (cutoffCV * cutoffAtt) + envelopeV, -5.f, 5.f);
+		float cutoffControlV = std::clamp(cutoffOffsetV + (cutoffCV * cutoffAtt) + envelopeV, -5.f, 5.f);
 		float cutoffNorm = rescale(cutoffControlV, -5.f, 5.f, 0.f, 1.f);
 		float cutoffHz = 20.f * std::pow(350.f, cutoffNorm);
 		float envelopeModHz = filterEnvelope * envDepth * 300.f;
 		cutoffHz += envelopeModHz;
-		cutoffHz = clamp(cutoffHz, 20.f, 7000.f);
+		cutoffHz = std::clamp(cutoffHz, 20.f, 7000.f);
 
 		// Resonance
 		float resonanceParam = params[RESONANCE_PARAM].getValue();
@@ -587,14 +587,14 @@ struct Monobass : Module {
 								clamp(inputs[RESONANCECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
 								outputValue;
 		float resonanceAtt = params[RESONANCEATT_PARAM].getValue() / 100.f;
-		float resonance = clamp(resonanceParam + resonanceCV * resonanceAtt, 0.f, 1.f);
+		float resonance = std::clamp(resonanceParam + resonanceCV * resonanceAtt, 0.f, 1.f);
 
 		// Filter the output
 		float filteredOutput = applyLowpassFilter(finalOutput, cutoffHz, resonance, args.sampleRate);
 
 		float resonanceGain = 0.5f + resonance;
 		float boostedOutput = ((filteredOutput * resonanceGain) * 2.f) * ampEnvelope;
-		float outputVoltage = clamp(boostedOutput * 5.f, -10.f, 10.f);
+		float outputVoltage = std::clamp(boostedOutput * 5.f, -10.f, 10.f);
 
 		outputs[AUDIO_OUTPUT].setVoltage(outputVoltage);
 	}

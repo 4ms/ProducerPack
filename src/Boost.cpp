@@ -52,14 +52,14 @@ struct Boost : Module {
 		if (leftConnected) {
 			const float inL = inputs[LEFTIN_INPUT].getVoltage();
 			const float boostedL = inL * preVolumeGain;
-			const float clippedL = clamp(boostedL, -5.f, 5.f);
+			const float clippedL = std::clamp(boostedL, -5.f, 5.f);
 			outL = clippedL * volume;
 			outputs[LEFTOUT_OUTPUT].setVoltage(outL);
 
 			if (!rightConnected) {
 				const float boostedR = inL * preVolumeGain;
 				clippingR = (boostedR < -5.f || boostedR > 5.f);
-				const float clippedR = clamp(boostedR, -5.f, 5.f);
+				const float clippedR = std::clamp(boostedR, -5.f, 5.f);
 				outR = clippedR * volume;
 				outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
 			}
@@ -74,13 +74,13 @@ struct Boost : Module {
 			const float inR = inputs[RIGHTIN_INPUT].getVoltage();
 			const float boostedR = inR * preVolumeGain;
 			clippingR = (boostedR < -5.f || boostedR > 5.f);
-			const float clippedR = clamp(boostedR, -5.f, 5.f);
+			const float clippedR = std::clamp(boostedR, -5.f, 5.f);
 			outR = clippedR * volume;
 			outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
 		}
 
 		// Update right output lights (only once per process)
-		const float brightnessR = clamp(fabsf(outR) * 0.2f, 0.f, 1.f); // same as /5
+		const float brightnessR = std::clamp(fabsf(outR) * 0.2f, 0.f, 1.f); // same as /5
 		lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clippingR ? brightnessR : 0.f, args.sampleTime);
 		lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clippingR ? 0.f : brightnessR, args.sampleTime);
 	}

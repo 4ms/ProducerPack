@@ -28,7 +28,7 @@ struct StereoWidth : Module {
 		if (inputs[WIDTHCV_INPUT].isConnected())
 			width += inputs[WIDTHCV_INPUT].getVoltage() * 0.1f; // same as /10.f
 
-		width = clamp(width, 0.f, 1.f);
+		width = std::clamp(width, 0.f, 1.f);
 
 		float outL = 0.f, outR = 0.f;
 
@@ -54,7 +54,7 @@ struct StereoWidth : Module {
 		if (inputs[PANCV_INPUT].isConnected())
 			pan += inputs[PANCV_INPUT].getVoltage() * 10.f; // scaled from 5V to 50%
 
-		pan = clamp(pan, -50.f, 50.f) * 0.02f; // [-1.0, 1.0] = pan / 50
+		pan = std::clamp(pan, -50.f, 50.f) * 0.02f; // [-1.0, 1.0] = pan / 50
 
 		// Apply pan - efficient gain calculation
 		float panL = 1.f - pan;

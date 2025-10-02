@@ -43,19 +43,19 @@ struct Router : Module {
 		float selectParam = params[SELECT_PARAM].getValue();
 		float selectCV = inputs[SELECTCV_INPUT].isConnected() ? inputs[SELECTCV_INPUT].getVoltage() * 0.5f : 0.f;
 
-		float rawSelect = clamp(selectParam + selectCV, 0.f, 5.f);
+		float rawSelect = std::clamp(selectParam + selectCV, 0.f, 5.f);
 
-		float slewControlMs = clamp(params[SLEW_PARAM].getValue(), 0.f, 5000.f);
+		float slewControlMs = std::clamp(params[SLEW_PARAM].getValue(), 0.f, 5000.f);
 		float slewTimeSec = slewControlMs / 1000.f;
-		float alpha = (slewTimeSec <= 0.f) ? 1.f : clamp(args.sampleTime / slewTimeSec, 0.f, 1.f);
+		float alpha = (slewTimeSec <= 0.f) ? 1.f : std::clamp(args.sampleTime / slewTimeSec, 0.f, 1.f);
 
 		slewedSelect += (rawSelect - slewedSelect) * alpha;
 
 		bool morph = params[INTERP_PARAM].getValue() > 0.5f;
 
-		int routeA = clamp((int)std::floor(slewedSelect), 0, 5);
-		int routeB = clamp(routeA + 1, 0, 5);
-		float t = morph ? clamp(slewedSelect - routeA, 0.f, 1.f) : 0.f;
+		int routeA = std::clamp((int)std::floor(slewedSelect), 0, 5);
+		int routeB = std::clamp(routeA + 1, 0, 5);
+		float t = morph ? std::clamp(slewedSelect - routeA, 0.f, 1.f) : 0.f;
 
 		// Routing matrix: [route][input][output]
 		static const int routingStates[6][4][4] = {

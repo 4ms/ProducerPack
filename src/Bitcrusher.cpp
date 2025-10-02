@@ -156,8 +156,9 @@ struct Bitcrusher : Module {
 
 	float getNormalizedParam(int paramId, int inputId) {
 		float paramValue = params[paramId].getValue();
-		float inputCV = inputs[inputId].isConnected() ? clamp(inputs[inputId].getVoltage(), -5.f, 5.f) / 10.f : 0.f;
-		return clamp(paramValue + inputCV, 0.f, 1.f);
+		float inputCV =
+			inputs[inputId].isConnected() ? std::clamp(inputs[inputId].getVoltage(), -5.f, 5.f) / 10.f : 0.f;
+		return std::clamp(paramValue + inputCV, 0.f, 1.f);
 	}
 
 	void updateFilterCoefficients(float cutoff, float resonance, float sampleRate, bool isLowpass) {
@@ -184,9 +185,9 @@ struct Bitcrusher : Module {
 		// Sample rate CV + param normalized
 		const float srParam = params[SAMPLERATE_PARAM].getValue();
 		const float srCV = inputs[SAMPLERATECVIN_INPUT].isConnected() ?
-							   clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f :
+							   std::clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f :
 							   0.f;
-		const float normSampleRate = clamp(srParam + srCV, 0.f, 1.f);
+		const float normSampleRate = std::clamp(srParam + srCV, 0.f, 1.f);
 		const float invSampleRate = 1.f - normSampleRate;
 		const float sampleRateHz = sampleRateMinHz + invSampleRate * (sampleRateMaxHz - sampleRateMinHz);
 
@@ -209,7 +210,7 @@ struct Bitcrusher : Module {
 		auto bitcrush = [bitDepth](float in) {
 			if (bitDepth >= 15)
 				return in;
-			float norm = clamp((in + 5.f) * 0.1f, 0.f, 1.f); // (x + 5) / 10
+			float norm = std::clamp((in + 5.f) * 0.1f, 0.f, 1.f); // (x + 5) / 10
 			if (bitDepth <= 0)
 				return norm >= 0.5f ? 5.f : -5.f;
 
@@ -239,8 +240,8 @@ struct Bitcrusher : Module {
 		const float volume = getNormalizedParam(VOLUME_PARAM, VOLUMECVIN_INPUT);
 
 		// Mix dry/wet, apply volume and clamp
-		const float outL = clamp(rack::math::crossfade(leftIn, filteredL, dryWet) * volume, -5.f, 5.f);
-		const float outR = clamp(rack::math::crossfade(rightIn, filteredR, dryWet) * volume, -5.f, 5.f);
+		const float outL = std::clamp(rack::math::crossfade(leftIn, filteredL, dryWet) * volume, -5.f, 5.f);
+		const float outR = std::clamp(rack::math::crossfade(rightIn, filteredR, dryWet) * volume, -5.f, 5.f);
 
 		// Outputs
 		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(outL);

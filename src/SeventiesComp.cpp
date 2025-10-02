@@ -68,8 +68,8 @@ struct SeventiesComp : Module {
 		float outL = inL * (1.f - dryWet) + inL * gainReduction * gain * dryWet;
 		float outR = inR * (1.f - dryWet) + inR * gainReduction * gain * dryWet;
 
-		outL = clamp(outL, -5.f, 5.f);
-		outR = clamp(outR, -5.f, 5.f);
+		outL = std::clamp(outL, -5.f, 5.f);
+		outR = std::clamp(outR, -5.f, 5.f);
 		outputs[AUDIO_L_OUTPUT].setVoltage(outL);
 		outputs[AUDIO_R_OUTPUT].setVoltage(outR);
 

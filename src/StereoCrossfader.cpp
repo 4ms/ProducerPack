@@ -21,13 +21,13 @@ struct StereoCrossfader : Module {
 
 	void process(const ProcessArgs &args) override {
 		// --- Mix Param + CV ---
-		float mixParam = clamp(params[MIX_PARAM].getValue(), 0.f, 1.f);
+		float mixParam = std::clamp(params[MIX_PARAM].getValue(), 0.f, 1.f);
 		float cv = inputs[MIXCV_INPUT].getVoltage();
 		float offset = rescale(mixParam, 0.f, 1.f, -5.f, 5.f);
-		float mix = clamp(rescale(clamp(offset + cv, -5.f, 5.f), -5.f, 5.f, 0.f, 1.f), 0.f, 1.f);
+		float mix = std::clamp(rescale(clamp(offset + cv, -5.f, 5.f), -5.f, 5.f, 0.f, 1.f), 0.f, 1.f);
 
 		// --- Shape ---
-		float shape = clamp(params[SHAPE_PARAM].getValue(), 0.f, 1.f);
+		float shape = std::clamp(params[SHAPE_PARAM].getValue(), 0.f, 1.f);
 		float k = 9.f * shape + 1.f;
 		float denom = std::log(k + 1e-6f);
 

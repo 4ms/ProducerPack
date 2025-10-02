@@ -32,20 +32,20 @@ struct TwoOp : Module {
 		const float voct = inputs[VOCTIN_INPUT].getVoltage();
 		const float baseFreq = 20.f * std::pow(1000.f, pitchParam);
 		float carrierFreq = baseFreq * std::exp2(voct); // faster than pow(2.f, voct)
-		carrierFreq = clamp(carrierFreq, 20.f, 20000.f);
+		carrierFreq = std::clamp(carrierFreq, 20.f, 20000.f);
 
 		// --- Ratio ---
 		float ratio = params[RATIO_PARAM].getValue();
 		if (inputs[RATIOCVIN_INPUT].isConnected())
 			ratio += inputs[RATIOCVIN_INPUT].getVoltage() * 0.2f; // == /5
-		ratio = clamp(ratio, 0.f, 1.f);
+		ratio = std::clamp(ratio, 0.f, 1.f);
 		const float modFreq = carrierFreq * (0.1f + 7.9f * ratio);
 
 		// --- FM Amount ---
 		float fmAmt = params[FMAMT_PARAM].getValue();
 		if (inputs[FMAMTCVIN_INPUT].isConnected())
 			fmAmt += inputs[FMAMTCVIN_INPUT].getVoltage() * 0.2f;
-		const float fmAmount = clamp(fmAmt, 0.f, 1.f) * 5000.f;
+		const float fmAmount = std::clamp(fmAmt, 0.f, 1.f) * 5000.f;
 
 		// --- Gate & Envelope ---
 		bool gate = inputs[GATEIN_INPUT].getVoltage() >= 1.f;
@@ -58,10 +58,10 @@ struct TwoOp : Module {
 			float decay = params[DECAY_PARAM].getValue();
 			if (inputs[DECAYCVIN_INPUT].isConnected())
 				decay += inputs[DECAYCVIN_INPUT].getVoltage() * 0.2f;
-			decay = clamp(decay, 0.f, 1.f);
+			decay = std::clamp(decay, 0.f, 1.f);
 
 			const float maxDecayMs[] = {30.f, 200.f, 5000.f};
-			const int range = clamp((int)params[RANGE_PARAM].getValue(), 0, 2);
+			const int range = std::clamp((int)params[RANGE_PARAM].getValue(), 0, 2);
 			const float decayMs = 1.f + (maxDecayMs[range] - 1.f) * decay;
 			const float decayCoeff = std::exp(-args.sampleTime / (decayMs * 0.001f));
 			env *= decayCoeff;
@@ -77,7 +77,7 @@ struct TwoOp : Module {
 		const float mod = std::sin(2.f * M_PI * modulatorPhase);
 
 		// --- Carrier ---
-		const float freq = clamp(carrierFreq + mod * fmAmount, 20.f, 20000.f);
+		const float freq = std::clamp(carrierFreq + mod * fmAmount, 20.f, 20000.f);
 		carrierPhase += freq * args.sampleTime;
 		if (carrierPhase >= 1.f)
 			carrierPhase -= 1.f;

@@ -80,7 +80,7 @@ struct Spatializer : Module {
 
 		// Params & CVs
 		const float timeCV = inputs[TIMECV_INPUT].getVoltage() * 0.1f; // /10
-		const float targetTime = clamp(params[TIME_PARAM].getValue() + timeCV, 0.f, 1.f);
+		const float targetTime = std::clamp(params[TIME_PARAM].getValue() + timeCV, 0.f, 1.f);
 		slewedTime += (targetTime - slewedTime) * timeSlewRate;
 
 		const bool useMilliseconds = params[RANGE_PARAM].getValue() < 0.5f;
@@ -90,10 +90,10 @@ struct Spatializer : Module {
 				clamp((int)(rescale(slewedTime, 0.f, 1.f, 1.f, 50.f)), 1, maxDelaySamples - 1);
 
 		const float widthCV = inputs[WIDTHCV_INPUT].getVoltage() * 0.1f;
-		const float width = clamp(params[WIDTH_PARAM].getValue() + widthCV, 0.f, 1.f);
+		const float width = std::clamp(params[WIDTH_PARAM].getValue() + widthCV, 0.f, 1.f);
 
 		const float mixCV = inputs[MIDSIDECV_INPUT].getVoltage() * 0.1f;
-		const float mix = clamp(params[MIDSIDE_PARAM].getValue() + mixCV, 0.f, 1.f);
+		const float mix = std::clamp(params[MIDSIDE_PARAM].getValue() + mixCV, 0.f, 1.f);
 
 		// Delay
 		delayBufferL[delayIndex] = inL;
