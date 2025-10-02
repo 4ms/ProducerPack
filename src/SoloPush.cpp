@@ -1,25 +1,10 @@
 #include "plugin.hpp"
 
 struct SoloPush : Module {
-	enum ParamId {
-		CH1RANGE_PARAM,
-		CH1OFFSET_PARAM,
-		CH1BEHAVIOR_PARAM,
-		CH1PUSH_PARAM,
-		PARAMS_LEN
-	};
-	enum InputId {
-		INPUTS_LEN
-	};
-	enum OutputId {
-		CH1VOLTAGEOUT_OUTPUT,
-		CH1BUTTONOUT_OUTPUT,
-		OUTPUTS_LEN
-	};
-	enum LightId {
-		CH1_LIGHT,
-		LIGHTS_LEN
-	};
+	enum ParamId { CH1RANGE_PARAM, CH1OFFSET_PARAM, CH1BEHAVIOR_PARAM, CH1PUSH_PARAM, PARAMS_LEN };
+	enum InputId { INPUTS_LEN };
+	enum OutputId { CH1VOLTAGEOUT_OUTPUT, CH1BUTTONOUT_OUTPUT, OUTPUTS_LEN };
+	enum LightId { CH1_LIGHT, LIGHTS_LEN };
 
 	SoloPush() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -32,7 +17,7 @@ struct SoloPush : Module {
 		configOutput(CH1BUTTONOUT_OUTPUT, "Ch. 1 Button");
 	}
 
-	void process(const ProcessArgs& args) override {
+	void process(const ProcessArgs &args) override {
 		static constexpr float rangeScale[3] = {1.f, 5.f, 10.f};
 		static constexpr float rangeBias[3] = {0.f, 0.f, -5.f};
 
@@ -99,6 +84,7 @@ struct SoloPush : Module {
 		const float voltageOut = logicOut > 0.f ? offsetVoltage : 0.f;
 		outputs[CH1VOLTAGEOUT_OUTPUT].setVoltage(voltageOut);
 	}
+
 private:
 	bool prevButtonState = false;
 	bool toggleState = false;
@@ -109,7 +95,7 @@ private:
 };
 
 struct SoloPushWidget : ModuleWidget {
-	SoloPushWidget(SoloPush* module) {
+	SoloPushWidget(SoloPush *module) {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/SoloPush_info.svg")));
 
@@ -120,12 +106,12 @@ struct SoloPushWidget : ModuleWidget {
 		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(10.16, 74.637)), module, SoloPush::CH1OFFSET_PARAM));
 		addParam(createParamCentered<_3Pos>(mm2px(Vec(10.16, 93.644)), module, SoloPush::CH1BEHAVIOR_PARAM));
 		addParam(createParamCentered<LEDBezel>(mm2px(Vec(10.16, 112.652)), module, SoloPush::CH1PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(10.16, 112.652)), module, SoloPush::CH1_LIGHT));
+		addChild(
+			createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(10.16, 112.652)), module, SoloPush::CH1_LIGHT));
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(10.16, 17.614)), module, SoloPush::CH1VOLTAGEOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(10.16, 36.622)), module, SoloPush::CH1BUTTONOUT_OUTPUT));
 	}
 };
 
-
-Model* modelSoloPush = createModel<SoloPush, SoloPushWidget>("SoloPush");
+Model *modelSoloPush = createModel<SoloPush, SoloPushWidget>("SoloPush");

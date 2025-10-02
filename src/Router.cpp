@@ -1,26 +1,28 @@
 #include "plugin.hpp"
 
 struct Router : Module {
-	enum ParamId {
-		SELECT_PARAM,
-		SLEW_PARAM,
-		INTERP_PARAM,
-		PARAMS_LEN
-	};
-	enum InputId {
-		SELECTCV_INPUT,
-		INPUTS_LEN
-	};
+	enum ParamId { SELECT_PARAM, SLEW_PARAM, INTERP_PARAM, PARAMS_LEN };
+	enum InputId { SELECTCV_INPUT, INPUTS_LEN };
 	enum OutputId {
-		A1_OUTPUT, A2_OUTPUT, A3_OUTPUT, A4_OUTPUT,
-		B1_OUTPUT, B2_OUTPUT, B3_OUTPUT, B4_OUTPUT,
-		C1_OUTPUT, C2_OUTPUT, C3_OUTPUT, C4_OUTPUT,
-		D1_OUTPUT, D2_OUTPUT, D3_OUTPUT, D4_OUTPUT,
+		A1_OUTPUT,
+		A2_OUTPUT,
+		A3_OUTPUT,
+		A4_OUTPUT,
+		B1_OUTPUT,
+		B2_OUTPUT,
+		B3_OUTPUT,
+		B4_OUTPUT,
+		C1_OUTPUT,
+		C2_OUTPUT,
+		C3_OUTPUT,
+		C4_OUTPUT,
+		D1_OUTPUT,
+		D2_OUTPUT,
+		D3_OUTPUT,
+		D4_OUTPUT,
 		OUTPUTS_LEN
 	};
-	enum LightId {
-		LIGHTS_LEN
-	};
+	enum LightId { LIGHTS_LEN };
 
 	Router() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -37,53 +39,52 @@ struct Router : Module {
 	float routingValues[16] = {}; // Final output voltages
 	float slewedSelect = 0.f;
 
-void process(const ProcessArgs& args) override {
-	float selectParam = params[SELECT_PARAM].getValue();
-	float selectCV = inputs[SELECTCV_INPUT].isConnected() ? inputs[SELECTCV_INPUT].getVoltage() * 0.5f : 0.f; 
+	void process(const ProcessArgs &args) override {
+		float selectParam = params[SELECT_PARAM].getValue();
+		float selectCV = inputs[SELECTCV_INPUT].isConnected() ? inputs[SELECTCV_INPUT].getVoltage() * 0.5f : 0.f;
 
-	float rawSelect = clamp(selectParam + selectCV, 0.f, 5.f);
+		float rawSelect = clamp(selectParam + selectCV, 0.f, 5.f);
 
-	float slewControlMs = clamp(params[SLEW_PARAM].getValue(), 0.f, 5000.f);
-	float slewTimeSec = slewControlMs / 1000.f;
-	float alpha = (slewTimeSec <= 0.f) ? 1.f : clamp(args.sampleTime / slewTimeSec, 0.f, 1.f);
+		float slewControlMs = clamp(params[SLEW_PARAM].getValue(), 0.f, 5000.f);
+		float slewTimeSec = slewControlMs / 1000.f;
+		float alpha = (slewTimeSec <= 0.f) ? 1.f : clamp(args.sampleTime / slewTimeSec, 0.f, 1.f);
 
-	slewedSelect += (rawSelect - slewedSelect) * alpha;
+		slewedSelect += (rawSelect - slewedSelect) * alpha;
 
-	bool morph = params[INTERP_PARAM].getValue() > 0.5f;
+		bool morph = params[INTERP_PARAM].getValue() > 0.5f;
 
-	int routeA = clamp((int)std::floor(slewedSelect), 0, 5);
-	int routeB = clamp(routeA + 1, 0, 5);
-	float t = morph ? clamp(slewedSelect - routeA, 0.f, 1.f) : 0.f;
+		int routeA = clamp((int)std::floor(slewedSelect), 0, 5);
+		int routeB = clamp(routeA + 1, 0, 5);
+		float t = morph ? clamp(slewedSelect - routeA, 0.f, 1.f) : 0.f;
 
-	// Routing matrix: [route][input][output]
-	static const int routingStates[6][4][4] = {
-		{ {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1} }, // 0: A → B → C
-		{ {1,0,0,0}, {0,0,1,0}, {0,0,0,1}, {0,1,0,0} }, // 1: A → C → B
-		{ {0,1,0,0}, {0,0,1,0}, {1,0,0,0}, {0,0,0,1} }, // 2: B → A → C
-		{ {0,1,0,0}, {0,0,0,1}, {0,0,1,0}, {1,0,0,0} }, // 3: B → C → A
-		{ {0,0,1,0}, {0,1,0,0}, {0,0,0,1}, {1,0,0,0} }, // 4: C → A → B
-		{ {0,0,1,0}, {0,0,0,1}, {1,0,0,0}, {0,1,0,0} }  // 5: C → B → A
-	};
+		// Routing matrix: [route][input][output]
+		static const int routingStates[6][4][4] = {
+			{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}, // 0: A → B → C
+			{{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}}, // 1: A → C → B
+			{{0, 1, 0, 0}, {0, 0, 1, 0}, {1, 0, 0, 0}, {0, 0, 0, 1}}, // 2: B → A → C
+			{{0, 1, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}, {1, 0, 0, 0}}, // 3: B → C → A
+			{{0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}}, // 4: C → A → B
+			{{0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}, {0, 1, 0, 0}}  // 5: C → B → A
+		};
 
-	int index = 0;
-	for (int input = 0; input < 4; ++input) {
-		for (int output = 0; output < 4; ++output) {
-			int valueA = routingStates[routeA][input][output];
-			int valueB = routingStates[routeB][input][output];
+		int index = 0;
+		for (int input = 0; input < 4; ++input) {
+			for (int output = 0; output < 4; ++output) {
+				int valueA = routingStates[routeA][input][output];
+				int valueB = routingStates[routeB][input][output];
 
-			// Interpolate voltage
-			float voltage = 5.f * ((1.f - t) * valueA + t * valueB);
-			routingValues[index] = voltage;
-			outputs[index].setVoltage(voltage);
-			++index;
+				// Interpolate voltage
+				float voltage = 5.f * ((1.f - t) * valueA + t * valueB);
+				routingValues[index] = voltage;
+				outputs[index].setVoltage(voltage);
+				++index;
+			}
 		}
 	}
-}
 };
 
-
 struct RouterWidget : ModuleWidget {
-	RouterWidget(Router* module) {
+	RouterWidget(Router *module) {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/Router.svg")));
 
@@ -115,5 +116,4 @@ struct RouterWidget : ModuleWidget {
 	}
 };
 
-
-Model* modelRouter = createModel<Router, RouterWidget>("Router");
+Model *modelRouter = createModel<Router, RouterWidget>("Router");

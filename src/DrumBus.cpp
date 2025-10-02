@@ -1,6 +1,5 @@
 #include "plugin.hpp"
 
-
 struct DrumBus : Module {
 	enum ParamId {
 		CH1VOL_PARAM,
@@ -41,14 +40,8 @@ struct DrumBus : Module {
 		CH8IN_INPUT,
 		INPUTS_LEN
 	};
-	enum OutputId {
-		AUDIOLEFTOUT_OUTPUT,
-		AUDIORIGHTOUT_OUTPUT,
-		OUTPUTS_LEN
-	};
-	enum LightId {
-		LIGHTS_LEN
-	};
+	enum OutputId { AUDIOLEFTOUT_OUTPUT, AUDIORIGHTOUT_OUTPUT, OUTPUTS_LEN };
+	enum LightId { LIGHTS_LEN };
 
 	DrumBus() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -98,52 +91,55 @@ struct DrumBus : Module {
 		configOutput(AUDIORIGHTOUT_OUTPUT, "Mix Right");
 	}
 
-	void process(const ProcessArgs& args) override {
-	float leftMix = 0.f;
-	float rightMix = 0.f;
+	void process(const ProcessArgs &args) override {
+		float leftMix = 0.f;
+		float rightMix = 0.f;
 
-	const float masterVol = params[MASTERVOL_PARAM].getValue();
-	if (masterVol <= 0.f) {
-		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(0.f);
-		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(0.f);
-		return;
+		const float masterVol = params[MASTERVOL_PARAM].getValue();
+		if (masterVol <= 0.f) {
+			outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(0.f);
+			outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(0.f);
+			return;
+		}
+
+		for (int ch = 0; ch < 8; ++ch) {
+			const int baseParam = CH1VOL_PARAM + ch * 3;
+			const int inputId = CH1IN_INPUT + ch;
+
+			if (!inputs[inputId].isConnected())
+				continue;
+
+			const float vol = params[baseParam].getValue();
+			if (vol <= 0.f)
+				continue;
+
+			if (params[baseParam + 2].getValue() > 0.5f)
+				continue; // muted
+
+			const float in = inputs[inputId].getVoltage();
+			const float panNorm = params[baseParam + 1].getValue() * 0.01f + 0.5f; // -50 to 50 -> 0 to 1
+
+			// Precompute pan law (constant power)
+			float panAngle = panNorm * (float)M_PI_2;
+			float leftGain = cosf(panAngle);
+			float rightGain = sinf(panAngle);
+
+			const float scaledIn = in * vol;
+			leftMix += scaledIn * leftGain;
+			rightMix += scaledIn * rightGain;
+		}
+
+		// Apply master volume
+		leftMix *= masterVol;
+		rightMix *= masterVol;
+
+		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(leftMix, -10.f, 10.f));
+		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(rightMix, -10.f, 10.f));
 	}
-
-	for (int ch = 0; ch < 8; ++ch) {
-		const int baseParam = CH1VOL_PARAM + ch * 3;
-		const int inputId = CH1IN_INPUT + ch;
-
-		if (!inputs[inputId].isConnected()) continue;
-
-		const float vol = params[baseParam].getValue();
-		if (vol <= 0.f) continue;
-
-		if (params[baseParam + 2].getValue() > 0.5f) continue; // muted
-
-		const float in = inputs[inputId].getVoltage();
-		const float panNorm = params[baseParam + 1].getValue() * 0.01f + 0.5f;  // -50 to 50 -> 0 to 1
-
-		// Precompute pan law (constant power)
-		float panAngle = panNorm * (float)M_PI_2;
-		float leftGain = cosf(panAngle);
-		float rightGain = sinf(panAngle);
-
-		const float scaledIn = in * vol;
-		leftMix += scaledIn * leftGain;
-		rightMix += scaledIn * rightGain;
-	}
-
-	// Apply master volume
-	leftMix *= masterVol;
-	rightMix *= masterVol;
-
-	outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(leftMix, -10.f, 10.f));
-	outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(rightMix, -10.f, 10.f));
-}
 };
 
 struct DrumBusWidget : ModuleWidget {
-	DrumBusWidget(DrumBus* module) {
+	DrumBusWidget(DrumBus *module) {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/DrumBus_info.svg")));
 
@@ -192,5 +188,4 @@ struct DrumBusWidget : ModuleWidget {
 	}
 };
 
-
-Model* modelDrumBus = createModel<DrumBus, DrumBusWidget>("DrumBus");
+Model *modelDrumBus = createModel<DrumBus, DrumBusWidget>("DrumBus");

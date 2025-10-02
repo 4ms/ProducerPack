@@ -1,28 +1,10 @@
 #include "plugin.hpp"
 
-
 struct Boost : Module {
-	enum ParamId {
-		GAIN_PARAM,
-		RANGE_PARAM,
-		VOLUME_PARAM,
-		PARAMS_LEN
-	};
-	enum InputId {
-		LEFTIN_INPUT,
-		RIGHTIN_INPUT,
-		INPUTS_LEN
-	};
-	enum OutputId {
-		LEFTOUT_OUTPUT,
-		RIGHTOUT_OUTPUT,
-		OUTPUTS_LEN
-	};
-	enum LightId {
-		RIGHTLEDRED_LIGHT,
-		RIGHTLEDGREEN_LIGHT,
-		LIGHTS_LEN
-	};
+	enum ParamId { GAIN_PARAM, RANGE_PARAM, VOLUME_PARAM, PARAMS_LEN };
+	enum InputId { LEFTIN_INPUT, RIGHTIN_INPUT, INPUTS_LEN };
+	enum OutputId { LEFTOUT_OUTPUT, RIGHTOUT_OUTPUT, OUTPUTS_LEN };
+	enum LightId { RIGHTLEDRED_LIGHT, RIGHTLEDGREEN_LIGHT, LIGHTS_LEN };
 
 	Boost() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -35,75 +17,77 @@ struct Boost : Module {
 		configOutput(RIGHTOUT_OUTPUT, "Audio Right");
 	}
 
-	void process(const ProcessArgs& args) override {
-	// Cache parameters
-	const int rangeSelection = (int)params[RANGE_PARAM].getValue();
-	const float gainParam = params[GAIN_PARAM].getValue();
-	const float volume = params[VOLUME_PARAM].getValue();
+	void process(const ProcessArgs &args) override {
+		// Cache parameters
+		const int rangeSelection = (int)params[RANGE_PARAM].getValue();
+		const float gainParam = params[GAIN_PARAM].getValue();
+		const float volume = params[VOLUME_PARAM].getValue();
 
-	// Lookup gain multiplier
-	float gainMultiplier = 1.f;
-	switch (rangeSelection) {
-		case 1: gainMultiplier = 5.f; break;
-		case 2: gainMultiplier = 100.f; break;
-	}
+		// Lookup gain multiplier
+		float gainMultiplier = 1.f;
+		switch (rangeSelection) {
+			case 1:
+				gainMultiplier = 5.f;
+				break;
+			case 2:
+				gainMultiplier = 100.f;
+				break;
+		}
 
-// Adjust gain mapping
-float preVolumeGain = 1.f;
-if (rangeSelection == 0) {
-	preVolumeGain = gainParam * gainMultiplier;
-}
-else {
-	preVolumeGain = 1.f + gainParam * (gainMultiplier - 1.f);
-}
+		// Adjust gain mapping
+		float preVolumeGain = 1.f;
+		if (rangeSelection == 0) {
+			preVolumeGain = gainParam * gainMultiplier;
+		} else {
+			preVolumeGain = 1.f + gainParam * (gainMultiplier - 1.f);
+		}
 
-	const bool leftConnected = inputs[LEFTIN_INPUT].isConnected();
-	const bool rightConnected = inputs[RIGHTIN_INPUT].isConnected();
+		const bool leftConnected = inputs[LEFTIN_INPUT].isConnected();
+		const bool rightConnected = inputs[RIGHTIN_INPUT].isConnected();
 
-	float outL = 0.f;
-	float outR = 0.f;
-	bool clippingR = false;
+		float outL = 0.f;
+		float outR = 0.f;
+		bool clippingR = false;
 
-	if (leftConnected) {
-		const float inL = inputs[LEFTIN_INPUT].getVoltage();
-		const float boostedL = inL * preVolumeGain;
-		const float clippedL = clamp(boostedL, -5.f, 5.f);
-		outL = clippedL * volume;
-		outputs[LEFTOUT_OUTPUT].setVoltage(outL);
+		if (leftConnected) {
+			const float inL = inputs[LEFTIN_INPUT].getVoltage();
+			const float boostedL = inL * preVolumeGain;
+			const float clippedL = clamp(boostedL, -5.f, 5.f);
+			outL = clippedL * volume;
+			outputs[LEFTOUT_OUTPUT].setVoltage(outL);
 
-		if (!rightConnected) {
-			const float boostedR = inL * preVolumeGain;
+			if (!rightConnected) {
+				const float boostedR = inL * preVolumeGain;
+				clippingR = (boostedR < -5.f || boostedR > 5.f);
+				const float clippedR = clamp(boostedR, -5.f, 5.f);
+				outR = clippedR * volume;
+				outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
+			}
+		} else {
+			outputs[LEFTOUT_OUTPUT].setVoltage(0.f);
+			if (!rightConnected) {
+				outputs[RIGHTOUT_OUTPUT].setVoltage(0.f);
+			}
+		}
+
+		if (rightConnected) {
+			const float inR = inputs[RIGHTIN_INPUT].getVoltage();
+			const float boostedR = inR * preVolumeGain;
 			clippingR = (boostedR < -5.f || boostedR > 5.f);
 			const float clippedR = clamp(boostedR, -5.f, 5.f);
 			outR = clippedR * volume;
 			outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
 		}
-	} else {
-		outputs[LEFTOUT_OUTPUT].setVoltage(0.f);
-		if (!rightConnected) {
-			outputs[RIGHTOUT_OUTPUT].setVoltage(0.f);
-		}
-	}
 
-	if (rightConnected) {
-		const float inR = inputs[RIGHTIN_INPUT].getVoltage();
-		const float boostedR = inR * preVolumeGain;
-		clippingR = (boostedR < -5.f || boostedR > 5.f);
-		const float clippedR = clamp(boostedR, -5.f, 5.f);
-		outR = clippedR * volume;
-		outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
+		// Update right output lights (only once per process)
+		const float brightnessR = clamp(fabsf(outR) * 0.2f, 0.f, 1.f); // same as /5
+		lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clippingR ? brightnessR : 0.f, args.sampleTime);
+		lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clippingR ? 0.f : brightnessR, args.sampleTime);
 	}
-
-	// Update right output lights (only once per process)
-	const float brightnessR = clamp(fabsf(outR) * 0.2f, 0.f, 1.f);  // same as /5
-	lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clippingR ? brightnessR : 0.f, args.sampleTime);
-	lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clippingR ? 0.f : brightnessR, args.sampleTime);
-}
 };
 
-
 struct BoostWidget : ModuleWidget {
-	BoostWidget(Boost* module) {
+	BoostWidget(Boost *module) {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/Boost_info.svg")));
 
@@ -120,10 +104,11 @@ struct BoostWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(10.16, 93.501)), module, Boost::LEFTOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(10.16, 110.001)), module, Boost::RIGHTOUT_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(4.801, 103.503)), module, Boost::RIGHTLEDRED_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(4.801, 103.503)), module, Boost::RIGHTLEDGREEN_LIGHT));
+		addChild(
+			createLightCentered<MediumLight<RedLight>>(mm2px(Vec(4.801, 103.503)), module, Boost::RIGHTLEDRED_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenLight>>(
+			mm2px(Vec(4.801, 103.503)), module, Boost::RIGHTLEDGREEN_LIGHT));
 	}
 };
 
-
-Model* modelBoost = createModel<Boost, BoostWidget>("Boost");
+Model *modelBoost = createModel<Boost, BoostWidget>("Boost");

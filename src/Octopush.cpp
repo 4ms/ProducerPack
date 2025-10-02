@@ -36,9 +36,7 @@ struct OctoPush : Module {
 		CH8PUSH_PARAM,
 		PARAMS_LEN
 	};
-	enum InputId {
-		INPUTS_LEN
-	};
+	enum InputId { INPUTS_LEN };
 	enum OutputId {
 		CH1VOLTAGEOUT_OUTPUT,
 		CH2VOLTAGEOUT_OUTPUT,
@@ -62,28 +60,29 @@ struct OctoPush : Module {
 		NEGATIVEOUT_OUTPUT,
 		OUTPUTS_LEN
 	};
-	enum LightId {
-		CH1_LIGHT,
-		CH2_LIGHT,
-		CH3_LIGHT,
-		CH4_LIGHT,
-		CH5_LIGHT,
-		CH6_LIGHT,
-		CH7_LIGHT,
-		CH8_LIGHT,
-		LIGHTS_LEN
-	};
+	enum LightId { CH1_LIGHT, CH2_LIGHT, CH3_LIGHT, CH4_LIGHT, CH5_LIGHT, CH6_LIGHT, CH7_LIGHT, CH8_LIGHT, LIGHTS_LEN };
 
 	OctoPush() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
 		for (int i = 0; i < 8; i++) {
-			configSwitch(CH1RANGE_PARAM + i, 0.f, 2.f, 2.f, "Ch. " + std::to_string(i+1) + " Range", {"0-1v", "0-5v", "-5v/+5v"});
-			configParam(CH1OFFSET_PARAM + i, 0.f, 1.f, 1.0f, "Ch. " + std::to_string(i+1) + " Offset", "%", 0.f, 100.f);
-			configSwitch(CH1BEHAVIOR_PARAM + i, 0.f, 2.f, 0.f, "Ch. " + std::to_string(i+1) + " Behavior", {"Gate", "Toggle", "Trig"});
-			configSwitch(CH1PUSH_PARAM + i, 0.f, 1.f, 0.f, "Ch. " + std::to_string(i+1), {"0", "1"});
-			configOutput(CH1VOLTAGEOUT_OUTPUT + i, "Ch. " + std::to_string(i+1) + " Voltage");
-			configOutput(CH1BUTTONOUT_OUTPUT + i, "Ch. " + std::to_string(i+1) + " Button");
+			configSwitch(CH1RANGE_PARAM + i,
+						 0.f,
+						 2.f,
+						 2.f,
+						 "Ch. " + std::to_string(i + 1) + " Range",
+						 {"0-1v", "0-5v", "-5v/+5v"});
+			configParam(
+				CH1OFFSET_PARAM + i, 0.f, 1.f, 1.0f, "Ch. " + std::to_string(i + 1) + " Offset", "%", 0.f, 100.f);
+			configSwitch(CH1BEHAVIOR_PARAM + i,
+						 0.f,
+						 2.f,
+						 0.f,
+						 "Ch. " + std::to_string(i + 1) + " Behavior",
+						 {"Gate", "Toggle", "Trig"});
+			configSwitch(CH1PUSH_PARAM + i, 0.f, 1.f, 0.f, "Ch. " + std::to_string(i + 1), {"0", "1"});
+			configOutput(CH1VOLTAGEOUT_OUTPUT + i, "Ch. " + std::to_string(i + 1) + " Voltage");
+			configOutput(CH1BUTTONOUT_OUTPUT + i, "Ch. " + std::to_string(i + 1) + " Button");
 		}
 
 		configOutput(SUMOUT_OUTPUT, "Sum");
@@ -94,7 +93,7 @@ struct OctoPush : Module {
 		std::fill(std::begin(prevBehaviorMode), std::end(prevBehaviorMode), -1);
 	}
 
-	void process(const ProcessArgs& args) override {
+	void process(const ProcessArgs &args) override {
 		static constexpr float rangeScale[3] = {1.f, 5.f, 10.f};
 		static constexpr float rangeBias[3] = {0.f, 0.f, -5.f};
 		float sumVoltages = 0.f;
@@ -183,7 +182,7 @@ private:
 };
 
 struct OctoPushWidget : ModuleWidget {
-	OctoPushWidget(OctoPush* module) {
+	OctoPushWidget(OctoPush *module) {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/OctoPush_info.svg")));
 
@@ -220,29 +219,36 @@ struct OctoPushWidget : ModuleWidget {
 		addParam(createParamCentered<_3Pos>(mm2px(Vec(101.465, 93.644)), module, OctoPush::CH8BEHAVIOR_PARAM));
 
 		addParam(createParamCentered<LEDBezel>(mm2px(Vec(7.188, 112.652)), module, OctoPush::CH1PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(7.188, 112.652)), module, OctoPush::CH1_LIGHT));
+		addChild(
+			createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(7.188, 112.652)), module, OctoPush::CH1_LIGHT));
 
 		addParam(createParamCentered<LEDBezel>(mm2px(Vec(20.656, 112.652)), module, OctoPush::CH2PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(20.656, 112.652)), module, OctoPush::CH2_LIGHT));
+		addChild(
+			createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(20.656, 112.652)), module, OctoPush::CH2_LIGHT));
 
 		addParam(createParamCentered<LEDBezel>(mm2px(Vec(34.124, 112.652)), module, OctoPush::CH3PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(34.124, 112.652)), module, OctoPush::CH3_LIGHT));
+		addChild(
+			createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(34.124, 112.652)), module, OctoPush::CH3_LIGHT));
 
 		addParam(createParamCentered<LEDBezel>(mm2px(Vec(47.592, 112.652)), module, OctoPush::CH4PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(47.592, 112.652)), module, OctoPush::CH4_LIGHT));
+		addChild(
+			createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(47.592, 112.652)), module, OctoPush::CH4_LIGHT));
 
 		addParam(createParamCentered<LEDBezel>(mm2px(Vec(61.061, 112.652)), module, OctoPush::CH5PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(61.061, 112.652)), module, OctoPush::CH5_LIGHT));
+		addChild(
+			createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(61.061, 112.652)), module, OctoPush::CH5_LIGHT));
 
 		addParam(createParamCentered<LEDBezel>(mm2px(Vec(74.529, 112.652)), module, OctoPush::CH6PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(74.529, 112.652)), module, OctoPush::CH6_LIGHT));
+		addChild(
+			createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(74.529, 112.652)), module, OctoPush::CH6_LIGHT));
 
 		addParam(createParamCentered<LEDBezel>(mm2px(Vec(87.997, 112.652)), module, OctoPush::CH7PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(87.997, 112.652)), module, OctoPush::CH7_LIGHT));
+		addChild(
+			createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(87.997, 112.652)), module, OctoPush::CH7_LIGHT));
 
 		addParam(createParamCentered<LEDBezel>(mm2px(Vec(101.465, 112.652)), module, OctoPush::CH8PUSH_PARAM));
-		addChild(createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(101.465, 112.652)), module, OctoPush::CH8_LIGHT));
-
+		addChild(
+			createLightCentered<LEDBezelLight<WhiteLight>>(mm2px(Vec(101.465, 112.652)), module, OctoPush::CH8_LIGHT));
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.188, 17.614)), module, OctoPush::CH1VOLTAGEOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(20.656, 17.614)), module, OctoPush::CH2VOLTAGEOUT_OUTPUT));
@@ -251,7 +257,8 @@ struct OctoPushWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(61.061, 17.614)), module, OctoPush::CH5VOLTAGEOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(74.529, 17.614)), module, OctoPush::CH6VOLTAGEOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(87.997, 17.614)), module, OctoPush::CH7VOLTAGEOUT_OUTPUT));
-		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(101.465, 17.614)), module, OctoPush::CH8VOLTAGEOUT_OUTPUT));
+		addOutput(
+			createOutputCentered<PJ301MPort>(mm2px(Vec(101.465, 17.614)), module, OctoPush::CH8VOLTAGEOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.188, 36.622)), module, OctoPush::CH1BUTTONOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(20.656, 36.622)), module, OctoPush::CH2BUTTONOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(34.124, 36.622)), module, OctoPush::CH3BUTTONOUT_OUTPUT));
@@ -267,5 +274,4 @@ struct OctoPushWidget : ModuleWidget {
 	}
 };
 
-
-Model* modelOctoPush = createModel<OctoPush, OctoPushWidget>("OctoPush");
+Model *modelOctoPush = createModel<OctoPush, OctoPushWidget>("OctoPush");
