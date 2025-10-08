@@ -46,7 +46,45 @@ struct PrePostBypass : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-	}
+		int mode = (int)params[SWITCH_PARAM].getValue();
+	
+		// Read all inputs
+		float fx1InL = inputs[FX1INL_INPUT].getVoltage();
+		float fx1InR = inputs[FX1INR_INPUT].getVoltage();
+		float fx2InL = inputs[FX2INL_INPUT].getVoltage();
+		float fx2InR = inputs[FX2INR_INPUT].getVoltage();
+		float pgmL = inputs[PGMINL_INPUT].getVoltage();
+		float pgmR = inputs[PGMINR_INPUT].getVoltage();
+	
+		switch (mode) {
+			case 0: // Pre: FX1 -> FX2
+				outputs[FX1OUTL_OUTPUT].setVoltage(pgmL);
+				outputs[FX1OUTR_OUTPUT].setVoltage(pgmR);
+				outputs[FX2OUTL_OUTPUT].setVoltage(fx1InL);
+				outputs[FX2OUTR_OUTPUT].setVoltage(fx1InR);
+				outputs[PGMOUTL_OUTPUT].setVoltage(fx2InL);
+				outputs[PGMOUTR_OUTPUT].setVoltage(fx2InR);
+				break;
+	
+			case 1: // Bypass: FX2 only
+				outputs[FX1OUTL_OUTPUT].setVoltage(0.f);
+				outputs[FX1OUTR_OUTPUT].setVoltage(0.f);
+				outputs[FX2OUTL_OUTPUT].setVoltage(pgmL);
+				outputs[FX2OUTR_OUTPUT].setVoltage(pgmR);
+				outputs[PGMOUTL_OUTPUT].setVoltage(fx2InL);
+				outputs[PGMOUTR_OUTPUT].setVoltage(fx2InR);
+				break;
+	
+			case 2: // Post: FX2 -> FX1
+				outputs[FX1OUTL_OUTPUT].setVoltage(fx2InL);
+				outputs[FX1OUTR_OUTPUT].setVoltage(fx2InR);
+				outputs[FX2OUTL_OUTPUT].setVoltage(pgmL);
+				outputs[FX2OUTR_OUTPUT].setVoltage(pgmR);
+				outputs[PGMOUTL_OUTPUT].setVoltage(fx1InL);
+				outputs[PGMOUTR_OUTPUT].setVoltage(fx1InR);
+				break;
+		}
+	}	
 };
 
 
