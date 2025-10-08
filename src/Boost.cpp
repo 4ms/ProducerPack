@@ -48,7 +48,14 @@ struct Boost : Module {
 		case 2: gainMultiplier = 100.f; break;
 	}
 
-	const float preVolumeGain = gainParam * gainMultiplier;
+// Adjust gain mapping
+float preVolumeGain = 1.f;
+if (rangeSelection == 0) {
+	preVolumeGain = gainParam * gainMultiplier;
+}
+else {
+	preVolumeGain = 1.f + gainParam * (gainMultiplier - 1.f);
+}
 
 	const bool leftConnected = inputs[LEFTIN_INPUT].isConnected();
 	const bool rightConnected = inputs[RIGHTIN_INPUT].isConnected();
