@@ -25,6 +25,7 @@ extern Model* modelOctoPush;
 extern Model* modelSoloPush;
 extern Model* modelRouter;
 extern Model* modelListenClosely;
+extern Model* modelPrePostBypass;
 
 struct _9mmKnob : RoundKnob {
     _9mmKnob() {
