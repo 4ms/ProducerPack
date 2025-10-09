@@ -38,7 +38,8 @@ target_sources(4ms-ProducerPack PRIVATE
     ${SOURCE_DIR}/src/Router.cpp     
     ${SOURCE_DIR}/src/ListenClosely.cpp     
     ${SOURCE_DIR}/src/PrePostBypass.cpp 
-    ${SOURCE_DIR}/src/KnobRescale.cpp         
+    ${SOURCE_DIR}/src/KnobRescale.cpp     
+    ${SOURCE_DIR}/src/SampleRateClock.cpp             
     ${SOURCE_DIR}/src/plugin.cpp        
     ${SOURCE_DIR}/src/plugin.hpp        
     ) 

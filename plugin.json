@@ -199,6 +199,12 @@
       "name": "KnobRescale",
       "description": "",
       "tags": []
+    },
+    {
+      "slug": "SampleRateClock",
+      "name": "SampleRateClock",
+      "description": "",
+      "tags": []
     }
   ]
 }

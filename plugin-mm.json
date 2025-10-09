@@ -83,6 +83,10 @@
 	{
 		"slug": "KnobRescale",
 		"name": "KnobRescale"
+	},
+	{
+		"slug": "SampleRateClock",
+		"name": "SampleRateClock"
 	}
 ]
 }

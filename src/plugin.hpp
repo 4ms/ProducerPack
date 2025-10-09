@@ -27,6 +27,7 @@ extern Model* modelRouter;
 extern Model* modelListenClosely;
 extern Model* modelPrePostBypass;
 extern Model* modelKnobRescale;
+extern Model* modelSampleRateClock;
 
 struct _9mmKnob : RoundKnob {
     _9mmKnob() {
