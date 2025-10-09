@@ -193,6 +193,12 @@
       "name": "PrePostBypass",
       "description": "",
       "tags": []
+    },
+    {
+      "slug": "KnobRescale",
+      "name": "KnobRescale",
+      "description": "",
+      "tags": []
     }
   ]
 }

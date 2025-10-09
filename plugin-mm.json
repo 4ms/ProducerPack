@@ -79,6 +79,10 @@
 	{
 		"slug": "PrePostBypass",
 		"name": "PrePostBypass"
+	},
+	{
+		"slug": "KnobRescale",
+		"name": "KnobRescale"
 	}
 ]
 }

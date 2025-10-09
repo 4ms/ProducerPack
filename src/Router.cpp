@@ -85,7 +85,7 @@ void process(const ProcessArgs& args) override {
 struct RouterWidget : ModuleWidget {
 	RouterWidget(Router* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/Router.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/Router.svg")));
 
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));

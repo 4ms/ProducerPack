@@ -91,7 +91,7 @@ struct PrePostBypass : Module {
 struct PrePostBypassWidget : ModuleWidget {
 	PrePostBypassWidget(PrePostBypass* module) {
 		setModule(module);
-		setPanel(createPanel(asset::plugin(pluginInstance, "res/PrePostBypass_info.svg")));
+		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/PrePostBypass_info.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
