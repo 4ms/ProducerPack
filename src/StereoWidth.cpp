@@ -17,56 +17,94 @@ struct StereoWidth : Module {
 		configOutput(OUTL_OUTPUT, "Audio Left");
 		configOutput(OUTR_OUTPUT, "Audio Right");
 	}
-
 	void process(const ProcessArgs &args) override {
-		// Input voltages
+		// --- Input voltages ---
 		float l = inputs[INL_INPUT].getVoltage();
 		float r = inputs[INR_INPUT].getVoltage();
 
-		// Width parameter + CV
-		float width = params[WIDTH_PARAM].getValue();
-		if (inputs[WIDTHCV_INPUT].isConnected())
-			width += inputs[WIDTHCV_INPUT].getVoltage() * 0.1f; // same as /10.f
+		// --- Recalculate width if param or CV changed ---
+		float newWidthParam = params[WIDTH_PARAM].getValue();
+		float newWidthCV = inputs[WIDTHCV_INPUT].isConnected() ? inputs[WIDTHCV_INPUT].getVoltage() : 0.f;
 
-		width = std::clamp(width, 0.f, 1.f);
+		if (newWidthParam != cachedWidthParam || newWidthCV != cachedWidthCV) {
+			cachedWidthParam = newWidthParam;
+			cachedWidthCV = newWidthCV;
 
-		float outL = 0.f, outR = 0.f;
+			float width = cachedWidthParam + cachedWidthCV * 0.1f;
+			width = std::clamp(width, 0.f, 1.f);
+			cachedWidth = width;
 
-		if (width <= 0.5f) {
-			// Blend mono → stereo
-			float t = width * 2.f;
-			float mono = 0.5f * (l + r);
-			outL = crossfade(mono, l, t);
-			outR = crossfade(mono, r, t);
-		} else {
-			// Stereo widening
-			float t = (width <= 0.75f) ? (width - 0.5f) * 4.f : 1.f;
-			float boost = (width > 0.75f) ? (width - 0.75f) * 4.f : 0.f;
-			float gain = 1.f + boost;
-
-			float diff = 0.5f * (l - r);
-			outL = l + t * gain * diff;
-			outR = r - t * gain * diff;
+			// Precompute width-dependent values
+			if (width <= 0.5f) {
+				widthBlendT = width * 2.f;
+				isWidthMonoToStereo = true;
+			} else {
+				isWidthMonoToStereo = false;
+				widthBlendT = (width <= 0.75f) ? (width - 0.5f) * 4.f : 1.f;
+				widthBoost = (width > 0.75f) ? (width - 0.75f) * 4.f : 0.f;
+				widthGain = 1.f + widthBoost;
+			}
 		}
 
-		// Pan control + CV
-		float pan = params[PAN_PARAM].getValue();
-		if (inputs[PANCV_INPUT].isConnected())
-			pan += inputs[PANCV_INPUT].getVoltage() * 10.f; // scaled from 5V to 50%
+		// --- Recalculate pan if param or CV changed ---
+		float newPanParam = params[PAN_PARAM].getValue();
+		float newPanCV = inputs[PANCV_INPUT].isConnected() ? inputs[PANCV_INPUT].getVoltage() : 0.f;
 
-		pan = std::clamp(pan, -50.f, 50.f) * 0.02f; // [-1.0, 1.0] = pan / 50
+		if (newPanParam != cachedPanParam || newPanCV != cachedPanCV) {
+			cachedPanParam = newPanParam;
+			cachedPanCV = newPanCV;
 
-		// Apply pan - efficient gain calculation
-		float panL = 1.f - pan;
-		float panR = 1.f + pan;
+			float pan = (cachedPanParam + cachedPanCV * 10.f); // [-50, +50]
+			pan = std::clamp(pan, -50.f, 50.f) * 0.02f;		   // [-1.0, +1.0]
+			cachedPan = pan;
 
+			panL = 1.f - pan;
+			panR = 1.f + pan;
+		}
+
+		// --- Width Mixing ---
+		float outL = 0.f, outR = 0.f;
+
+		if (isWidthMonoToStereo) {
+			// Mono → stereo blend
+			float mono = 0.5f * (l + r);
+			outL = crossfade(mono, l, widthBlendT);
+			outR = crossfade(mono, r, widthBlendT);
+		} else {
+			// Stereo widening
+			float diff = 0.5f * (l - r);
+			outL = l + widthBlendT * widthGain * diff;
+			outR = r - widthBlendT * widthGain * diff;
+		}
+
+		// --- Apply pan ---
 		outL *= panL;
 		outR *= panR;
 
-		// Clamp final output voltages
-		outputs[OUTL_OUTPUT].setVoltage(clamp(outL, -5.f, 5.f));
-		outputs[OUTR_OUTPUT].setVoltage(clamp(outR, -5.f, 5.f));
+		// --- Output ---
+		outputs[OUTL_OUTPUT].setVoltage(outL);
+		outputs[OUTR_OUTPUT].setVoltage(outR);
 	}
+
+private:
+	// Cached params
+	float cachedWidthParam = -1.f;
+	float cachedWidthCV = -1000.f;
+	float cachedWidth = 0.f;
+
+	float cachedPanParam = -1.f;
+	float cachedPanCV = -1000.f;
+	float cachedPan = 0.f;
+
+	// Width-related cached values
+	bool isWidthMonoToStereo = true;
+	float widthBlendT = 0.f;
+	float widthBoost = 0.f;
+	float widthGain = 1.f;
+
+	// Pan-related cached values
+	float panL = 1.f;
+	float panR = 1.f;
 };
 
 struct StereoWidthWidget : ModuleWidget {
