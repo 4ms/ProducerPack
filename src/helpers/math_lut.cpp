@@ -15,4 +15,4 @@ struct ExpTableRange {
 };
 
 const Mapping::LookupTable_t<64, float> Exp =
-	Mapping::LookupTable_t<64, float>::generate<ExpTableRange>([](float x) { return sinf(x); });
+	Mapping::LookupTable_t<64, float>::generate<ExpTableRange>([](float x) { return std::exp(x); });
