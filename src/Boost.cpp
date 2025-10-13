@@ -17,57 +17,66 @@ struct Boost : Module {
 		configOutput(RIGHTOUT_OUTPUT, "Audio Right");
 	}
 
+	// Cached values
+	float cachedGainParam = -1.f;
+	float cachedVolume = -1.f;
+	int cachedRangeSelection = -1;
+	float preVolumeGain = 1.f;
+
 	void process(const ProcessArgs &args) override {
-		// Cache parameters
-		const int rangeSelection = (int)params[RANGE_PARAM].getValue();
+		// Read parameter values
 		const float gainParam = params[GAIN_PARAM].getValue();
 		const float volume = params[VOLUME_PARAM].getValue();
+		const int rangeSelection = (int)params[RANGE_PARAM].getValue();
 
-		// Lookup gain multiplier
-		float gainMultiplier = 1.f;
-		switch (rangeSelection) {
-			case 1:
-				gainMultiplier = 5.f;
-				break;
-			case 2:
-				gainMultiplier = 100.f;
-				break;
+		// Update only if parameters have changed
+		if (gainParam != cachedGainParam || rangeSelection != cachedRangeSelection) {
+			float gainMultiplier = 1.f;
+			switch (rangeSelection) {
+				case 1:
+					gainMultiplier = 5.f;
+					break;
+				case 2:
+					gainMultiplier = 100.f;
+					break;
+			}
+
+			if (rangeSelection == 0)
+				preVolumeGain = gainParam * gainMultiplier;
+			else
+				preVolumeGain = 1.f + gainParam * (gainMultiplier - 1.f);
+
+			cachedGainParam = gainParam;
+			cachedRangeSelection = rangeSelection;
 		}
 
-		// Adjust gain mapping
-		float preVolumeGain = 1.f;
-		if (rangeSelection == 0) {
-			preVolumeGain = gainParam * gainMultiplier;
-		} else {
-			preVolumeGain = 1.f + gainParam * (gainMultiplier - 1.f);
-		}
+		if (volume != cachedVolume)
+			cachedVolume = volume;
 
 		const bool leftConnected = inputs[LEFTIN_INPUT].isConnected();
 		const bool rightConnected = inputs[RIGHTIN_INPUT].isConnected();
 
-		float outL = 0.f;
-		float outR = 0.f;
+		float outL = 0.f, outR = 0.f;
 		bool clippingR = false;
 
 		if (leftConnected) {
 			const float inL = inputs[LEFTIN_INPUT].getVoltage();
 			const float boostedL = inL * preVolumeGain;
 			const float clippedL = std::clamp(boostedL, -5.f, 5.f);
-			outL = clippedL * volume;
+			outL = clippedL * cachedVolume;
 			outputs[LEFTOUT_OUTPUT].setVoltage(outL);
 
 			if (!rightConnected) {
 				const float boostedR = inL * preVolumeGain;
 				clippingR = (boostedR < -5.f || boostedR > 5.f);
 				const float clippedR = std::clamp(boostedR, -5.f, 5.f);
-				outR = clippedR * volume;
+				outR = clippedR * cachedVolume;
 				outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
 			}
 		} else {
 			outputs[LEFTOUT_OUTPUT].setVoltage(0.f);
-			if (!rightConnected) {
+			if (!rightConnected)
 				outputs[RIGHTOUT_OUTPUT].setVoltage(0.f);
-			}
 		}
 
 		if (rightConnected) {
@@ -75,12 +84,12 @@ struct Boost : Module {
 			const float boostedR = inR * preVolumeGain;
 			clippingR = (boostedR < -5.f || boostedR > 5.f);
 			const float clippedR = std::clamp(boostedR, -5.f, 5.f);
-			outR = clippedR * volume;
+			outR = clippedR * cachedVolume;
 			outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
 		}
 
-		// Update right output lights (only once per process)
-		const float brightnessR = std::clamp(fabsf(outR) * 0.2f, 0.f, 1.f); // same as /5
+		// LED lights
+		const float brightnessR = std::clamp(fabsf(outR) * 0.2f, 0.f, 1.f);
 		lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clippingR ? brightnessR : 0.f, args.sampleTime);
 		lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clippingR ? 0.f : brightnessR, args.sampleTime);
 	}
