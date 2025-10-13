@@ -21,70 +21,113 @@ struct TwoOp : Module {
 		configOutput(AUDIO_OUTPUT, "Audio");
 	}
 
-	float carrierPhase = 0.f;
-	float modulatorPhase = 0.f;
-	float env = 0.f;
-	bool lastGate = false;
-
 	void process(const ProcessArgs &args) override {
-		// --- Pitch and Frequency ---
-		const float pitchParam = params[PITCH_PARAM].getValue();
-		const float voct = inputs[VOCTIN_INPUT].getVoltage();
-		const float baseFreq = 20.f * std::pow(1000.f, pitchParam);
-		float carrierFreq = baseFreq * std::exp2(voct); // faster than pow(2.f, voct)
-		carrierFreq = std::clamp(carrierFreq, 20.f, 20000.f);
+		// --- Pitch & Frequency ---
+		float newPitch = params[PITCH_PARAM].getValue();
+		float newVoct = inputs[VOCTIN_INPUT].getVoltage();
+
+		if (newPitch != cachedPitch || newVoct != cachedVoct) {
+			cachedPitch = newPitch;
+			cachedVoct = newVoct;
+			baseFreq = 20.f * pow(1000.f, cachedPitch);
+			carrierFreq = baseFreq * exp(cachedVoct);
+			carrierFreq = std::clamp(carrierFreq, 20.f, 20000.f);
+		}
 
 		// --- Ratio ---
-		float ratio = params[RATIO_PARAM].getValue();
-		if (inputs[RATIOCVIN_INPUT].isConnected())
-			ratio += inputs[RATIOCVIN_INPUT].getVoltage() * 0.2f; // == /5
-		ratio = std::clamp(ratio, 0.f, 1.f);
-		const float modFreq = carrierFreq * (0.1f + 7.9f * ratio);
+		float newRatio = params[RATIO_PARAM].getValue();
+		float newRatioCV = inputs[RATIOCVIN_INPUT].isConnected() ? inputs[RATIOCVIN_INPUT].getVoltage() : 0.f;
+
+		if (newRatio != cachedRatio || newRatioCV != cachedRatioCV) {
+			cachedRatio = newRatio;
+			cachedRatioCV = newRatioCV;
+			float ratio = std::clamp(cachedRatio + cachedRatioCV * 0.2f, 0.f, 1.f);
+			modFreq = carrierFreq * (0.1f + 7.9f * ratio);
+		}
 
 		// --- FM Amount ---
-		float fmAmt = params[FMAMT_PARAM].getValue();
-		if (inputs[FMAMTCVIN_INPUT].isConnected())
-			fmAmt += inputs[FMAMTCVIN_INPUT].getVoltage() * 0.2f;
-		const float fmAmount = std::clamp(fmAmt, 0.f, 1.f) * 5000.f;
+		float newFmAmt = params[FMAMT_PARAM].getValue();
+		float newFmAmtCV = inputs[FMAMTCVIN_INPUT].isConnected() ? inputs[FMAMTCVIN_INPUT].getVoltage() : 0.f;
+
+		if (newFmAmt != cachedFmAmt || newFmAmtCV != cachedFmAmtCV) {
+			cachedFmAmt = newFmAmt;
+			cachedFmAmtCV = newFmAmtCV;
+			float fm = std::clamp(cachedFmAmt + cachedFmAmtCV * 0.2f, 0.f, 1.f);
+			fmAmount = fm * 5000.f;
+		}
 
 		// --- Gate & Envelope ---
 		bool gate = inputs[GATEIN_INPUT].getVoltage() >= 1.f;
+
 		if (inputs[GATEIN_INPUT].isConnected()) {
 			if (gate && !lastGate)
 				env = 1.f;
 			lastGate = gate;
 
-			// Decay Time
-			float decay = params[DECAY_PARAM].getValue();
-			if (inputs[DECAYCVIN_INPUT].isConnected())
-				decay += inputs[DECAYCVIN_INPUT].getVoltage() * 0.2f;
-			decay = std::clamp(decay, 0.f, 1.f);
+			// --- Decay ---
+			float newDecay = params[DECAY_PARAM].getValue();
+			float newDecayCV = inputs[DECAYCVIN_INPUT].isConnected() ? inputs[DECAYCVIN_INPUT].getVoltage() : 0.f;
+			int newRange = (int)params[RANGE_PARAM].getValue();
 
-			const float maxDecayMs[] = {30.f, 200.f, 5000.f};
-			const int range = std::clamp((int)params[RANGE_PARAM].getValue(), 0, 2);
-			const float decayMs = 1.f + (maxDecayMs[range] - 1.f) * decay;
-			const float decayCoeff = std::exp(-args.sampleTime / (decayMs * 0.001f));
+			if (newDecay != cachedDecay || newDecayCV != cachedDecayCV || newRange != cachedRange) {
+				cachedDecay = newDecay;
+				cachedDecayCV = newDecayCV;
+				cachedRange = newRange;
+
+				float decay = std::clamp(cachedDecay + cachedDecayCV * 0.2f, 0.f, 1.f);
+				const float maxDecayMs[] = {30.f, 200.f, 5000.f};
+				float decayMs = 1.f + (maxDecayMs[std::clamp(cachedRange, 0, 2)] - 1.f) * decay;
+				decayCoeff = exp(-args.sampleTime / (decayMs * 0.001f));
+			}
+
 			env *= decayCoeff;
 		} else {
 			env = 1.f;
 			lastGate = false;
 		}
 
-		// --- Modulator ---
+		// --- Modulator Phase ---
 		modulatorPhase += modFreq * args.sampleTime;
 		if (modulatorPhase >= 1.f)
 			modulatorPhase -= 1.f;
-		const float mod = std::sin(2.f * M_PI * modulatorPhase);
+		float mod = sin(2.f * M_PI * modulatorPhase);
 
-		// --- Carrier ---
-		const float freq = std::clamp(carrierFreq + mod * fmAmount, 20.f, 20000.f);
-		carrierPhase += freq * args.sampleTime;
+		// --- Carrier Phase ---
+		float modulatedFreq = std::clamp(carrierFreq + mod * fmAmount, 20.f, 20000.f);
+		carrierPhase += modulatedFreq * args.sampleTime;
 		if (carrierPhase >= 1.f)
 			carrierPhase -= 1.f;
 
-		const float output = std::sin(2.f * M_PI * carrierPhase) * 5.f * env;
-		outputs[AUDIO_OUTPUT].setVoltage(clamp(output, -5.f, 5.f));
+		// --- Output ---
+		float output = sin(2.f * M_PI * carrierPhase) * 5.f * env;
+		outputs[AUDIO_OUTPUT].setVoltage(output);
 	}
+
+private:
+	// Phases & Envelope
+	float carrierPhase = 0.f;
+	float modulatorPhase = 0.f;
+	float env = 0.f;
+	bool lastGate = false;
+
+	// Cached Params & CVs
+	float cachedPitch = -1.f;
+	float cachedVoct = -1000.f;
+	float baseFreq = 0.f;
+	float carrierFreq = 0.f;
+
+	float cachedRatio = -1.f;
+	float cachedRatioCV = -1000.f;
+	float modFreq = 0.f;
+
+	float cachedFmAmt = -1.f;
+	float cachedFmAmtCV = -1000.f;
+	float fmAmount = 0.f;
+
+	float cachedDecay = -1.f;
+	float cachedDecayCV = -1000.f;
+	int cachedRange = -1;
+	float decayCoeff = 1.f;
 };
 
 struct TwoOpWidget : ModuleWidget {
