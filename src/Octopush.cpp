@@ -73,7 +73,7 @@ struct OctoPush : Module {
 						 "Ch. " + std::to_string(i + 1) + " Range",
 						 {"0-1v", "0-5v", "-5v/+5v"});
 			configParam(
-				CH1OFFSET_PARAM + i, 0.f, 1.f, 1.0f, "Ch. " + std::to_string(i + 1) + " Offset", "%", 0.f, 100.f);
+				CH1OFFSET_PARAM + i, 0.f, 1.f, 1.f, "Ch. " + std::to_string(i + 1) + " Offset", "%", 0.f, 100.f);
 			configSwitch(CH1BEHAVIOR_PARAM + i,
 						 0.f,
 						 2.f,
@@ -90,7 +90,14 @@ struct OctoPush : Module {
 		configOutput(POSITIVEOUT_OUTPUT, "Positive");
 		configOutput(NEGATIVEOUT_OUTPUT, "Negative");
 
-		std::fill(std::begin(prevBehaviorMode), std::end(prevBehaviorMode), -1);
+		for (int i = 0; i < 8; i++) {
+			prevBehaviorMode[i] = -1;
+			prevButtonState[i] = false;
+			prevLogicOut[i] = -1.f;
+			prevRange[i] = -1;
+			prevOffset[i] = -1.f;
+			prevVoltageOut[i] = -1.f;
+		}
 	}
 
 	void process(const ProcessArgs &args) override {
@@ -98,30 +105,31 @@ struct OctoPush : Module {
 		static constexpr float rangeBias[3] = {0.f, 0.f, -5.f};
 		float sumVoltages = 0.f;
 
-		for (int ch = 0; ch < 8; ch++) {
-			const float buttonValue = params[CH1PUSH_PARAM + ch].getValue();
-			const bool buttonPressed = buttonValue > 0.5f;
+		for (int ch = 0; ch < 8; ++ch) {
+			// Read button & behavior
+			const bool buttonPressed = params[CH1PUSH_PARAM + ch].getValue() > 0.5f;
 			const int mode = (int)params[CH1BEHAVIOR_PARAM + ch].getValue();
 
+			// Reset on behavior change
 			if (mode != prevBehaviorMode[ch]) {
 				toggleState[ch] = false;
 				trigState[ch] = false;
 				trigTimeRemaining[ch] = 0.f;
 				trigLightTimeRemaining[ch] = 0.f;
 				prevButtonState[ch] = false;
+				prevLogicOut[ch] = 0.f;
+				prevVoltageOut[ch] = 0.f;
 				outputs[CH1BUTTONOUT_OUTPUT + ch].setVoltage(0.f);
 				outputs[CH1VOLTAGEOUT_OUTPUT + ch].setVoltage(0.f);
 				lights[CH1_LIGHT + ch].setBrightness(0.f);
 				prevBehaviorMode[ch] = mode;
-				continue;
 			}
 
-			const bool prevPressed = prevButtonState[ch];
+			// Rising edge
+			const bool risingEdge = buttonPressed && !prevButtonState[ch];
 			prevButtonState[ch] = buttonPressed;
-			const bool risingEdge = buttonPressed && !prevPressed;
 
 			float logicOut = 0.f;
-
 			switch (mode) {
 				case 0:
 					logicOut = buttonPressed ? 5.f : 0.f;
@@ -147,25 +155,41 @@ struct OctoPush : Module {
 					break;
 			}
 
-			outputs[CH1BUTTONOUT_OUTPUT + ch].setVoltage(logicOut);
+			// Update button output only if changed
+			if (logicOut != prevLogicOut[ch]) {
+				outputs[CH1BUTTONOUT_OUTPUT + ch].setVoltage(logicOut);
+				prevLogicOut[ch] = logicOut;
+			}
 
+			// LED
 			if (trigLightTimeRemaining[ch] > 0.f) {
 				trigLightTimeRemaining[ch] -= args.sampleTime;
 				lights[CH1_LIGHT + ch].setBrightnessSmooth(1.f, args.sampleTime);
 			} else {
-				lights[CH1_LIGHT + ch].setBrightnessSmooth((logicOut > 0.f ? 1.f : 0.f), args.sampleTime);
+				lights[CH1_LIGHT + ch].setBrightnessSmooth(logicOut > 0.f ? 1.f : 0.f, args.sampleTime);
 			}
 
+			// Range & offset caching
 			const int range = (int)params[CH1RANGE_PARAM + ch].getValue();
 			const float offset = params[CH1OFFSET_PARAM + ch].getValue();
-			const float offsetVoltage = offset * rangeScale[range] + rangeBias[range];
 
-			const float voltageOut = logicOut > 0.f ? offsetVoltage : 0.f;
-			outputs[CH1VOLTAGEOUT_OUTPUT + ch].setVoltage(voltageOut);
+			if (range != prevRange[ch] || offset != prevOffset[ch]) {
+				prevOffsetVoltage[ch] = offset * rangeScale[range] + rangeBias[range];
+				prevRange[ch] = range;
+				prevOffset[ch] = offset;
+			}
+
+			// Voltage output
+			const float voltageOut = logicOut > 0.f ? prevOffsetVoltage[ch] : 0.f;
+			if (voltageOut != prevVoltageOut[ch]) {
+				outputs[CH1VOLTAGEOUT_OUTPUT + ch].setVoltage(voltageOut);
+				prevVoltageOut[ch] = voltageOut;
+			}
 
 			sumVoltages += voltageOut;
 		}
 
+		// Sum outputs
 		outputs[SUMOUT_OUTPUT].setVoltage(clamp(sumVoltages, -5.f, 5.f));
 		outputs[INVERSEOUT_OUTPUT].setVoltage(sumVoltages != 0.f ? std::clamp(1.f / sumVoltages, -5.f, 5.f) : 0.f);
 		outputs[POSITIVEOUT_OUTPUT].setVoltage(sumVoltages > 0.f ? std::clamp(sumVoltages, 0.f, 5.f) : 0.f);
@@ -179,6 +203,11 @@ private:
 	float trigTimeRemaining[8] = {};
 	float trigLightTimeRemaining[8] = {};
 	int prevBehaviorMode[8] = {};
+	int prevRange[8] = {};
+	float prevOffset[8] = {};
+	float prevOffsetVoltage[8] = {};
+	float prevLogicOut[8] = {};
+	float prevVoltageOut[8] = {};
 };
 
 struct OctoPushWidget : ModuleWidget {
