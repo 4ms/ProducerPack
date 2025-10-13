@@ -56,16 +56,25 @@ struct Spatializer : Module {
 		configOutput(OUTL_OUTPUT, "Audio Left");
 		configOutput(OUTR_OUTPUT, "Audio Right");
 	}
-
-	static const int maxDelaySamples = 2880; // Enough for 30ms at ~96kHz
+	static const int maxDelaySamples = 2880;
 	float delayBufferL[maxDelaySamples] = {};
 	float delayBufferR[maxDelaySamples] = {};
 	int delayIndex = 0;
 
-	float slewedTime = 0.f;				// Smoothed time value (normalized 0–1)
-	const float timeSlewRate = 0.0005f; // Adjust for smoothing speed
+	float slewedTime = 0.f;
+	const float timeSlewRate = 0.0005f;
 
-	// Helper function for crossfade (used for the dry/wet mix)
+	// Cached values
+	float cachedTime = -1.f;
+	float cachedWidth = -1.f;
+	float cachedMix = -1.f;
+	float cachedRange = -1.f;
+
+	int delaySamples = 1;
+	float width = 0.f;
+	float mix = 0.f;
+	bool useMilliseconds = true;
+
 	inline float crossfade(float a, float b, float x) {
 		return a * (1.f - x) + b * x;
 	}
@@ -78,24 +87,41 @@ struct Spatializer : Module {
 		const bool stereoIn = inputs[INR_INPUT].isConnected();
 		const float inR = stereoIn ? inputs[INR_INPUT].getVoltage() : inL;
 
-		// Params & CVs
-		const float timeCV = inputs[TIMECV_INPUT].getVoltage() * 0.1f; // /10
-		const float targetTime = std::clamp(params[TIME_PARAM].getValue() + timeCV, 0.f, 1.f);
+		// --- Update params/CVs only if changed ---
+		float targetTime = params[TIME_PARAM].getValue() + inputs[TIMECV_INPUT].getVoltage() * 0.1f;
+		targetTime = std::clamp(targetTime, 0.f, 1.f);
+
+		if (targetTime != cachedTime || params[RANGE_PARAM].getValue() != cachedRange) {
+			cachedTime = targetTime;
+			cachedRange = params[RANGE_PARAM].getValue();
+
+			useMilliseconds = cachedRange < 0.5f;
+
+			if (useMilliseconds)
+				delaySamples = std::clamp(
+					(int)(rescale(slewedTime, 0.f, 1.f, 1.f, 30.f) * sampleRate * 0.001f), 1, maxDelaySamples - 1);
+			else
+				delaySamples = std::clamp((int)(rescale(slewedTime, 0.f, 1.f, 1.f, 50.f)), 1, maxDelaySamples - 1);
+		}
+
+		float newWidth =
+			std::clamp(params[WIDTH_PARAM].getValue() + inputs[WIDTHCV_INPUT].getVoltage() * 0.1f, 0.f, 1.f);
+		if (newWidth != cachedWidth) {
+			cachedWidth = newWidth;
+			width = cachedWidth;
+		}
+
+		float newMix =
+			std::clamp(params[MIDSIDE_PARAM].getValue() + inputs[MIDSIDECV_INPUT].getVoltage() * 0.1f, 0.f, 1.f);
+		if (newMix != cachedMix) {
+			cachedMix = newMix;
+			mix = cachedMix;
+		}
+
+		// Slew time toward target
 		slewedTime += (targetTime - slewedTime) * timeSlewRate;
 
-		const bool useMilliseconds = params[RANGE_PARAM].getValue() < 0.5f;
-		int delaySamples =
-			useMilliseconds ?
-				clamp((int)(rescale(slewedTime, 0.f, 1.f, 1.f, 30.f) * sampleRate * 0.001f), 1, maxDelaySamples - 1) :
-				clamp((int)(rescale(slewedTime, 0.f, 1.f, 1.f, 50.f)), 1, maxDelaySamples - 1);
-
-		const float widthCV = inputs[WIDTHCV_INPUT].getVoltage() * 0.1f;
-		const float width = std::clamp(params[WIDTH_PARAM].getValue() + widthCV, 0.f, 1.f);
-
-		const float mixCV = inputs[MIDSIDECV_INPUT].getVoltage() * 0.1f;
-		const float mix = std::clamp(params[MIDSIDE_PARAM].getValue() + mixCV, 0.f, 1.f);
-
-		// Delay
+		// --- Delay ---
 		delayBufferL[delayIndex] = inL;
 		delayBufferR[delayIndex] = stereoIn ? inR : inL;
 
@@ -107,7 +133,7 @@ struct Spatializer : Module {
 		const float delayedL = delayBufferL[readIndex];
 		const float delayedR = -delayBufferR[readIndex];
 
-		// Spatial panning
+		// --- Spatial panning ---
 		float wetL, wetR;
 		if (stereoIn) {
 			const float panWidth = (width <= 0.5f) ? (width * 2.f) : 1.f;
@@ -129,7 +155,7 @@ struct Spatializer : Module {
 		outputs[SENDM_OUTPUT].setVoltage(dryMid);
 
 		// --- Mid signal ---
-		float midSignal = crossfade(dryMid * 0.66f, wetL + wetR, mix); // Scale dry for balance
+		float midSignal = crossfade(dryMid * 0.66f, wetL + wetR, mix);
 
 		// --- Returns ---
 		const bool retLConnected = inputs[RETURNL_INPUT].isConnected();
@@ -138,7 +164,6 @@ struct Spatializer : Module {
 
 		const float returnL = retLConnected ? inputs[RETURNL_INPUT].getVoltage() : wetL;
 		const float returnR = retRConnected ? inputs[RETURNR_INPUT].getVoltage() : wetR;
-
 		const float defaultMid = stereoIn ? (returnL + returnR) * 0.5f : inL;
 		const float returnM = retMConnected ? inputs[RETURNM_INPUT].getVoltage() : defaultMid;
 
@@ -151,7 +176,7 @@ struct Spatializer : Module {
 		outputs[OUTR_OUTPUT].setVoltage(outR);
 
 		// --- LED metering ---
-		const float ledScale = 0.2f; // == 1/5
+		const float ledScale = 0.2f;
 		const float leftSignal = fabsf(returnL) * ledScale;
 		const float rightSignal = fabsf(returnR) * ledScale;
 		const float midSignalLevel = fabsf(midSignal) * ledScale;
