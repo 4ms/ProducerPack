@@ -39,6 +39,7 @@ target_sources(
             ${SOURCE_DIR}/src/Router.cpp
             ${SOURCE_DIR}/src/plugin.cpp
             ${SOURCE_DIR}/src/plugin.hpp
+            ${SOURCE_DIR}/src/helpers/math_lut.cpp
 )
 
 # Add includes and compile options for source repo
