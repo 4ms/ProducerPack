@@ -18,42 +18,47 @@ struct SoloPush : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
-		static constexpr float rangeScale[3] = {1.f, 5.f, 10.f};
-		static constexpr float rangeBias[3] = {0.f, 0.f, -5.f};
-
 		const float buttonValue = params[CH1PUSH_PARAM].getValue();
 		const bool buttonPressed = buttonValue > 0.5f;
-		const int mode = (int)params[CH1BEHAVIOR_PARAM].getValue();
+		const bool risingEdge = buttonPressed && !prevButtonState;
+		prevButtonState = buttonPressed;
 
-		if (mode != prevBehaviorMode) {
-			toggleState = false;
-			trigState = false;
-			trigTimeRemaining = 0.f;
-			trigLightTimeRemaining = 0.f;
-			prevButtonState = false;
-			outputs[CH1BUTTONOUT_OUTPUT].setVoltage(0.f);
-			outputs[CH1VOLTAGEOUT_OUTPUT].setVoltage(0.f);
-			lights[CH1_LIGHT].setBrightness(0.f);
-			prevBehaviorMode = mode;
+		// Update mode only if changed
+		const int newMode = (int)params[CH1BEHAVIOR_PARAM].getValue();
+		if (newMode != cachedBehaviorMode) {
+			cachedBehaviorMode = newMode;
+			resetState();
 			return;
 		}
 
-		const bool prevPressed = prevButtonState;
-		prevButtonState = buttonPressed;
-		const bool risingEdge = buttonPressed && !prevPressed;
+		// Update range if changed
+		const int newRange = (int)params[CH1RANGE_PARAM].getValue();
+		if (newRange != cachedRange) {
+			cachedRange = newRange;
+			updateOffsetVoltage();
+		}
+
+		// Update offset if changed
+		const float newOffset = params[CH1OFFSET_PARAM].getValue();
+		if (newOffset != cachedOffset) {
+			cachedOffset = newOffset;
+			updateOffsetVoltage();
+		}
 
 		float logicOut = 0.f;
 
-		switch (mode) {
-			case 0:
+		switch (cachedBehaviorMode) {
+			case 0: // Momentary
 				logicOut = buttonPressed ? 5.f : 0.f;
 				break;
-			case 1:
+
+			case 1: // Toggle
 				if (risingEdge)
 					toggleState = !toggleState;
 				logicOut = toggleState ? 5.f : 0.f;
 				break;
-			case 2:
+
+			case 2: // Trigger
 				if (risingEdge) {
 					trigState = true;
 					trigTimeRemaining = 0.005f;
@@ -69,29 +74,53 @@ struct SoloPush : Module {
 				break;
 		}
 
+		// Output logic
 		outputs[CH1BUTTONOUT_OUTPUT].setVoltage(logicOut);
+		outputs[CH1VOLTAGEOUT_OUTPUT].setVoltage(logicOut > 0.f ? cachedOffsetVoltage : 0.f);
 
+		// Light logic
 		if (trigLightTimeRemaining > 0.f) {
 			trigLightTimeRemaining -= args.sampleTime;
 			lights[CH1_LIGHT].setBrightnessSmooth(1.f, args.sampleTime);
 		} else {
-			lights[CH1_LIGHT].setBrightnessSmooth((logicOut > 0.f ? 1.f : 0.f), args.sampleTime);
+			lights[CH1_LIGHT].setBrightnessSmooth(0.f);
 		}
-
-		const int range = (int)params[CH1RANGE_PARAM].getValue();
-		const float offset = params[CH1OFFSET_PARAM].getValue();
-		const float offsetVoltage = offset * rangeScale[range] + rangeBias[range];
-		const float voltageOut = logicOut > 0.f ? offsetVoltage : 0.f;
-		outputs[CH1VOLTAGEOUT_OUTPUT].setVoltage(voltageOut);
 	}
 
 private:
+	// Logic state
 	bool prevButtonState = false;
 	bool toggleState = false;
 	bool trigState = false;
+
+	// Trigger timers
 	float trigTimeRemaining = 0.f;
 	float trigLightTimeRemaining = 0.f;
-	int prevBehaviorMode = -1;
+
+	// Cached parameter values
+	int cachedBehaviorMode = -1;
+	int cachedRange = -1;
+	float cachedOffset = 0.f;
+	float cachedOffsetVoltage = 0.f;
+
+	static constexpr float rangeScale[3] = {1.f, 5.f, 10.f};
+	static constexpr float rangeBias[3] = {0.f, 0.f, -5.f};
+	// Resets internal state on mode change
+	void resetState() {
+		toggleState = false;
+		trigState = false;
+		trigTimeRemaining = 0.f;
+		trigLightTimeRemaining = 0.f;
+		prevButtonState = false;
+		outputs[CH1BUTTONOUT_OUTPUT].setVoltage(0.f);
+		outputs[CH1VOLTAGEOUT_OUTPUT].setVoltage(0.f);
+		lights[CH1_LIGHT].setBrightness(0.f);
+	}
+
+	// Recalculates offset voltage when range or offset changes
+	void updateOffsetVoltage() {
+		cachedOffsetVoltage = cachedOffset * rangeScale[cachedRange] + rangeBias[cachedRange];
+	}
 };
 
 struct SoloPushWidget : ModuleWidget {
