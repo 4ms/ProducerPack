@@ -161,8 +161,8 @@ struct DrumBus : Module {
 		leftMix *= cachedMasterVol;
 		rightMix *= cachedMasterVol;
 
-		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(std::clamp(leftMix, -10.f, 10.f));
-		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(std::clamp(rightMix, -10.f, 10.f));
+		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(leftMix);
+		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(rightMix);
 	}
 };
 
