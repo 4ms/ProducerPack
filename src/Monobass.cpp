@@ -1,3 +1,4 @@
+#include "helpers/lut.hh"
 #include "plugin.hpp"
 #include <cmath> // for std::round
 
@@ -167,6 +168,14 @@ struct Monobass : Module {
 
 	bool lfoResetEnabled;		// From the UI or a physical switch
 	bool prevGateState = false; // To detect rising edge
+
+	struct Pow2TableRange {
+		static constexpr float min = -15.f;
+		static constexpr float max = 12.f;
+	};
+
+	static inline const auto Pow2 =
+		Mapping::LookupTable_t<64, float>::generate<Pow2TableRange>([](float x) { return std::pow(2.f, x); });
 
 	void process(const ProcessArgs &args) override {
 		float gateIn = inputs[GATE_INPUT].getVoltage();
@@ -407,6 +416,7 @@ struct Monobass : Module {
 
 		float fineTune = params[FINETUNE_PARAM].getValue();
 
+		// [-11, 11] + [-0.1, 0.1] + [-3, 0] + [-0.1, 0.1] => [-14.2, 11.2]
 		float basePitch = pitchCV + fineTune + freqOffset + fmPitchOffset;
 
 		float detuneKnob = params[DETUNE_PARAM].getValue();
@@ -452,8 +462,8 @@ struct Monobass : Module {
 		float timbre = std::clamp(phaseParam + phaseCV * phaseAtt, 0.f, 1.f);
 
 		// === Frequencies ===
-		float freq1 = 261.626f * std::pow(2.f, basePitch);
-		float freq2 = 261.626f * std::pow(2.f, detunedPitch);
+		float freq1 = 261.626f * Pow2(basePitch);
+		float freq2 = 261.626f * Pow2(detunedPitch);
 
 		// === Advance phases ===
 		phase += freq1 / args.sampleRate;
