@@ -20,33 +20,30 @@ struct StereoCrossfader : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
-		// --- Mix Param + CV ---
-		float mixParam = std::clamp(params[MIX_PARAM].getValue(), 0.f, 1.f);
-		float cv = inputs[MIXCV_INPUT].getVoltage();
-		float offset = rescale(mixParam, 0.f, 1.f, -5.f, 5.f);
-		float mix = rescale(std::clamp(offset + cv, -5.f, 5.f), -5.f, 5.f, 0.f, 1.f);
+		// --- Read CV input ---
+		float mixCV = inputs[MIXCV_INPUT].getVoltage();
 
-		// --- Shape ---
-		float shape = std::clamp(params[SHAPE_PARAM].getValue(), 0.f, 1.f);
-		float k = 9.f * shape + 1.f;
-		float denom = std::log(k + 1e-6f);
+		// --- Update mix param only if changed ---
+		float newMixParam = params[MIX_PARAM].getValue();
+		if (newMixParam != cachedMixParam || mixCV != cachedMixCV) {
+			cachedMixParam = newMixParam;
+			cachedMixCV = mixCV;
 
-		// --- Curved mix (log interpolation) ---
-		float x = mix;
-		if (x < 0.5f) {
-			x *= 2.f;
-			float y = x * (1.f - shape) + std::log(1.f + (k - 1.f) * x) / denom * shape;
-			mix = 0.5f * y;
-		} else {
-			x = 2.f * (x - 0.5f);
-			float y = x * (1.f - shape) + std::log(1.f + (k - 1.f) * x) / denom * shape;
-			mix = 0.5f + 0.5f * y;
+			float offset = rescale(cachedMixParam, 0.f, 1.f, -5.f, 5.f);
+			float sum = offset + cachedMixCV;
+			float clamped = std::clamp(sum, -5.f, 5.f);
+			mix = rescale(clamped, -5.f, 5.f, 0.f, 1.f);
+
+			// Need to recompute gains when mix changes
+			updateMixShapeDependent();
 		}
 
-		// --- Equal-power gain calculation using a fast approximation of cosine
-		// cos(pi * x / 2) ≈ sin((1 - x) * pi/2)
-		float gainA = std::sin((1.f - mix) * 0.5f * M_PI);
-		float gainB = std::sin(mix * 0.5f * M_PI);
+		// --- Update shape param only if changed ---
+		float newShape = params[SHAPE_PARAM].getValue();
+		if (newShape != cachedShape) {
+			cachedShape = newShape;
+			updateMixShapeDependent();
+		}
 
 		// --- Inputs ---
 		float aL = inputs[INAL_INPUT].getVoltage();
@@ -58,6 +55,40 @@ struct StereoCrossfader : Module {
 		outputs[OUTL_OUTPUT].setVoltage(gainA * aL + gainB * bL);
 		outputs[OUTR_OUTPUT].setVoltage(gainA * aR + gainB * bR);
 	}
+
+	// Called when either shape or mix changes
+	void updateMixShapeDependent() {
+		float shape = cachedShape;
+		float k = 9.f * shape + 1.f;
+		float denom = log(k + 1e-6f); // add epsilon to avoid log(0)
+		float x = mix;
+
+		if (x < 0.5f) {
+			x *= 2.f;
+			float y = x * (1.f - shape) + log(1.f + (k - 1.f) * x) / denom * shape;
+			mixShaped = 0.5f * y;
+		} else {
+			x = 2.f * (x - 0.5f);
+			float y = x * (1.f - shape) + log(1.f + (k - 1.f) * x) / denom * shape;
+			mixShaped = 0.5f + 0.5f * y;
+		}
+
+		// Equal power gain calculation
+		gainA = sin((1.f - mixShaped) * 0.5f * M_PI);
+		gainB = sin(mixShaped * 0.5f * M_PI);
+	}
+
+private:
+	// Cached param values
+	float cachedMixParam = -1.f;
+	float cachedMixCV = 9999.f; // Unlikely value to force first update
+	float cachedShape = -1.f;
+
+	// Cached intermediate values
+	float mix = 0.f;
+	float mixShaped = 0.f;
+	float gainA = 0.f;
+	float gainB = 0.f;
 };
 
 struct StereoCrossfaderWidget : ModuleWidget {

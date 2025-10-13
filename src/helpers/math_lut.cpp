@@ -24,3 +24,11 @@ struct ExpTableRange {
 
 const Mapping::LookupTable_t<64, float> Exp =
 	Mapping::LookupTable_t<64, float>::generate<ExpTableRange>([](float x) { return std::exp(x); });
+
+struct LogTableRange {
+	static constexpr float min = -2.f;
+	static constexpr float max = 2.f;
+};
+
+const Mapping::LookupTable_t<64, float> Log =
+	Mapping::LookupTable_t<64, float>::generate<LogTableRange>([](float x) { return std::log(x); });
