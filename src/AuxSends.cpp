@@ -53,6 +53,11 @@ struct AuxSends : Module {
 		LIGHTS_LEN
 	};
 
+	unsigned lightThrottle = 0;
+	static constexpr unsigned lightThrottleAmount = 256;
+	static_assert(((lightThrottleAmount - 1) & lightThrottleAmount) == 0, "lightThrottleAmount must be a power of 2");
+	static_assert(lightThrottleAmount > 1);
+
 	AuxSends() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		configParam(ASEND_PARAM, 0.f, 1.f, 0.5f, "Send A", "%", 0.f, 100.f);
@@ -120,7 +125,9 @@ struct AuxSends : Module {
 			float sendR = (pre ? rawInR : inR) * sendA;
 			outputs[ASENDLEFTOUT_OUTPUT].setVoltage(sendL);
 			outputs[ASENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-			lights[ASENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
+			if (lightThrottle == 0)
+				lights[ASENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f,
+														   args.sampleTime * lightThrottleAmount);
 		}
 
 		// === RETURN A ===
@@ -131,7 +138,9 @@ struct AuxSends : Module {
 				inputs[ARETURNRIGHTIN_INPUT].isConnected() ? inputs[ARETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
 			outL += returnL;
 			outR += returnR;
-			lights[ARETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
+			if (lightThrottle == 0)
+				lights[ARETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f,
+															 args.sampleTime * lightThrottleAmount);
 		}
 
 		// === SEND B ===
@@ -142,7 +151,9 @@ struct AuxSends : Module {
 			float sendR = (pre ? rawInR : inR) * sendB;
 			outputs[BSENDLEFTOUT_OUTPUT].setVoltage(sendL);
 			outputs[BSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-			lights[BSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
+			if (lightThrottle == 0)
+				lights[BSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f,
+														   args.sampleTime * lightThrottleAmount);
 		}
 
 		// === RETURN B ===
@@ -153,7 +164,9 @@ struct AuxSends : Module {
 				inputs[BRETURNRIGHTIN_INPUT].isConnected() ? inputs[BRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
 			outL += returnL;
 			outR += returnR;
-			lights[BRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
+			if (lightThrottle == 0)
+				lights[BRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f,
+															 args.sampleTime * lightThrottleAmount);
 		}
 
 		// === SEND C ===
@@ -164,7 +177,9 @@ struct AuxSends : Module {
 			float sendR = (pre ? rawInR : inR) * sendC;
 			outputs[CSENDLEFTOUT_OUTPUT].setVoltage(sendL);
 			outputs[CSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-			lights[CSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
+			if (lightThrottle == 0)
+				lights[CSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f,
+														   args.sampleTime * lightThrottleAmount);
 		}
 
 		// === RETURN C ===
@@ -175,12 +190,16 @@ struct AuxSends : Module {
 				inputs[CRETURNRIGHTIN_INPUT].isConnected() ? inputs[CRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
 			outL += returnL;
 			outR += returnR;
-			lights[CRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
+			if (lightThrottle == 0)
+				lights[CRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f,
+															 args.sampleTime * lightThrottleAmount);
 		}
 
 		// Final output
 		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f));
 		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f));
+
+		lightThrottle = (lightThrottle + 1) & (lightThrottleAmount - 1);
 	}
 };
 
