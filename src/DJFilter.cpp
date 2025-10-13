@@ -1,3 +1,4 @@
+#include "helpers/math_lut.hpp"
 #include "plugin.hpp"
 
 struct DJFilter : Module {
@@ -33,6 +34,14 @@ struct DJFilter : Module {
 			setValue(0.5f);
 		}
 	};
+
+	struct Pow2TableRange {
+		static constexpr float min = 4.f;
+		static constexpr float max = 13.f;
+	};
+
+	static inline const auto Pow2 =
+		Mapping::LookupTable_t<64, float>::generate<Pow2TableRange>([](float x) { return std::pow(2.f, x); });
 
 	DJFilter() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -74,8 +83,18 @@ struct DJFilter : Module {
 
 	SVF svfL[4], svfR[4];
 
+	const float log2_20 = std::log2(20.f);
+	const float log2_300 = std::log2(300.f);
+	const float log2_7000 = std::log2(7000.f);
+
+	// morph will be different than lastMorph => forces finalFreq to be calc the first time its run
+	float lastMorph = -1.f;
+
+	float lastSampleRate = 0.f;
+
+	float finalFreq = 300.f;
+
 	void process(const ProcessArgs &args) override {
-		const float sampleRate = args.sampleRate;
 
 		// Cache inputs
 		float inL = inputs[INL_INPUT].getVoltage();
@@ -94,16 +113,23 @@ struct DJFilter : Module {
 
 		// Cutoff frequency calculation (log scale)
 		float cutoffHz;
-		if (morph < 0.5f) {
-			float t = morph * 2.f;
-			cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(20.f), std::log2(7000.f)));
-		} else {
-			float t = (morph - 0.5f) * 2.f;
-			cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(300.f), std::log2(7000.f)));
+
+		if (morph != lastMorph || args.sampleRate != lastSampleRate) {
+			lastMorph = morph;
+			lastSampleRate = args.sampleRate;
+
+			if (morph < 0.5f) {
+				float t = morph * 2.f;
+				cutoffHz = Pow2(rescale(t, 0.f, 1.f, log2_20, log2_7000));
+			} else {
+				float t = (morph - 0.5f) * 2.f;
+				cutoffHz = Pow2(rescale(t, 0.f, 1.f, log2_300, log2_7000));
+			}
+
+			finalFreq = 2.f * Sin(M_PI * cutoffHz / args.sampleRate);
 		}
 
 		float q = rescale(resonanceParam, 0.f, 1.f, 0.707f, 3.f);
-		float f = 2.f * sinf(M_PI * cutoffHz / sampleRate);
 		float damp = 1.f / q;
 
 		// Dry input saved for mix
@@ -117,14 +143,14 @@ struct DJFilter : Module {
 
 			// Left
 			svfL.high = inL - svfL.low - damp * svfL.band;
-			svfL.band += f * svfL.high;
-			svfL.low += f * svfL.band;
+			svfL.band += finalFreq * svfL.high;
+			svfL.low += finalFreq * svfL.band;
 			inL = svfL.low;
 
 			// Right
 			svfR.high = inR - svfR.low - damp * svfR.band;
-			svfR.band += f * svfR.high;
-			svfR.low += f * svfR.band;
+			svfR.band += finalFreq * svfR.high;
+			svfR.low += finalFreq * svfR.band;
 			inR = svfR.low;
 		}
 
