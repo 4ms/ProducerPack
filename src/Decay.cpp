@@ -17,45 +17,71 @@ struct Decay : Module {
 		configOutput(AUDIOOUT_OUTPUT, "Audio");
 	}
 
-	float lastTrig = 0.0f;
-	float envelope = 0.0f;
+	// --- Cached member variables ---
+	float envelope = 0.f;
+	float lastTrig = 0.f;
+
+	float decayCoeff = 1.f;
+	float maxDecayMs = 200.f;
+
+	int cachedRangeSelection = -1;
+	float cachedDecayParam = -1.f;
+	float cachedDecayCV = -1.f;
+	float cachedDecayControl = -1.f;
+
+	bool updateDecay = true;
 
 	void process(const ProcessArgs &args) override {
+		// --- Inputs ---
+		const float trig = inputs[TRIGIN_INPUT].getVoltage();
+		const bool decayCvConnected = inputs[DECAYCVIN_INPUT].isConnected();
+		const float decayCV = decayCvConnected ? inputs[DECAYCVIN_INPUT].getVoltage() * 0.2f : 0.f;
+		const float decayParam = params[DECAY_PARAM].getValue();
+		const int rangeSelection = (int)params[RANGE_PARAM].getValue();
 
-		// Determine maxDecayMs only when the range param changes
-		float maxDecayMs = 200.f;
-		switch ((int)params[RANGE_PARAM].getValue()) {
-			case 0:
-				maxDecayMs = 30.f;
-				break;
-			case 1:
-				maxDecayMs = 200.f;
-				break;
-			case 2:
-				maxDecayMs = 5000.f;
-				break;
+		// --- Detect RANGE_PARAM change ---
+		if (rangeSelection != cachedRangeSelection) {
+			switch (rangeSelection) {
+				case 0:
+					maxDecayMs = 30.f;
+					break;
+				case 1:
+					maxDecayMs = 200.f;
+					break;
+				case 2:
+					maxDecayMs = 5000.f;
+					break;
+			}
+			cachedRangeSelection = rangeSelection;
+			updateDecay = true;
 		}
 
-		// Cache input voltages and parameter values
-		const float trig = inputs[TRIGIN_INPUT].getVoltage();
-		const float decayParam = params[DECAY_PARAM].getValue();
-		const float decayCV =
-			inputs[DECAYCVIN_INPUT].isConnected() ? inputs[DECAYCVIN_INPUT].getVoltage() * 0.2f : 0.f; // /5.0f
-		const float decayControl = std::clamp(decayParam + decayCV, 0.f, 1.f);
+		// --- Detect decayParam or decayCV change ---
+		if (decayParam != cachedDecayParam || decayCV != cachedDecayCV) {
+			cachedDecayParam = decayParam;
+			cachedDecayCV = decayCV;
+			const float newDecayControl = std::clamp(decayParam + decayCV, 0.f, 1.f);
 
-		// Avoid recalculating if decayControl is 0 (envelope decays immediately)
-		float decayTimeSec = decayControl * maxDecayMs * 0.001f;
-		if (decayTimeSec < 0.001f)
-			decayTimeSec = 0.001f;
+			if (newDecayControl != cachedDecayControl) {
+				cachedDecayControl = newDecayControl;
+				updateDecay = true;
+			}
+		}
 
-		// Calculate the decay coefficient only once
-		const float decayCoeff = std::exp(-1.f / (decayTimeSec * args.sampleRate));
+		// --- Recompute decay coefficient only when needed ---
+		if (updateDecay) {
+			float decayTimeSec = cachedDecayControl * maxDecayMs * 0.001f;
+			if (decayTimeSec < 0.001f)
+				decayTimeSec = 0.001f;
+			decayCoeff = exp(-1.f / (decayTimeSec * args.sampleRate));
+			updateDecay = false;
+		}
 
-		// Detect rising edge trigger
+		// --- Trigger detection ---
 		const bool trigRising = (trig >= 1.f && lastTrig < 1.f);
 		lastTrig = trig;
 
-		// Envelope logic
+		// --- Envelope processing ---
 		if (trigRising) {
 			envelope = 5.f;
 		} else {
@@ -66,12 +92,12 @@ struct Decay : Module {
 
 		outputs[DECAYOUT_OUTPUT].setVoltage(envelope);
 
-		// Audio output with envelope applied
+		// --- Audio with envelope ---
 		const float audioIn = inputs[AUDIOIN_INPUT].getVoltage();
-		float audioOut = audioIn * (envelope * 0.2f); // /5.0f
-		outputs[AUDIOOUT_OUTPUT].setVoltage(clamp(audioOut, -5.f, 5.f));
+		const float audioOut = audioIn * (envelope * 0.2f);
+		outputs[AUDIOOUT_OUTPUT].setVoltage(audioOut);
 
-		// LED update
+		// --- LED ---
 		lights[LED_LIGHT].setBrightnessSmooth(envelope, args.sampleTime);
 	}
 };
