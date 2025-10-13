@@ -24,7 +24,7 @@ struct StereoCrossfader : Module {
 		float mixParam = std::clamp(params[MIX_PARAM].getValue(), 0.f, 1.f);
 		float cv = inputs[MIXCV_INPUT].getVoltage();
 		float offset = rescale(mixParam, 0.f, 1.f, -5.f, 5.f);
-		float mix = std::clamp(rescale(clamp(offset + cv, -5.f, 5.f), -5.f, 5.f, 0.f, 1.f), 0.f, 1.f);
+		float mix = rescale(std::clamp(offset + cv, -5.f, 5.f), -5.f, 5.f, 0.f, 1.f);
 
 		// --- Shape ---
 		float shape = std::clamp(params[SHAPE_PARAM].getValue(), 0.f, 1.f);
