@@ -91,17 +91,31 @@ struct DrumBus : Module {
 		configOutput(AUDIORIGHTOUT_OUTPUT, "Mix Right");
 	}
 
+	// --- Cached parameter and state variables ---
+	float cachedMasterVol = -1.f;
+
+	float cachedVol[8] = {};
+	float cachedPan[8] = {};
+	float cachedMute[8] = {};
+
+	float chLeftGain[8] = {};
+	float chRightGain[8] = {};
+	bool chEnabled[8] = {};
+
 	void process(const ProcessArgs &args) override {
 		float leftMix = 0.f;
 		float rightMix = 0.f;
 
+		// --- Master volume ---
 		const float masterVol = params[MASTERVOL_PARAM].getValue();
 		if (masterVol <= 0.f) {
 			outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(0.f);
 			outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(0.f);
 			return;
 		}
+		cachedMasterVol = masterVol;
 
+		// --- Process each channel ---
 		for (int ch = 0; ch < 8; ++ch) {
 			const int baseParam = CH1VOL_PARAM + ch * 3;
 			const int inputId = CH1IN_INPUT + ch;
@@ -110,31 +124,45 @@ struct DrumBus : Module {
 				continue;
 
 			const float vol = params[baseParam].getValue();
-			if (vol <= 0.f)
+			const float pan = params[baseParam + 1].getValue();
+			const float mute = params[baseParam + 2].getValue();
+
+			bool changed = false;
+			if (vol != cachedVol[ch] || pan != cachedPan[ch] || mute != cachedMute[ch]) {
+				cachedVol[ch] = vol;
+				cachedPan[ch] = pan;
+				cachedMute[ch] = mute;
+				changed = true;
+			}
+
+			// --- Update gains only if params changed ---
+			if (changed) {
+				if (mute > 0.5f || vol <= 0.f) {
+					chEnabled[ch] = false;
+				} else {
+					chEnabled[ch] = true;
+					const float panNorm = pan * 0.01f + 0.5f; // -50 → 0, +50 → 1
+					const float panAngle = panNorm * (float)M_PI_2;
+					chLeftGain[ch] = cos(panAngle);
+					chRightGain[ch] = sin(panAngle);
+				}
+			}
+
+			if (!chEnabled[ch])
 				continue;
 
-			if (params[baseParam + 2].getValue() > 0.5f)
-				continue; // muted
-
 			const float in = inputs[inputId].getVoltage();
-			const float panNorm = params[baseParam + 1].getValue() * 0.01f + 0.5f; // -50 to 50 -> 0 to 1
-
-			// Precompute pan law (constant power)
-			float panAngle = panNorm * (float)M_PI_2;
-			float leftGain = cosf(panAngle);
-			float rightGain = sinf(panAngle);
-
-			const float scaledIn = in * vol;
-			leftMix += scaledIn * leftGain;
-			rightMix += scaledIn * rightGain;
+			const float scaledIn = in * cachedVol[ch];
+			leftMix += scaledIn * chLeftGain[ch];
+			rightMix += scaledIn * chRightGain[ch];
 		}
 
-		// Apply master volume
-		leftMix *= masterVol;
-		rightMix *= masterVol;
+		// --- Apply master volume ---
+		leftMix *= cachedMasterVol;
+		rightMix *= cachedMasterVol;
 
-		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(leftMix, -10.f, 10.f));
-		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(rightMix, -10.f, 10.f));
+		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(std::clamp(leftMix, -10.f, 10.f));
+		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(std::clamp(rightMix, -10.f, 10.f));
 	}
 };
 
