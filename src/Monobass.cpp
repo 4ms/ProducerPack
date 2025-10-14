@@ -289,7 +289,8 @@ struct Monobass : Module {
 		// === Decay Time Calculation ===
 		float ampDecayParam = params[AMPDECAY_PARAM].getValue();
 		float ampDecayAtt = params[AMPDECAYATT_PARAM].getValue() / 100.f;
-		float ampDecayCV = inputs[AMPDECAYCV_INPUT].isConnected() ? inputs[AMPDECAYCV_INPUT].getVoltage() / 5.f : 0.f;
+		float ampDecayCV =
+			inputs[AMPDECAYCV_INPUT].isConnected() ? inputs[AMPDECAYCV_INPUT].getVoltage() : outputValue / 5.f;
 		float decayCombined = std::clamp(ampDecayParam + ampDecayCV * ampDecayAtt, 0.f, 1.f);
 
 		// Final decay time in range: 10ms (0.01) to 500ms (0.5)
@@ -300,10 +301,11 @@ struct Monobass : Module {
 		float decayCoeff = exp(-1.f / (decayTime * args.sampleRate));
 
 		// === Filter Envelope Decay ===
+
 		float filterDecayParam = params[FILTERDECAY_PARAM].getValue();
 		float filterDecayAtt = params[FILTERDECAYATT_PARAM].getValue() / 100.f;
 		float filterDecayCV =
-			inputs[FILTERDECAYCV_INPUT].isConnected() ? inputs[FILTERDECAYCV_INPUT].getVoltage() / 5.f : 0.f;
+			inputs[FILTERDECAYCV_INPUT].isConnected() ? inputs[FILTERDECAYCV_INPUT].getVoltage() : outputValue / 5.f;
 		float filterDecayCombined = std::clamp(filterDecayParam + filterDecayCV * filterDecayAtt, 0.f, 1.f);
 		float filterDecayTime = 0.01f + filterDecayCombined * 0.49f; // 10ms to 500ms
 		float filterDecayCoeff = exp(-1.f / (filterDecayTime * args.sampleRate));
