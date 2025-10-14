@@ -404,12 +404,9 @@ struct Monobass : Module {
 
 		// [-11, 11] + [-0.1, 0.1] + [-3, 0] + [-0.1, 0.1] => [-14.2, 11.2]
 		float basePitch = pitchCV + fineTune + freqOffset + fmPitchOffset;
-
 		float detuneKnob = params[DETUNE_PARAM].getValue();
-		float detuneCV = inputs[DETUNECV_INPUT].isConnected() ?
-							 std::clamp(inputs[DETUNECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
-							 outputValue;
 		float detuneAtt = params[DETUNEATT_PARAM].getValue() / 100.f;
+		float detuneCV = inputs[DETUNECV_INPUT].isConnected() ? inputs[DETUNECV_INPUT].getVoltage() : outputValue / 5.f;
 		float totalDetuneControl = std::clamp(detuneKnob + detuneCV * detuneAtt, 0.f, 1.f);
 		float detuneSemitones = totalDetuneControl * 0.5f;
 		float detunedPitch = basePitch + detuneSemitones / 12.f;
