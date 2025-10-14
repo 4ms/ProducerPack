@@ -214,17 +214,13 @@ struct Monobass : Module {
 
 		if (isRandomShape && isLfoFreqZero) {
 			// LFO is in stepped random mode and frequency is 0 – gate-triggered
-			if (gateRisingEdge) {
-				lfoRandomValue = 2.f * ((float)rand() / (float)RAND_MAX) - 1.f;
-			}
+			if (gateRisingEdge) { lfoRandomValue = 2.f * ((float)rand() / (float)RAND_MAX) - 1.f; }
 		} else {
 			// Free-running mode
 			lfoPhase += lfoFreq / args.sampleRate;
 			if (lfoPhase >= 1.f) {
 				lfoPhase -= 1.f;
-				if (isRandomShape) {
-					lfoRandomValue = 2.f * ((float)rand() / (float)RAND_MAX) - 1.f;
-				}
+				if (isRandomShape) { lfoRandomValue = 2.f * ((float)rand() / (float)RAND_MAX) - 1.f; }
 			}
 		}
 
@@ -307,8 +303,8 @@ struct Monobass : Module {
 		float decayTime = 0.01f + decayCombined * 0.49f; // decayTime from 10ms to 500ms
 
 		// Coefficients for exponential envelope
-		float attackCoeff = std::exp(-1.f / (attackTime * args.sampleRate));
-		float decayCoeff = std::exp(-1.f / (decayTime * args.sampleRate));
+		float attackCoeff = exp(-1.f / (attackTime * args.sampleRate));
+		float decayCoeff = exp(-1.f / (decayTime * args.sampleRate));
 
 		// === FILTER ENVELOPE DECAY ===
 		float filterDecayParam = params[FILTERDECAY_PARAM].getValue();
@@ -318,7 +314,7 @@ struct Monobass : Module {
 		float filterDecayAtt = params[FILTERDECAYATT_PARAM].getValue() / 100.f;
 		float filterDecayCombined = std::clamp(filterDecayParam + (filterDecayCV * filterDecayAtt), 0.f, 1.f);
 		float filterDecayTime = 0.01f + filterDecayCombined * 0.49f; // 10ms to 500ms
-		float filterDecayCoeff = std::exp(-1.f / (filterDecayTime * args.sampleRate));
+		float filterDecayCoeff = exp(-1.f / (filterDecayTime * args.sampleRate));
 
 		// Envelope processing
 		int gateMode = (int)params[GATETRIG_PARAM].getValue();
@@ -367,9 +363,7 @@ struct Monobass : Module {
 				break;
 			}
 			case 1: { // TRIG Mode
-				if (risingEdge) {
-					filterTrigAttackPhase = true;
-				}
+				if (risingEdge) { filterTrigAttackPhase = true; }
 				if (filterTrigAttackPhase) {
 					filterEnvelope += (1.f - filterEnvelope) * (1.f - attackCoeff);
 					if (filterEnvelope > 0.99f) {
@@ -383,9 +377,7 @@ struct Monobass : Module {
 			}
 			case 2: { // DRONE Mode
 				risingEdge = (currentGateHigh && !lastGateState);
-				if (risingEdge) {
-					filterTrigAttackPhase = true;
-				}
+				if (risingEdge) { filterTrigAttackPhase = true; }
 				if (filterTrigAttackPhase) {
 					filterEnvelope += (1.f - filterEnvelope) * (1.f - attackCoeff);
 					if (filterEnvelope > 0.99f) {
@@ -555,8 +547,8 @@ struct Monobass : Module {
 		float targetPeak = targetVpp / 2.f; // ±2V
 
 		// Fast attack, slow release
-		float agcAttack = 1.f - std::exp(-1.f / (0.001f * args.sampleRate)); // 1ms attack
-		float agcRelease = 1.f - std::exp(-1.f / (0.1f * args.sampleRate));	 // 100ms release
+		float agcAttack = 1.f - exp(-1.f / (0.001f * args.sampleRate)); // 1ms attack
+		float agcRelease = 1.f - exp(-1.f / (0.1f * args.sampleRate));	// 100ms release
 
 		float absSample = std::fabs(finalOutput);
 		if (absSample > agcEnvelope)
@@ -586,7 +578,7 @@ struct Monobass : Module {
 		float cutoffAtt = params[CUTOFFATT_PARAM].getValue() / 100.f;
 		float cutoffControlV = std::clamp(cutoffOffsetV + (cutoffCV * cutoffAtt) + envelopeV, -5.f, 5.f);
 		float cutoffNorm = rescale(cutoffControlV, -5.f, 5.f, 0.f, 1.f);
-		float cutoffHz = 20.f * std::pow(350.f, cutoffNorm);
+		float cutoffHz = 20.f * pow(350.f, cutoffNorm);
 		float envelopeModHz = filterEnvelope * envDepth * 300.f;
 		cutoffHz += envelopeModHz;
 		cutoffHz = std::clamp(cutoffHz, 20.f, 7000.f);
