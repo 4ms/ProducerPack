@@ -286,13 +286,14 @@ struct Monobass : Module {
 		// Attack and decay times (in seconds)
 		float attackTime = 0.001f; // fixed 1ms attack
 
+		// === Decay Time Calculation ===
 		float ampDecayParam = params[AMPDECAY_PARAM].getValue();
-		float ampDecayCV = inputs[AMPDECAYCV_INPUT].isConnected() ?
-							   std::clamp(inputs[AMPDECAYCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
-							   outputValue;
 		float ampDecayAtt = params[AMPDECAYATT_PARAM].getValue() / 100.f;
-		float decayCombined = std::clamp(ampDecayParam + (ampDecayCV * ampDecayAtt), 0.f, 1.f);
-		float decayTime = 0.01f + decayCombined * 0.49f; // decayTime from 10ms to 500ms
+		float ampDecayCV = inputs[AMPDECAYCV_INPUT].isConnected() ? inputs[AMPDECAYCV_INPUT].getVoltage() / 5.f : 0.f;
+		float decayCombined = std::clamp(ampDecayParam + ampDecayCV * ampDecayAtt, 0.f, 1.f);
+
+		// Final decay time in range: 10ms (0.01) to 500ms (0.5)
+		float decayTime = 0.01f + decayCombined * 0.49f;
 
 		// Coefficients for exponential envelope
 		float attackCoeff = exp(-1.f / (attackTime * args.sampleRate));
