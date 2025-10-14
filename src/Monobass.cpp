@@ -299,13 +299,12 @@ struct Monobass : Module {
 		float attackCoeff = exp(-1.f / (attackTime * args.sampleRate));
 		float decayCoeff = exp(-1.f / (decayTime * args.sampleRate));
 
-		// === FILTER ENVELOPE DECAY ===
+		// === Filter Envelope Decay ===
 		float filterDecayParam = params[FILTERDECAY_PARAM].getValue();
-		float filterDecayCV = inputs[FILTERDECAYCV_INPUT].isConnected() ?
-								  std::clamp(inputs[FILTERDECAYCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
-								  outputValue;
 		float filterDecayAtt = params[FILTERDECAYATT_PARAM].getValue() / 100.f;
-		float filterDecayCombined = std::clamp(filterDecayParam + (filterDecayCV * filterDecayAtt), 0.f, 1.f);
+		float filterDecayCV =
+			inputs[FILTERDECAYCV_INPUT].isConnected() ? inputs[FILTERDECAYCV_INPUT].getVoltage() / 5.f : 0.f;
+		float filterDecayCombined = std::clamp(filterDecayParam + filterDecayCV * filterDecayAtt, 0.f, 1.f);
 		float filterDecayTime = 0.01f + filterDecayCombined * 0.49f; // 10ms to 500ms
 		float filterDecayCoeff = exp(-1.f / (filterDecayTime * args.sampleRate));
 
