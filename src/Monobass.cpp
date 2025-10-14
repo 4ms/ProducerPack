@@ -506,24 +506,22 @@ struct Monobass : Module {
 		sum2 /= (float)numVoices;
 
 		float saw3 = 2.f * phaseSaw - 1.f;
-
 		// mixerAmount is 0..1 from knob + CV summed & clamped
 		float mixerKnob = params[MIXER_PARAM].getValue();
-		float mixerCV = inputs[MIXERCV_INPUT].isConnected() ?
-							clamp(inputs[MIXERCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
-							outputValue;
 		float mixerAtt = params[MIXERATT_PARAM].getValue() / 100.f;
-		float mixerAmount = std::clamp(mixerKnob + (mixerCV * mixerAtt), 0.f, 1.f);
 
-		// Compute voice volumes
-		float vol1 = 1.f;											   // Voice 1 always full volume
-		float vol2 = std::clamp(mixerAmount * 2.f, 0.f, 1.f);		   // 0..0.5 maps to 0..1 fade-in for voice 2
-		float vol3 = std::clamp((mixerAmount - 0.5f) * 2.f, 0.f, 1.f); // 0.5..1 maps to 0..1 fade-in for voice 3
+		float mixerCV = inputs[MIXERCV_INPUT].isConnected() ? inputs[MIXERCV_INPUT].getVoltage() : outputValue;
 
-		// Sum volumes for normalization
+		float mixerAmount = std::clamp(mixerKnob + mixerCV * mixerAtt / 5.f, 0.f, 1.f);
+
+		// Compute voice volumes without clamp
+		float vol1 = 1.f;
+		float vol2 = (mixerAmount < 0.5f) ? mixerAmount * 2.f : 1.f;
+		float vol3 = (mixerAmount > 0.5f) ? (mixerAmount - 0.5f) * 2.f : 0.f;
+
+		// Normalize volumes so overall amplitude stays constant
 		float sumVol = vol1 + vol2 + vol3;
 
-		// Normalize volumes so overall amplitude constant
 		vol1 /= sumVol;
 		vol2 /= sumVol;
 		vol3 /= sumVol;
