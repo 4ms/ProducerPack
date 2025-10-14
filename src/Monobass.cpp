@@ -137,7 +137,7 @@ struct Monobass : Module {
 	inline float equalPowerCrossfade(float a, float b, float t) {
 		t = std::clamp(t, 0.f, 1.f);
 		float angle = t * (float)M_PI / 2.f;
-		return a * std::cos(angle) + b * std::sin(angle);
+		return a * cos(angle) + b * sin(angle);
 	}
 
 	float phase = 0.f;
@@ -188,9 +188,8 @@ struct Monobass : Module {
 
 		// === LFO Frequency Computation ===
 		float freqParam = params[LFOFREQ_PARAM].getValue(); // 0–1
-		float freqCV =
-			inputs[LFOCV_INPUT].isConnected() ? std::clamp(inputs[LFOCV_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
 		float freqAtt = params[LFOFREQATT_PARAM].getValue() / 100.f;
+		float freqCV = inputs[LFOCV_INPUT].isConnected() ? inputs[LFOCV_INPUT].getVoltage() / 5.f : 0.f;
 		float freqMod = std::clamp(freqParam + freqCV * freqAtt, 0.f, 1.f);
 
 		bool LFORange = (params[LFO_RANGE_PARAM].getValue() > 0.5f);
@@ -262,19 +261,15 @@ struct Monobass : Module {
 				break;
 		}
 
-		// === Final Output Voltage ===
+		// LFO unipolar / bipolar switch
 		bool LFOoffsetSwitch = params[UNIPOLARBIPOLAR_PARAM].getValue() > 0.5f;
-
-		float bipolarLFO = (out * amp) * 5.f;
-		float unipolarLFO = ((out * 2.5f) + 2.5f) * amp;
-
 		float outputValue;
 		if (LFOoffsetSwitch) {
-			// Unipolar: shift to 0–5V
-			outputValue = std::clamp(unipolarLFO, 0.f, 5.f);
+			// Unipolar: map [-1, 1] to [0, 5]
+			outputValue = ((out + 1.f) * 0.5f) * amp * 5.f;
 		} else {
-			// Bipolar: no shift
-			outputValue = std::clamp(bipolarLFO, -5.f, 5.f);
+			// Bipolar: map [-1, 1] to [-5, 5]
+			outputValue = out * amp * 5.f;
 		}
 
 		// Send to output
