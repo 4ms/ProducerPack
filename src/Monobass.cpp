@@ -413,10 +413,9 @@ struct Monobass : Module {
 
 		// === Waveshape and Timbre ===
 		float waveshapeParam = params[WAVESHAPE_PARAM].getValue();
-		float waveshapeCV = inputs[WAVESHAPECV_INPUT].isConnected() ?
-								clamp(inputs[WAVESHAPECV_INPUT].getVoltage() / 5.f, -1.f, 1.f) :
-								outputValue;
 		float waveshapeAtt = params[WAVESHAPEATT_PARAM].getValue() / 100.f;
+		float waveshapeCV =
+			inputs[WAVESHAPECV_INPUT].isConnected() ? inputs[WAVESHAPECV_INPUT].getVoltage() : outputValue / 5.f;
 		float shape = std::clamp(waveshapeParam + waveshapeCV * waveshapeAtt, 0.f, 1.f);
 
 		// Automatic Gain Compensation calculation
