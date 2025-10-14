@@ -275,13 +275,10 @@ struct Monobass : Module {
 		// Send to output
 		outputs[LFO_OUT_OUTPUT].setVoltage(outputValue);
 
-		float maxVoltage = 5.f;
-		float positiveHalf = std::max(outputValue, 0.f) / maxVoltage;
-		float negativeHalf = std::max(-outputValue, 0.f) / maxVoltage;
-
-		positiveHalf = std::clamp(positiveHalf, 0.f, 1.f);
-		negativeHalf = std::clamp(negativeHalf, 0.f, 1.f);
-
+		// LFO lights
+		float norm = outputValue / 5.f;
+		float positiveHalf = (norm > 0.f) ? norm : 0.f;
+		float negativeHalf = (norm < 0.f) ? -norm : 0.f;
 		lights[LFOLEDRED_LIGHT].setBrightnessSmooth(negativeHalf, args.sampleTime);	  // Red
 		lights[LFOLEDGREEN_LIGHT].setBrightnessSmooth(positiveHalf, args.sampleTime); // Green
 
