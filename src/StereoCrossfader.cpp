@@ -1,28 +1,10 @@
 #include "plugin.hpp"
 
-
 struct StereoCrossfader : Module {
-	enum ParamId {
-		MIX_PARAM,
-		SHAPE_PARAM,
-		PARAMS_LEN
-	};
-	enum InputId {
-		MIXCV_INPUT,
-		INAL_INPUT,
-		INAR_INPUT,
-		INBL_INPUT,
-		INBR_INPUT,
-		INPUTS_LEN
-	};
-	enum OutputId {
-		OUTL_OUTPUT,
-		OUTR_OUTPUT,
-		OUTPUTS_LEN
-	};
-	enum LightId {
-		LIGHTS_LEN
-	};
+	enum ParamId { MIX_PARAM, SHAPE_PARAM, PARAMS_LEN };
+	enum InputId { MIXCV_INPUT, INAL_INPUT, INAR_INPUT, INBL_INPUT, INBR_INPUT, INPUTS_LEN };
+	enum OutputId { OUTL_OUTPUT, OUTR_OUTPUT, OUTPUTS_LEN };
+	enum LightId { LIGHTS_LEN };
 
 	StereoCrossfader() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -37,49 +19,80 @@ struct StereoCrossfader : Module {
 		configOutput(OUTR_OUTPUT, "Audio Right");
 	}
 
-	void process(const ProcessArgs& args) override {
-	// --- Mix Param + CV ---
-	float mixParam = clamp(params[MIX_PARAM].getValue(), 0.f, 1.f);
-	float cv = inputs[MIXCV_INPUT].getVoltage();
-	float offset = rescale(mixParam, 0.f, 1.f, -5.f, 5.f);
-	float mix = clamp(rescale(clamp(offset + cv, -5.f, 5.f), -5.f, 5.f, 0.f, 1.f), 0.f, 1.f);
+	void process(const ProcessArgs &args) override {
+		// --- Read CV input ---
+		float mixCV = inputs[MIXCV_INPUT].getVoltage();
 
-	// --- Shape ---
-	float shape = clamp(params[SHAPE_PARAM].getValue(), 0.f, 1.f);
-	float k = 9.f * shape + 1.f;
-	float denom = std::log(k + 1e-6f);
+		// --- Update mix param only if changed ---
+		float newMixParam = params[MIX_PARAM].getValue();
+		if (newMixParam != cachedMixParam || mixCV != cachedMixCV) {
+			cachedMixParam = newMixParam;
+			cachedMixCV = mixCV;
 
-	// --- Curved mix (log interpolation) ---
-	float x = mix;
-	if (x < 0.5f) {
-		x *= 2.f;
-		float y = x * (1.f - shape) + std::log(1.f + (k - 1.f) * x) / denom * shape;
-		mix = 0.5f * y;
-	} else {
-		x = 2.f * (x - 0.5f);
-		float y = x * (1.f - shape) + std::log(1.f + (k - 1.f) * x) / denom * shape;
-		mix = 0.5f + 0.5f * y;
+			float offset = rescale(cachedMixParam, 0.f, 1.f, -5.f, 5.f);
+			float sum = offset + cachedMixCV;
+			float clamped = std::clamp(sum, -5.f, 5.f);
+			mix = rescale(clamped, -5.f, 5.f, 0.f, 1.f);
+
+			// Need to recompute gains when mix changes
+			updateMixShapeDependent();
+		}
+
+		// --- Update shape param only if changed ---
+		float newShape = params[SHAPE_PARAM].getValue();
+		if (newShape != cachedShape) {
+			cachedShape = newShape;
+			updateMixShapeDependent();
+		}
+
+		// --- Inputs ---
+		float aL = inputs[INAL_INPUT].getVoltage();
+		float aR = inputs[INAR_INPUT].isConnected() ? inputs[INAR_INPUT].getVoltage() : aL;
+		float bL = inputs[INBL_INPUT].getVoltage();
+		float bR = inputs[INBR_INPUT].isConnected() ? inputs[INBR_INPUT].getVoltage() : bL;
+
+		// --- Outputs ---
+		outputs[OUTL_OUTPUT].setVoltage(gainA * aL + gainB * bL);
+		outputs[OUTR_OUTPUT].setVoltage(gainA * aR + gainB * bR);
 	}
 
-	// --- Equal-power gain calculation using a fast approximation of cosine
-	// cos(pi * x / 2) ≈ sin((1 - x) * pi/2)
-	float gainA = std::sin((1.f - mix) * 0.5f * M_PI);
-	float gainB = std::sin(mix * 0.5f * M_PI);
+	// Called when either shape or mix changes
+	void updateMixShapeDependent() {
+		float shape = cachedShape;
+		float k = 9.f * shape + 1.f;
+		float denom = log(k + 1e-6f); // add epsilon to avoid log(0)
+		float x = mix;
 
-	// --- Inputs ---
-	float aL = inputs[INAL_INPUT].getVoltage();
-	float aR = inputs[INAR_INPUT].isConnected() ? inputs[INAR_INPUT].getVoltage() : aL;
-	float bL = inputs[INBL_INPUT].getVoltage();
-	float bR = inputs[INBR_INPUT].isConnected() ? inputs[INBR_INPUT].getVoltage() : bL;
+		if (x < 0.5f) {
+			x *= 2.f;
+			float y = x * (1.f - shape) + log(1.f + (k - 1.f) * x) / denom * shape;
+			mixShaped = 0.5f * y;
+		} else {
+			x = 2.f * (x - 0.5f);
+			float y = x * (1.f - shape) + log(1.f + (k - 1.f) * x) / denom * shape;
+			mixShaped = 0.5f + 0.5f * y;
+		}
 
-	// --- Outputs ---
-	outputs[OUTL_OUTPUT].setVoltage(gainA * aL + gainB * bL);
-	outputs[OUTR_OUTPUT].setVoltage(gainA * aR + gainB * bR);
-}
+		// Equal power gain calculation
+		gainA = sin((1.f - mixShaped) * 0.5f * M_PI);
+		gainB = sin(mixShaped * 0.5f * M_PI);
+	}
+
+private:
+	// Cached param values
+	float cachedMixParam = -1.f;
+	float cachedMixCV = 9999.f; // Unlikely value to force first update
+	float cachedShape = -1.f;
+
+	// Cached intermediate values
+	float mix = 0.f;
+	float mixShaped = 0.f;
+	float gainA = 0.f;
+	float gainB = 0.f;
 };
 
 struct StereoCrossfaderWidget : ModuleWidget {
-	StereoCrossfaderWidget(StereoCrossfader* module) {
+	StereoCrossfaderWidget(StereoCrossfader *module) {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/StereoCrossfader_info.svg")));
 
@@ -89,7 +102,8 @@ struct StereoCrossfaderWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
 		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.24, 18.803)), module, StereoCrossfader::MIX_PARAM));
-		addParam(createParamCentered<Davies1900hBlack>(mm2px(Vec(15.24, 60.748)), module, StereoCrossfader::SHAPE_PARAM));
+		addParam(
+			createParamCentered<Davies1900hBlack>(mm2px(Vec(15.24, 60.748)), module, StereoCrossfader::SHAPE_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 38.798)), module, StereoCrossfader::MIXCV_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.303, 82.991)), module, StereoCrossfader::INAL_INPUT));
@@ -102,4 +116,4 @@ struct StereoCrossfaderWidget : ModuleWidget {
 	}
 };
 
-Model* modelStereoCrossfader = createModel<StereoCrossfader, StereoCrossfaderWidget>("StereoCrossfader");
+Model *modelStereoCrossfader = createModel<StereoCrossfader, StereoCrossfaderWidget>("StereoCrossfader");

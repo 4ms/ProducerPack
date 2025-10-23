@@ -1,6 +1,5 @@
 #include "plugin.hpp"
 
-
 struct DrumBus : Module {
 	enum ParamId {
 		CH1VOL_PARAM,
@@ -41,14 +40,8 @@ struct DrumBus : Module {
 		CH8IN_INPUT,
 		INPUTS_LEN
 	};
-	enum OutputId {
-		AUDIOLEFTOUT_OUTPUT,
-		AUDIORIGHTOUT_OUTPUT,
-		OUTPUTS_LEN
-	};
-	enum LightId {
-		LIGHTS_LEN
-	};
+	enum OutputId { AUDIOLEFTOUT_OUTPUT, AUDIORIGHTOUT_OUTPUT, OUTPUTS_LEN };
+	enum LightId { LIGHTS_LEN };
 
 	DrumBus() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -98,52 +91,83 @@ struct DrumBus : Module {
 		configOutput(AUDIORIGHTOUT_OUTPUT, "Mix Right");
 	}
 
-	void process(const ProcessArgs& args) override {
-	float leftMix = 0.f;
-	float rightMix = 0.f;
+	// --- Cached parameter and state variables ---
+	float cachedMasterVol = -1.f;
 
-	const float masterVol = params[MASTERVOL_PARAM].getValue();
-	if (masterVol <= 0.f) {
-		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(0.f);
-		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(0.f);
-		return;
+	float cachedVol[8] = {};
+	float cachedPan[8] = {};
+	float cachedMute[8] = {};
+
+	float chLeftGain[8] = {};
+	float chRightGain[8] = {};
+	bool chEnabled[8] = {};
+
+	void process(const ProcessArgs &args) override {
+		float leftMix = 0.f;
+		float rightMix = 0.f;
+
+		// --- Master volume ---
+		const float masterVol = params[MASTERVOL_PARAM].getValue();
+		if (masterVol <= 0.f) {
+			outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(0.f);
+			outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(0.f);
+			return;
+		}
+		cachedMasterVol = masterVol;
+
+		// --- Process each channel ---
+		for (int ch = 0; ch < 8; ++ch) {
+			const int baseParam = CH1VOL_PARAM + ch * 3;
+			const int inputId = CH1IN_INPUT + ch;
+
+			if (!inputs[inputId].isConnected())
+				continue;
+
+			const float vol = params[baseParam].getValue();
+			const float pan = params[baseParam + 1].getValue();
+			const float mute = params[baseParam + 2].getValue();
+
+			bool changed = false;
+			if (vol != cachedVol[ch] || pan != cachedPan[ch] || mute != cachedMute[ch]) {
+				cachedVol[ch] = vol;
+				cachedPan[ch] = pan;
+				cachedMute[ch] = mute;
+				changed = true;
+			}
+
+			// --- Update gains only if params changed ---
+			if (changed) {
+				if (mute > 0.5f || vol <= 0.f) {
+					chEnabled[ch] = false;
+				} else {
+					chEnabled[ch] = true;
+					const float panNorm = pan * 0.01f + 0.5f; // -50 → 0, +50 → 1
+					const float panAngle = panNorm * (float)M_PI_2;
+					chLeftGain[ch] = cos(panAngle);
+					chRightGain[ch] = sin(panAngle);
+				}
+			}
+
+			if (!chEnabled[ch])
+				continue;
+
+			const float in = inputs[inputId].getVoltage();
+			const float scaledIn = in * cachedVol[ch];
+			leftMix += scaledIn * chLeftGain[ch];
+			rightMix += scaledIn * chRightGain[ch];
+		}
+
+		// --- Apply master volume ---
+		leftMix *= cachedMasterVol;
+		rightMix *= cachedMasterVol;
+
+		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(leftMix);
+		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(rightMix);
 	}
-
-	for (int ch = 0; ch < 8; ++ch) {
-		const int baseParam = CH1VOL_PARAM + ch * 3;
-		const int inputId = CH1IN_INPUT + ch;
-
-		if (!inputs[inputId].isConnected()) continue;
-
-		const float vol = params[baseParam].getValue();
-		if (vol <= 0.f) continue;
-
-		if (params[baseParam + 2].getValue() > 0.5f) continue; // muted
-
-		const float in = inputs[inputId].getVoltage();
-		const float panNorm = params[baseParam + 1].getValue() * 0.01f + 0.5f;  // -50 to 50 -> 0 to 1
-
-		// Precompute pan law (constant power)
-		float panAngle = panNorm * (float)M_PI_2;
-		float leftGain = cosf(panAngle);
-		float rightGain = sinf(panAngle);
-
-		const float scaledIn = in * vol;
-		leftMix += scaledIn * leftGain;
-		rightMix += scaledIn * rightGain;
-	}
-
-	// Apply master volume
-	leftMix *= masterVol;
-	rightMix *= masterVol;
-
-	outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(leftMix, -10.f, 10.f));
-	outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(rightMix, -10.f, 10.f));
-}
 };
 
 struct DrumBusWidget : ModuleWidget {
-	DrumBusWidget(DrumBus* module) {
+	DrumBusWidget(DrumBus *module) {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/DrumBus_info.svg")));
 
@@ -152,31 +176,31 @@ struct DrumBusWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 13.501)), module, DrumBus::CH1VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 13.501)), module, DrumBus::CH1PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 13.499)), module, DrumBus::CH1MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 25.199)), module, DrumBus::CH2VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 25.199)), module, DrumBus::CH2PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 25.201)), module, DrumBus::CH2MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 36.901)), module, DrumBus::CH3VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 36.901)), module, DrumBus::CH3PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 36.899)), module, DrumBus::CH3MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 48.599)), module, DrumBus::CH4VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 48.599)), module, DrumBus::CH4PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 48.601)), module, DrumBus::CH4MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 60.399)), module, DrumBus::CH5VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 60.399)), module, DrumBus::CH5PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 60.401)), module, DrumBus::CH5MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 71.999)), module, DrumBus::CH6VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 72.073)), module, DrumBus::CH6PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 72.001)), module, DrumBus::CH6MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 83.799)), module, DrumBus::CH7VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 83.799)), module, DrumBus::CH7PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 83.801)), module, DrumBus::CH7MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(27.651, 95.501)), module, DrumBus::CH8VOL_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(45.649, 95.501)), module, DrumBus::CH8PAN_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(63.549, 95.499)), module, DrumBus::CH8MUTE_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(13.0, 111.002)), module, DrumBus::MASTERVOL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(27.651, 13.501)), module, DrumBus::CH1VOL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(45.649, 13.501)), module, DrumBus::CH1PAN_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(63.549, 13.499)), module, DrumBus::CH1MUTE_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(27.651, 25.199)), module, DrumBus::CH2VOL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(45.649, 25.199)), module, DrumBus::CH2PAN_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(63.549, 25.201)), module, DrumBus::CH2MUTE_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(27.651, 36.901)), module, DrumBus::CH3VOL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(45.649, 36.901)), module, DrumBus::CH3PAN_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(63.549, 36.899)), module, DrumBus::CH3MUTE_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(27.651, 48.599)), module, DrumBus::CH4VOL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(45.649, 48.599)), module, DrumBus::CH4PAN_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(63.549, 48.601)), module, DrumBus::CH4MUTE_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(27.651, 60.399)), module, DrumBus::CH5VOL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(45.649, 60.399)), module, DrumBus::CH5PAN_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(63.549, 60.401)), module, DrumBus::CH5MUTE_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(27.651, 71.999)), module, DrumBus::CH6VOL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(45.649, 72.073)), module, DrumBus::CH6PAN_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(63.549, 72.001)), module, DrumBus::CH6MUTE_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(27.651, 83.799)), module, DrumBus::CH7VOL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(45.649, 83.799)), module, DrumBus::CH7PAN_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(63.549, 83.801)), module, DrumBus::CH7MUTE_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(27.651, 95.501)), module, DrumBus::CH8VOL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(45.649, 95.501)), module, DrumBus::CH8PAN_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(63.549, 95.499)), module, DrumBus::CH8MUTE_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(13.0, 111.002)), module, DrumBus::MASTERVOL_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.599, 13.501)), module, DrumBus::CH1IN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.599, 25.199)), module, DrumBus::CH2IN_INPUT));
@@ -192,5 +216,4 @@ struct DrumBusWidget : ModuleWidget {
 	}
 };
 
-
-Model* modelDrumBus = createModel<DrumBus, DrumBusWidget>("DrumBus");
+Model *modelDrumBus = createModel<DrumBus, DrumBusWidget>("DrumBus");

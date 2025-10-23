@@ -1,6 +1,5 @@
 #include "plugin.hpp"
 
-
 struct AuxSends : Module {
 	enum ParamId {
 		PREPOST1_PARAM,
@@ -54,6 +53,11 @@ struct AuxSends : Module {
 		LIGHTS_LEN
 	};
 
+	unsigned lightThrottle = 0;
+	static constexpr unsigned lightThrottleAmount = 256;
+	static_assert(((lightThrottleAmount - 1) & lightThrottleAmount) == 0, "lightThrottleAmount must be a power of 2");
+	static_assert(lightThrottleAmount > 1);
+
 	AuxSends() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		configParam(ASEND_PARAM, 0.f, 1.f, 0.5f, "Send A", "%", 0.f, 100.f);
@@ -92,102 +96,115 @@ struct AuxSends : Module {
 		configOutput(AUDIOLEFTOUT_OUTPUT, "Audio Left");
 		configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
 	}
-void process(const ProcessArgs& args) override {
-	// --- Read raw audio input ---
-	float rawInL = inputs[AUDIOLEFTIN_INPUT].getVoltage();
-	float rawInR = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : rawInL;
 
-	// --- Dry level ---
-	float dryCV = clamp(inputs[DRYLEVELCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f;
-	float dryLevel = clamp(params[DRYLEVEL_PARAM].getValue() + dryCV, 0.f, 1.f);
-	float inL = rawInL * dryLevel;
-	float inR = rawInR * dryLevel;
+	void process(const ProcessArgs &args) override {
+		// --- Read raw audio input ---
+		float rawInL = inputs[AUDIOLEFTIN_INPUT].getVoltage();
+		float rawInR = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : rawInL;
 
-	float outL = inL;
-	float outR = inR;
+		// --- Dry level ---
+		float dryCV = std::clamp(inputs[DRYLEVELCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f;
+		float dryLevel = std::clamp(params[DRYLEVEL_PARAM].getValue() + dryCV, 0.f, 1.f);
+		float inL = rawInL * dryLevel;
+		float inR = rawInR * dryLevel;
 
-	// --- Shared CV helpers (cached values) ---
-	auto computeCV = [](Input& in) {
-		return clamp(in.getVoltage(), -5.f, 5.f) / 5.f;
-	};
+		float outL = inL;
+		float outR = inR;
 
-	// === SEND A ===
-	if (outputs[ASENDLEFTOUT_OUTPUT].isConnected() || outputs[ASENDRIGHTOUT_OUTPUT].isConnected()) {
-		float sendCV = computeCV(inputs[ASENDCVIN_INPUT]);
-		float sendA = clamp(params[ASEND_PARAM].getValue() + sendCV, 0.f, 1.f);
-		bool pre = params[PREPOST1_PARAM].getValue() > 0.5f;
-		float sendL = (pre ? rawInL : inL) * sendA;
-		float sendR = (pre ? rawInR : inR) * sendA;
-		outputs[ASENDLEFTOUT_OUTPUT].setVoltage(sendL);
-		outputs[ASENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-		lights[ASENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
+		// --- Shared CV helpers (cached values) ---
+		auto computeCVKnobSum = [](Input &in, Param &param) {
+			auto cv = in.getVoltage() / 5.f;
+			return std::clamp(param.getValue() + cv, 0.f, 1.f);
+		};
+
+		// === SEND A ===
+		if (outputs[ASENDLEFTOUT_OUTPUT].isConnected() || outputs[ASENDRIGHTOUT_OUTPUT].isConnected()) {
+			float sendA = computeCVKnobSum(inputs[ASENDCVIN_INPUT], params[ASEND_PARAM]);
+			bool pre = params[PREPOST1_PARAM].getValue() > 0.5f;
+			float sendL = (pre ? rawInL : inL) * sendA;
+			float sendR = (pre ? rawInR : inR) * sendA;
+			outputs[ASENDLEFTOUT_OUTPUT].setVoltage(sendL);
+			outputs[ASENDRIGHTOUT_OUTPUT].setVoltage(sendR);
+			if (lightThrottle == 0)
+				lights[ASENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f,
+														   args.sampleTime * lightThrottleAmount);
+		}
+
+		// === RETURN A ===
+		if (inputs[ARETURNLEFTIN_INPUT].isConnected()) {
+			float gain = computeCVKnobSum(inputs[ARETURNCVIN_INPUT], params[ARETURN_PARAM]);
+			float returnL = inputs[ARETURNLEFTIN_INPUT].getVoltage() * gain;
+			float returnR =
+				inputs[ARETURNRIGHTIN_INPUT].isConnected() ? inputs[ARETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
+			outL += returnL;
+			outR += returnR;
+			if (lightThrottle == 0)
+				lights[ARETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f,
+															 args.sampleTime * lightThrottleAmount);
+		}
+
+		// === SEND B ===
+		if (outputs[BSENDLEFTOUT_OUTPUT].isConnected() || outputs[BSENDRIGHTOUT_OUTPUT].isConnected()) {
+			float sendB = computeCVKnobSum(inputs[BSENDCVIN_INPUT], params[BSEND_PARAM]);
+			bool pre = params[PREPOST2_PARAM].getValue() > 0.5f;
+			float sendL = (pre ? rawInL : inL) * sendB;
+			float sendR = (pre ? rawInR : inR) * sendB;
+			outputs[BSENDLEFTOUT_OUTPUT].setVoltage(sendL);
+			outputs[BSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
+			if (lightThrottle == 0)
+				lights[BSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f,
+														   args.sampleTime * lightThrottleAmount);
+		}
+
+		// === RETURN B ===
+		if (inputs[BRETURNLEFTIN_INPUT].isConnected()) {
+			float gain = computeCVKnobSum(inputs[BRETURNCVIN_INPUT], params[BRETURN_PARAM]);
+			float returnL = inputs[BRETURNLEFTIN_INPUT].getVoltage() * gain;
+			float returnR =
+				inputs[BRETURNRIGHTIN_INPUT].isConnected() ? inputs[BRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
+			outL += returnL;
+			outR += returnR;
+			if (lightThrottle == 0)
+				lights[BRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f,
+															 args.sampleTime * lightThrottleAmount);
+		}
+
+		// === SEND C ===
+		if (outputs[CSENDLEFTOUT_OUTPUT].isConnected() || outputs[CSENDRIGHTOUT_OUTPUT].isConnected()) {
+			float sendC = computeCVKnobSum(inputs[CSENDCVIN_INPUT], params[CSEND_PARAM]);
+			bool pre = params[PREPOST3_PARAM].getValue() > 0.5f;
+			float sendL = (pre ? rawInL : inL) * sendC;
+			float sendR = (pre ? rawInR : inR) * sendC;
+			outputs[CSENDLEFTOUT_OUTPUT].setVoltage(sendL);
+			outputs[CSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
+			if (lightThrottle == 0)
+				lights[CSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f,
+														   args.sampleTime * lightThrottleAmount);
+		}
+
+		// === RETURN C ===
+		if (inputs[CRETURNLEFTIN_INPUT].isConnected()) {
+			float gain = computeCVKnobSum(inputs[CRETURNCVIN_INPUT], params[CRETURN_PARAM]);
+			float returnL = inputs[CRETURNLEFTIN_INPUT].getVoltage() * gain;
+			float returnR =
+				inputs[CRETURNRIGHTIN_INPUT].isConnected() ? inputs[CRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
+			outL += returnL;
+			outR += returnR;
+			if (lightThrottle == 0)
+				lights[CRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f,
+															 args.sampleTime * lightThrottleAmount);
+		}
+
+		// Final output
+		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f));
+		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f));
+
+		lightThrottle = (lightThrottle + 1) & (lightThrottleAmount - 1);
 	}
-
-	// === RETURN A ===
-	if (inputs[ARETURNLEFTIN_INPUT].isConnected()) {
-		float returnCV = computeCV(inputs[ARETURNCVIN_INPUT]);
-		float gain = clamp(params[ARETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
-		float returnL = inputs[ARETURNLEFTIN_INPUT].getVoltage() * gain;
-		float returnR = inputs[ARETURNRIGHTIN_INPUT].isConnected() ? inputs[ARETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
-		outL += returnL;
-		outR += returnR;
-		lights[ARETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
-	}
-
-	// === SEND B ===
-	if (outputs[BSENDLEFTOUT_OUTPUT].isConnected() || outputs[BSENDRIGHTOUT_OUTPUT].isConnected()) {
-		float sendCV = computeCV(inputs[BSENDCVIN_INPUT]);
-		float sendB = clamp(params[BSEND_PARAM].getValue() + sendCV, 0.f, 1.f);
-		bool pre = params[PREPOST2_PARAM].getValue() > 0.5f;
-		float sendL = (pre ? rawInL : inL) * sendB;
-		float sendR = (pre ? rawInR : inR) * sendB;
-		outputs[BSENDLEFTOUT_OUTPUT].setVoltage(sendL);
-		outputs[BSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-		lights[BSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
-	}
-
-	// === RETURN B ===
-	if (inputs[BRETURNLEFTIN_INPUT].isConnected()) {
-		float returnCV = computeCV(inputs[BRETURNCVIN_INPUT]);
-		float gain = clamp(params[BRETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
-		float returnL = inputs[BRETURNLEFTIN_INPUT].getVoltage() * gain;
-		float returnR = inputs[BRETURNRIGHTIN_INPUT].isConnected() ? inputs[BRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
-		outL += returnL;
-		outR += returnR;
-		lights[BRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
-	}
-
-	// === SEND C ===
-	if (outputs[CSENDLEFTOUT_OUTPUT].isConnected() || outputs[CSENDRIGHTOUT_OUTPUT].isConnected()) {
-		float sendCV = computeCV(inputs[CSENDCVIN_INPUT]);
-		float sendC = clamp(params[CSEND_PARAM].getValue() + sendCV, 0.f, 1.f);
-		bool pre = params[PREPOST3_PARAM].getValue() > 0.5f;
-		float sendL = (pre ? rawInL : inL) * sendC;
-		float sendR = (pre ? rawInR : inR) * sendC;
-		outputs[CSENDLEFTOUT_OUTPUT].setVoltage(sendL);
-		outputs[CSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-		lights[CSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f, args.sampleTime);
-	}
-
-	// === RETURN C ===
-	if (inputs[CRETURNLEFTIN_INPUT].isConnected()) {
-		float returnCV = computeCV(inputs[CRETURNCVIN_INPUT]);
-		float gain = clamp(params[CRETURN_PARAM].getValue() + returnCV, 0.f, 1.f);
-		float returnL = inputs[CRETURNLEFTIN_INPUT].getVoltage() * gain;
-		float returnR = inputs[CRETURNRIGHTIN_INPUT].isConnected() ? inputs[CRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
-		outL += returnL;
-		outR += returnR;
-		lights[CRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f, args.sampleTime);
-	}
-
-	// Final output
-	outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f));
-	outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f));
-}
 };
 
 struct AuxSendsWidget : ModuleWidget {
-	AuxSendsWidget(AuxSends* module) {
+	AuxSendsWidget(AuxSends *module) {
 		setModule(module);
 		setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/AuxSends_info.svg")));
 
@@ -196,18 +213,18 @@ struct AuxSendsWidget : ModuleWidget {
 		addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(17.681, 13.501)), module, AuxSends::ASEND_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(40.678, 13.501)), module, AuxSends::BSEND_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(63.58, 13.501)), module, AuxSends::CSEND_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(17.681, 13.501)), module, AuxSends::ASEND_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(40.678, 13.501)), module, AuxSends::BSEND_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(63.58, 13.501)), module, AuxSends::CSEND_PARAM));
 
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(6.699, 14.702)), module, AuxSends::PREPOST1_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(29.7, 14.702)), module, AuxSends::PREPOST2_PARAM));
-		addParam(createParamCentered<_2Pos>(mm2px(Vec(52.701, 14.702)), module, AuxSends::PREPOST3_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(6.699, 14.702)), module, AuxSends::PREPOST1_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(29.7, 14.702)), module, AuxSends::PREPOST2_PARAM));
+		addParam(createParamCentered<Switch2Pos>(mm2px(Vec(52.701, 14.702)), module, AuxSends::PREPOST3_PARAM));
 
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(12.679, 61.499)), module, AuxSends::ARETURN_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(35.581, 61.499)), module, AuxSends::BRETURN_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(58.578, 61.499)), module, AuxSends::CRETURN_PARAM));
-		addParam(createParamCentered<_9mmKnob>(mm2px(Vec(28.998, 111.0)), module, AuxSends::DRYLEVEL_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(12.679, 61.499)), module, AuxSends::ARETURN_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(35.581, 61.499)), module, AuxSends::BRETURN_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(58.578, 61.499)), module, AuxSends::CRETURN_PARAM));
+		addParam(createParamCentered<Knob9mm>(mm2px(Vec(28.998, 111.0)), module, AuxSends::DRYLEVEL_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.7, 30.998)), module, AuxSends::ASENDCVIN_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(35.581, 30.998)), module, AuxSends::BSENDCVIN_INPUT));
@@ -234,13 +251,19 @@ struct AuxSendsWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(53.498, 111.0)), module, AuxSends::AUDIOLEFTOUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(63.7, 111.0)), module, AuxSends::AUDIORIGHTOUT_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(12.679, 22.5)), module, AuxSends::ASENDLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(35.581, 22.5)), module, AuxSends::BSENDLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(58.578, 22.5)), module, AuxSends::CSENDLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(12.7, 70.498)), module, AuxSends::ARETURNLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(35.598, 70.498)), module, AuxSends::BRETURNLED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(58.599, 70.498)), module, AuxSends::CRETURNLED_LIGHT));
+		addChild(
+			createLightCentered<MediumLight<RedLight>>(mm2px(Vec(12.679, 22.5)), module, AuxSends::ASENDLED_LIGHT));
+		addChild(
+			createLightCentered<MediumLight<RedLight>>(mm2px(Vec(35.581, 22.5)), module, AuxSends::BSENDLED_LIGHT));
+		addChild(
+			createLightCentered<MediumLight<RedLight>>(mm2px(Vec(58.578, 22.5)), module, AuxSends::CSENDLED_LIGHT));
+		addChild(
+			createLightCentered<MediumLight<RedLight>>(mm2px(Vec(12.7, 70.498)), module, AuxSends::ARETURNLED_LIGHT));
+		addChild(
+			createLightCentered<MediumLight<RedLight>>(mm2px(Vec(35.598, 70.498)), module, AuxSends::BRETURNLED_LIGHT));
+		addChild(
+			createLightCentered<MediumLight<RedLight>>(mm2px(Vec(58.599, 70.498)), module, AuxSends::CRETURNLED_LIGHT));
 	}
 };
 
-Model* modelAuxSends = createModel<AuxSends, AuxSendsWidget>("AuxSends");
+Model *modelAuxSends = createModel<AuxSends, AuxSendsWidget>("AuxSends");
