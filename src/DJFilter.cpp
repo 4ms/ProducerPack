@@ -15,13 +15,13 @@ struct DJFilter : Module {
 
 			if (morph <= 0.45f) {
 				float t = morph / 0.5f;
-				float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(20.f), std::log2(2000.f)));
+				float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, Log2(20.f), std::log2(2000.f)));
 				return string::f("Cutoff: %.2fhz", cutoffHz);
 			} else if (morph < 0.55f) {
 				return "Cutoff: BYPASS";
 			} else {
 				float t = (morph - 0.5f) / 0.5f;
-				float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, std::log2(300.f), std::log2(7000.f)));
+				float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, Log2(300.f), std::log2(7000.f)));
 				return string::f("Cutoff: %.2fhz", cutoffHz);
 			}
 		}
@@ -42,6 +42,16 @@ struct DJFilter : Module {
 
 	static inline const auto Pow2 =
 		Mapping::LookupTable_t<64, float>::generate<Pow2TableRange>([](float x) { return std::pow(2.f, x); });
+
+	struct Log2TableRange {
+			static constexpr float min = 20.f;
+			static constexpr float max = 7000.f;
+		};
+		
+	static inline const auto Log2 =
+			Mapping::LookupTable_t<64, float>::generate<Log2TableRange>([](float x) { return std::log2(x); });
+		
+	
 
 	DJFilter() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -83,9 +93,9 @@ struct DJFilter : Module {
 
 	SVF svfL[4], svfR[4];
 
-	const float log2_20 = std::log2(20.f);
-	const float log2_300 = std::log2(300.f);
-	const float log2_7000 = std::log2(7000.f);
+	const float log2_20 = Log2(20.f);
+	const float log2_300 = Log2(300.f);
+	const float log2_7000 = Log2(7000.f);
 
 	// morph will be different than lastMorph => forces finalFreq to be calc the first time its run
 	float lastMorph = -1.f;
