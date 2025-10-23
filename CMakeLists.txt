@@ -21,21 +21,16 @@ set(SOURCE_DIR .)
 
 target_sources(4ms-ProducerPack PRIVATE
     ${SOURCE_DIR}/src/DJFilter.cpp                    # Note: this file contains init(rack::Plugin*
-    ${SOURCE_DIR}/src/Monobass.cpp    
     ${SOURCE_DIR}/src/Boost.cpp    
     ${SOURCE_DIR}/src/Spatializer.cpp 
     ${SOURCE_DIR}/src/StereoWidth.cpp      
     ${SOURCE_DIR}/src/StereoCrossfader.cpp     
     ${SOURCE_DIR}/src/SeventiesEQ.cpp    
     ${SOURCE_DIR}/src/SeventiesComp.cpp    
-    ${SOURCE_DIR}/src/TwoOp.cpp  
     ${SOURCE_DIR}/src/Decay.cpp
     ${SOURCE_DIR}/src/AuxSends.cpp      
     ${SOURCE_DIR}/src/Bitcrusher.cpp     
     ${SOURCE_DIR}/src/DrumBus.cpp     
-    ${SOURCE_DIR}/src/OctoPush.cpp     
-    ${SOURCE_DIR}/src/SoloPush.cpp     
-    ${SOURCE_DIR}/src/Router.cpp     
     ${SOURCE_DIR}/src/plugin.cpp        
     ${SOURCE_DIR}/src/plugin.hpp        
     ) 

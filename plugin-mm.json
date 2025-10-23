@@ -11,10 +11,6 @@
 			"name": "DJFilter"
 		},
 		{
-			"slug": "Monobass",
-			"name": "Monobass"
-		},
-		{
 			"slug": "Boost",
 			"name": "Boost"
 		},
@@ -39,10 +35,6 @@
 			"name": "SeventiesComp"
 		},
 		{
-			"slug": "TwoOp",
-			"name": "TwoOp"
-		},
-		{
 			"slug": "Decay",
 			"name": "Decay"
 		},
@@ -57,18 +49,6 @@
 		{
 			"slug": "DrumBus",
 			"name": "DrumBus"
-		},
-		{
-			"slug": "OctoPush",
-			"name": "OctoPush"
-		},
-		{
-			"slug": "SoloPush",
-			"name": "SoloPush"
-		},
-		{
-			"slug": "Router",
-			"name": "Router"
 		}
 	]
 }

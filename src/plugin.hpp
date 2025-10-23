@@ -9,21 +9,17 @@ extern Plugin* pluginInstance;
 
 // Declare each Model, defined in each module source file
 extern Model* modelDJFilter;
-extern Model* modelMonobass;
 extern Model* modelSpatializer;
 extern Model* modelStereoWidth;
 extern Model* modelStereoCrossfader;
 extern Model* modelSeventiesEQ;
 extern Model* modelSeventiesComp;
 extern Model* modelBoost;
-extern Model* modelTwoOp;
 extern Model* modelDecay;
 extern Model* modelAuxSends;
 extern Model* modelBitcrusher;
 extern Model* modelDrumBus;
-extern Model* modelOctoPush;
-extern Model* modelSoloPush;
-extern Model* modelRouter;
+
 
 struct _9mmKnob : RoundKnob {
     _9mmKnob() {

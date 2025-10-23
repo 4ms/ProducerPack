@@ -17,97 +17,120 @@
       "slug": "DJFilter",
       "name": "DJFilter",
       "description": "A continous lowpass to highpass filter effect in the spirit of DJ mixers",
-      "tags": ["Effect", "Filter", "Stereo", "VCF"]
-    },
-    {
-      "slug": "Monobass",
-      "name": "Monobass",
-      "description": "A simple and compact bass monosynth voice",
-      "tags": ["Synth Voice", "LFO"]
+      "tags": [
+        "Effect",
+        "Filter",
+        "Stereo",
+        "VCF"
+      ]
     },
     {
       "slug": "Boost",
       "name": "Boost",
       "description": "Stereo gain + distortion module",
-      "tags": ["Dynamics", "Utility", "Effect", "Distortion"]
+      "tags": [
+        "Dynamics",
+        "Utility",
+        "Effect",
+        "Distortion"
+      ]
     },
     {
       "slug": "Spatializer",
       "name": "Spatializer",
       "description": "Exploitation of the Haas effect + mid/side processing techniques",
-      "tags": ["Stereo", "Utility", "Effect"]
+      "tags": [
+        "Stereo",
+        "Utility",
+        "Effect"
+      ]
     },
     {
       "slug": "StereoWidth",
       "name": "StereoWidth",
       "description": "Shrink or expand the stereo image of a stereo track",
-      "tags": ["Stereo", "Utility"]
+      "tags": [
+        "Stereo",
+        "Utility"
+      ]
     },
     {
       "slug": "StereoCrossfader",
       "name": "StereoCrossfader",
       "description": "Crossfade between two stereo audio sources",
-      "tags": ["Stereo", "Utility"]
+      "tags": [
+        "Stereo",
+        "Utility"
+      ]
     },
     {
       "slug": "SeventiesEQ",
-      "name": "SeventiesEQ",
+      "name": "70sEQ",
       "description": "Neve 1073 inspired stereo EQ",
-      "tags": ["Stereo", "Utility", "Equalizer", "EQ", "Effect"]
+      "tags": [
+        "Stereo",
+        "Utility",
+        "Equalizer",
+        "EQ",
+        "Effect"
+      ]
     },
     {
       "slug": "SeventiesComp",
-      "name": "SeventiesComp",
+      "name": "70sComp",
       "description": "LA2A inspired optical compressor",
-      "tags": ["Stereo", "Utility", "Effect", "Dynamics"]
-    },
-    {
-      "slug": "TwoOp",
-      "name": "TwoOp",
-      "description": "Simple 2 operator FM voice",
-      "tags": ["Synth Voice", "Drum"]
+      "tags": [
+        "Stereo",
+        "Utility",
+        "Effect",
+        "Dynamics"
+      ]
     },
     {
       "slug": "Decay",
       "name": "Decay",
       "description": "Decay envelope with built in VCA",
-      "tags": ["Utility", "Drum", "Envelope generator", "VCA", "Voltage-controlled amplifier"]
+      "tags": [
+        "Utility",
+        "Drum",
+        "Envelope generator",
+        "VCA",
+        "Voltage-controlled amplifier"
+      ]
     },
     {
       "slug": "AuxSends",
       "name": "AuxSends",
       "description": "3 sets of stereo auxillary sends and returns with CV control",
-      "tags": ["Stereo", "Utility", "Mixer", "Effect"]
+      "tags": [
+        "Stereo",
+        "Utility",
+        "Mixer",
+        "Effect"
+      ]
     },
     {
       "slug": "Bitcrusher",
       "name": "Bitcrusher",
       "description": "Stereo bitcrusher, sample rate reducer, and selectable resonant filter",
-      "tags": ["Stereo", "Effect", "Filter", "VCF", "Distortion"]
+      "tags": [
+        "Stereo",
+        "Effect",
+        "Filter",
+        "VCF",
+        "Distortion"
+      ]
     },
     {
       "slug": "DrumBus",
       "name": "DrumBus",
       "description": "8 channel mono to stereo mixer with mute per channel",
-      "tags": ["Stereo", "Mixer", "Drum", "Utility"]
-    },
-    {
-      "slug": "OctoPush",
-      "name": "OctoPush",
-      "description": "8 button macro controller",
-      "tags": ["Utility", "Controller"]
-    },
-    {
-      "slug": "SoloPush",
-      "name": "SoloPush",
-      "description": "Single button macro controller",
-      "tags": ["Utility", "Controller"]
-    },
-    {
-      "slug": "Router",
-      "name": "Router",
-      "description": "VCAM scene selector",
-      "tags": ["Utility", "Controller"]
+      "tags": [
+        "Stereo",
+        "Mixer",
+        "Drum",
+        "Utility"
+      ]
     }
   ]
 }
