@@ -108,14 +108,14 @@ private:
 	// --- Member variables for caching ---
 	float env = 0.f;
 
-	float prevPeakReduction = -1.f;
-	float prevGain = 1.f;
-	float prevDryWet = -1.f;
-	float prevRatioParam = -1.f;
+	float prevPeakReduction = 0.f;
+	float prevGain = 0.f;
+	float prevDryWet = 0.f;
+	float prevRatioParam = 0.f;
 
-	float threshold = 1.f;
-	float gain = 1.f;
-	float dryWet = 1.f;
+	float threshold = 0.f;
+	float gain = 0.f;
+	float dryWet = 0.f;
 	bool isLimiter = false;
 	float ratio = 3.f;
 
