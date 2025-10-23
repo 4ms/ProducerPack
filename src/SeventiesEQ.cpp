@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "helpers/math_lut.hpp"
 #include <cmath>
 
 struct Highpass {
@@ -24,10 +25,10 @@ struct HighShelf {
 		if (freq > nyquist * 0.95f)
 			freq = nyquist * 0.95f;
 
-		float A = pow(10.f, gainDB / 40.f);
+		float A = Pow10(gainDB / 40.f);
 		float w0 = 2.f * M_PI * freq / sampleRate;
-		float cosw0 = cos(w0);
-		float sinw0 = sin(w0);
+		float cosw0 = CosEQ(w0);
+		float sinw0 = SinEQ(w0);
 		float alpha = sinw0 / (2.f * 0.707f);
 
 		float sqrtA = sqrtf(A);
@@ -79,10 +80,10 @@ struct MidPeakingEQ {
 		if (freq > nyquist * 0.95f)
 			freq = nyquist * 0.95f;
 
-		float A = pow(10.f, gainDB / 40.f);
+		float A = Pow10(gainDB / 40.f);
 		float w0 = 2.f * M_PI * freq / sampleRate;
-		float cosw0 = cos(w0);
-		float sinw0 = sin(w0);
+		float cosw0 = CosEQ(w0);
+		float sinw0 = SinEQ(w0);
 		float alpha = sinw0 / (2.f * Q);
 
 		float b0 = 1.f + alpha * A;
@@ -132,10 +133,10 @@ struct LowShelf {
 		if (freq > nyquist * 0.95f)
 			freq = nyquist * 0.95f;
 
-		float A = pow(10.f, gainDB / 40.f);
+		float A = Pow10(gainDB / 40.f);
 		float w0 = 2.f * M_PI * freq / sampleRate;
-		float cosw0 = cos(w0);
-		float sinw0 = sin(w0);
+		float cosw0 = CosEQ(w0);
+		float sinw0 = SinEQ(w0);
 
 		float alpha = sinw0 / 1.5f; // approx 6dB/oct broad Q for Neve 1073 style
 
