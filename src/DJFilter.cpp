@@ -196,8 +196,8 @@ struct DJFilter : Module {
 		float outL = svfLOut.low * lowMix + dryL * dryMix + svfLOut.high * highMix;
 		float outR = svfROut.low * lowMix + dryR * dryMix + svfROut.high * highMix;
 
-		outputs[OUT_L_OUTPUT].setVoltage(clamp(outL, -5.f, 5.f));
-		outputs[OUT_R_OUTPUT].setVoltage(clamp(outR, -5.f, 5.f));
+		outputs[OUT_L_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f));
+		outputs[OUT_R_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f));
 	}
 };
 
