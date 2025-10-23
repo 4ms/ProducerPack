@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "helpers/math_lut.hpp"
 
 struct SeventiesComp : Module {
 	enum ParamId { PEAK_REDUCTION_PARAM, RATIO_PARAM, GAIN_PARAM, BYPASS_PARAM, DRY_WET_PARAM, PARAMS_LEN };
@@ -18,6 +19,24 @@ struct SeventiesComp : Module {
 		configOutput(AUDIO_L_OUTPUT, "Audio Left");
 		configOutput(AUDIO_R_OUTPUT, "Audio Right");
 	}
+
+
+	struct Pow10TableRange {
+		static constexpr float min = -20.f;
+		static constexpr float max = 20.f;
+	};
+
+	static inline const auto Pow10 =
+		Mapping::LookupTable_t<64, float>::generate<Pow10TableRange>([](float x) { return std::pow(10.f, x); });
+
+	struct ExpTableRange {
+			static constexpr float min = -1.f;
+			static constexpr float max = 1.f;
+		};
+		
+	static inline const auto Exp =
+		Mapping::LookupTable_t<64, float>::generate<ExpTableRange>([](float x) { return std::exp(x); });
+
 
 	void process(const ProcessArgs &args) override {
 		const float inL = inputs[AUDIO_L_INPUT].getVoltage();
@@ -39,7 +58,7 @@ struct SeventiesComp : Module {
 
 		if (prevGain != params[GAIN_PARAM].getValue()) {
 			prevGain = params[GAIN_PARAM].getValue();
-			gain = pow(10.f, prevGain * 2.f);
+			gain = Pow10(prevGain * 2.f);
 		}
 
 		if (prevDryWet != params[DRY_WET_PARAM].getValue()) {
@@ -91,7 +110,7 @@ private:
 	float env = 0.f;
 
 	float prevPeakReduction = -1.f;
-	float prevGain = -1.f;
+	float prevGain = 1.f;
 	float prevDryWet = -1.f;
 	float prevRatioParam = -1.f;
 
@@ -103,13 +122,13 @@ private:
 
 	// Precompute attack/release coefficients per sampleRate
 	float attackCoeff(float sampleRate) {
-		return exp(-1.f / (0.01f * sampleRate));
+		return Exp(-1.f / (0.01f * sampleRate));
 	}
 	float releaseFastCoeff(float sampleRate) {
-		return exp(-1.f / (0.06f * sampleRate));
+		return Exp(-1.f / (0.06f * sampleRate));
 	}
 	float releaseSlowCoeff(float sampleRate) {
-		return exp(-1.f / (1.5f * sampleRate));
+		return Exp(-1.f / (1.5f * sampleRate));
 	}
 };
 
