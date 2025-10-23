@@ -19,21 +19,23 @@ add_library(4ms-ProducerPack STATIC)
 # Add sources from the Rack source repo
 set(SOURCE_DIR .)
 
-target_sources(4ms-ProducerPack PRIVATE
-    ${SOURCE_DIR}/src/DJFilter.cpp                    # Note: this file contains init(rack::Plugin*
-    ${SOURCE_DIR}/src/Boost.cpp    
-    ${SOURCE_DIR}/src/Spatializer.cpp 
-    ${SOURCE_DIR}/src/StereoWidth.cpp      
-    ${SOURCE_DIR}/src/StereoCrossfader.cpp     
-    ${SOURCE_DIR}/src/SeventiesEQ.cpp    
-    ${SOURCE_DIR}/src/SeventiesComp.cpp    
-    ${SOURCE_DIR}/src/Decay.cpp
-    ${SOURCE_DIR}/src/AuxSends.cpp      
-    ${SOURCE_DIR}/src/Bitcrusher.cpp     
-    ${SOURCE_DIR}/src/DrumBus.cpp     
-    ${SOURCE_DIR}/src/plugin.cpp        
-    ${SOURCE_DIR}/src/plugin.hpp        
-    ) 
+target_sources(
+    4ms-ProducerPack
+    PRIVATE ${SOURCE_DIR}/src/DJFilter.cpp # Note: this file contains init(rack::Plugin*
+            ${SOURCE_DIR}/src/Boost.cpp
+            ${SOURCE_DIR}/src/Spatializer.cpp
+            ${SOURCE_DIR}/src/StereoWidth.cpp
+            ${SOURCE_DIR}/src/StereoCrossfader.cpp
+            ${SOURCE_DIR}/src/SeventiesEQ.cpp
+            ${SOURCE_DIR}/src/SeventiesComp.cpp
+            ${SOURCE_DIR}/src/Decay.cpp
+            ${SOURCE_DIR}/src/AuxSends.cpp
+            ${SOURCE_DIR}/src/Bitcrusher.cpp
+            ${SOURCE_DIR}/src/DrumBus.cpp
+            ${SOURCE_DIR}/src/plugin.cpp
+            ${SOURCE_DIR}/src/plugin.hpp
+            ${SOURCE_DIR}/src/helpers/math_lut.cpp
+)
 
 # Add includes and compile options for source repo
 target_include_directories(4ms-ProducerPack PRIVATE ${SOURCE_DIR}/src)
