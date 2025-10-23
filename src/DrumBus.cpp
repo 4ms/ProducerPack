@@ -1,4 +1,6 @@
 #include "plugin.hpp"
+#include "helpers/math_lut.hpp"
+
 
 struct DrumBus : Module {
 	enum ParamId {
@@ -143,8 +145,8 @@ struct DrumBus : Module {
 					chEnabled[ch] = true;
 					const float panNorm = pan * 0.01f + 0.5f; // -50 → 0, +50 → 1
 					const float panAngle = panNorm * (float)M_PI_2;
-					chLeftGain[ch] = cos(panAngle);
-					chRightGain[ch] = sin(panAngle);
+					chLeftGain[ch] = Cos(panAngle);
+					chRightGain[ch] = Sin(panAngle);
 				}
 			}
 
@@ -161,8 +163,8 @@ struct DrumBus : Module {
 		leftMix *= cachedMasterVol;
 		rightMix *= cachedMasterVol;
 
-		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(leftMix);
-		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(rightMix);
+		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(std::clamp(leftMix, -10.f, 10.f));
+		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(std::clamp(rightMix, -10.f, 10.f));
 	}
 };
 
