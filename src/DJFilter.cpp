@@ -15,13 +15,13 @@ struct DJFilter : Module {
 
 			if (morph <= 0.45f) {
 				float t = morph / 0.5f;
-				float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, Log2(20.f), std::log2(2000.f)));
+				float cutoffHz = Pow2(rescale(t, 0.f, 1.f, Log2(20.f), Log2(2000.f)));
 				return string::f("Cutoff: %.2fhz", cutoffHz);
 			} else if (morph < 0.55f) {
 				return "Cutoff: BYPASS";
 			} else {
 				float t = (morph - 0.5f) / 0.5f;
-				float cutoffHz = std::pow(2.f, rescale(t, 0.f, 1.f, Log2(300.f), std::log2(7000.f)));
+				float cutoffHz = Pow2(rescale(t, 0.f, 1.f, Log2(300.f), Log2(7000.f)));
 				return string::f("Cutoff: %.2fhz", cutoffHz);
 			}
 		}
@@ -82,7 +82,7 @@ struct DJFilter : Module {
 		float high = 0.f;
 
 		void process(float in, float cutoff, float q, float sampleRate) {
-			float f = 2.f * sinf(M_PI * cutoff / sampleRate);
+			float f = 2.f * Sin(M_PI * cutoff / sampleRate);
 			float damp = 1.f / q;
 
 			high = in - low - damp * band;
