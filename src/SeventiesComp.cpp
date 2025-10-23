@@ -20,7 +20,6 @@ struct SeventiesComp : Module {
 		configOutput(AUDIO_R_OUTPUT, "Audio Right");
 	}
 
-
 	struct Pow10TableRange {
 		static constexpr float min = -20.f;
 		static constexpr float max = 20.f;
