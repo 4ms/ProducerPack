@@ -1,76 +1,74 @@
 {
-"MetaModuleBrandName": "Producer Pack",
-  "MetaModuleBrandSlug": "4ms-ProducerPack",
-  "MetaModuleBrandAliases": ["4msProducerPack", "ProducerPack"],
-  "MetaModulePluginMaintainer": "4ms Company",
-  "MetaModulePluginMaintainerEmail": "4ms@4mscompany.com",
-  "MetaModulePluginMaintainerUrl": "",
-  "MetaModuleDescription": "Stereo tools and other essentials for music producers",
-  "MetaModuleIncludedModules":
-  [
-	{
-		"slug": "DJFilter",
-		"name": "DJFilter"
-	},
-    {
-		"slug": "Monobass",
-		"name": "Monobass"
-	},
-    {
-		"slug": "Boost",
-		"name": "Boost"
-	},
-    {
-		"slug": "Spatializer",
-		"name": "Spatializer"
-	},
-    {
-		"slug": "StereoWidth",
-		"name": "StereoWidth"
-	},
-    {
-		"slug": "StereoCrossfader",
-		"name": "StereoCrossfader"
-	},
-    {
-		"slug": "SeventiesEQ",
-		"name": "SeventiesEQ"
-	},
-    {
-		"slug": "SeventiesComp",
-		"name": "SeventiesComp"
-	},
-    {
-		"slug": "TwoOp",
-		"name": "TwoOp"
-	},
-    {
-		"slug": "Decay",
-		"name": "Decay"
-	},
-    {
-		"slug": "AuxSends",
-		"name": "AuxSends"
-	},
-    {
-		"slug": "Bitcrusher",
-		"name": "Bitcrusher"
-	},
-	{
-		"slug": "DrumBus",
-		"name": "DrumBus"
-	},
-	{
-		"slug": "OctoPush",
-		"name": "OctoPush"
-	},
-	{
-		"slug": "SoloPush",
-		"name": "SoloPush"
-	},
-	{
-		"slug": "Router",
-		"name": "Router"
-	}
-]
+	"MetaModuleBrandName": "Producer Pack",
+	"MetaModuleBrandSlug": "4ms-ProducerPack",
+	"MetaModulePluginMaintainer": "4ms Company",
+	"MetaModulePluginMaintainerEmail": "4ms@4mscompany.com",
+	"MetaModulePluginMaintainerUrl": "",
+	"MetaModuleDescription": "Stereo tools and other essentials for music producers",
+	"MetaModuleIncludedModules": [
+		{
+			"slug": "DJFilter",
+			"name": "DJFilter"
+		},
+		{
+			"slug": "Monobass",
+			"name": "Monobass"
+		},
+		{
+			"slug": "Boost",
+			"name": "Boost"
+		},
+		{
+			"slug": "Spatializer",
+			"name": "Spatializer"
+		},
+		{
+			"slug": "StereoWidth",
+			"name": "StereoWidth"
+		},
+		{
+			"slug": "StereoCrossfader",
+			"name": "StereoCrossfader"
+		},
+		{
+			"slug": "SeventiesEQ",
+			"name": "SeventiesEQ"
+		},
+		{
+			"slug": "SeventiesComp",
+			"name": "SeventiesComp"
+		},
+		{
+			"slug": "TwoOp",
+			"name": "TwoOp"
+		},
+		{
+			"slug": "Decay",
+			"name": "Decay"
+		},
+		{
+			"slug": "AuxSends",
+			"name": "AuxSends"
+		},
+		{
+			"slug": "Bitcrusher",
+			"name": "Bitcrusher"
+		},
+		{
+			"slug": "DrumBus",
+			"name": "DrumBus"
+		},
+		{
+			"slug": "OctoPush",
+			"name": "OctoPush"
+		},
+		{
+			"slug": "SoloPush",
+			"name": "SoloPush"
+		},
+		{
+			"slug": "Router",
+			"name": "Router"
+		}
+	]
 }
