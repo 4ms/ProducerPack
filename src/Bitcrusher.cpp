@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "helpers/math_lut.hpp"
 #include <cmath>
 
 struct InvertedRangeParamQuantity : rack::engine::ParamQuantity {
@@ -26,8 +27,8 @@ struct Biquad {
 	void setupLowpass(float cutoff, float resonance, float sampleRate) {
 		float w0 = 2.f * M_PI * cutoff / sampleRate;
 		float Q = resonance * 5.f + 0.1f;
-		float alpha = sinf(w0) / (2.f * Q);
-		float cosw0 = cosf(w0);
+		float alpha = Sin(w0) / (2.f * Q);
+		float cosw0 = Cos(w0);
 
 		b0 = (1.f - cosw0) * 0.5f;
 		b1 = 1.f - cosw0;
@@ -46,8 +47,8 @@ struct Biquad {
 	void setupHighpass(float cutoff, float resonance, float sampleRate) {
 		float w0 = 2.f * M_PI * cutoff / sampleRate;
 		float Q = resonance * 5.f + 0.1f;
-		float alpha = sinf(w0) / (2.f * Q);
-		float cosw0 = cosf(w0);
+		float alpha = Sin(w0) / (2.f * Q);
+		float cosw0 = Cos(w0);
 
 		b0 = (1.f + cosw0) * 0.5f;
 		b1 = -(1.f + cosw0);
