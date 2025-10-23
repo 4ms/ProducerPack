@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "helpers/math_lut.hpp"
 
 struct StereoCrossfader : Module {
 	enum ParamId { MIX_PARAM, SHAPE_PARAM, PARAMS_LEN };
@@ -60,22 +61,22 @@ struct StereoCrossfader : Module {
 	void updateMixShapeDependent() {
 		float shape = cachedShape;
 		float k = 9.f * shape + 1.f;
-		float denom = log(k + 1e-6f); // add epsilon to avoid log(0)
+		float denom = Log(k + 1e-6f); // add epsilon to avoid Log(0)
 		float x = mix;
 
 		if (x < 0.5f) {
 			x *= 2.f;
-			float y = x * (1.f - shape) + log(1.f + (k - 1.f) * x) / denom * shape;
+			float y = x * (1.f - shape) + Log(1.f + (k - 1.f) * x) / denom * shape;
 			mixShaped = 0.5f * y;
 		} else {
 			x = 2.f * (x - 0.5f);
-			float y = x * (1.f - shape) + log(1.f + (k - 1.f) * x) / denom * shape;
+			float y = x * (1.f - shape) + Log(1.f + (k - 1.f) * x) / denom * shape;
 			mixShaped = 0.5f + 0.5f * y;
 		}
 
 		// Equal power gain calculation
-		gainA = sin((1.f - mixShaped) * 0.5f * M_PI);
-		gainB = sin(mixShaped * 0.5f * M_PI);
+		gainA = Sin((1.f - mixShaped) * 0.5f * M_PI);
+		gainB = Sin(mixShaped * 0.5f * M_PI);
 	}
 
 private:
