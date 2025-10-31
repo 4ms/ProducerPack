@@ -61,16 +61,16 @@ struct StereoCrossfader : Module {
 	void updateMixShapeDependent() {
 		float shape = cachedShape;
 		float k = 9.f * shape + 1.f;
-		float denom = Log(k + 1e-6f); // add epsilon to avoid Log(0)
+		float denom = LogXF(k + 1e-6f); // add epsilon to avoid LogXF(0)
 		float x = mix;
 
 		if (x < 0.5f) {
 			x *= 2.f;
-			float y = x * (1.f - shape) + Log(1.f + (k - 1.f) * x) / denom * shape;
+			float y = x * (1.f - shape) + LogXF(1.f + (k - 1.f) * x) / denom * shape;
 			mixShaped = 0.5f * y;
 		} else {
 			x = 2.f * (x - 0.5f);
-			float y = x * (1.f - shape) + Log(1.f + (k - 1.f) * x) / denom * shape;
+			float y = x * (1.f - shape) + LogXF(1.f + (k - 1.f) * x) / denom * shape;
 			mixShaped = 0.5f + 0.5f * y;
 		}
 

@@ -6,4 +6,6 @@ extern const Mapping::LookupTable_t<64, float> CosEQ;
 extern const Mapping::LookupTable_t<64, float> Cos;
 extern const Mapping::LookupTable_t<64, float> Exp;
 extern const Mapping::LookupTable_t<64, float> Log;
+extern const Mapping::LookupTable_t<64, float> LogXF;
 extern const Mapping::LookupTable_t<64, float> Pow10;
+extern const Mapping::LookupTable_t<64, float> Pow2;
