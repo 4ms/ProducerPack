@@ -36,7 +36,7 @@ struct SeventiesComp : Module {
 		if (bypass) {
 			outputs[AUDIO_L_OUTPUT].setVoltage(inL);
 			outputs[AUDIO_R_OUTPUT].setVoltage(inR);
-			lights[CLIPLED_LIGHT].setBrightnessSmooth(0.f);
+			lights[CLIPLED_LIGHT].setBrightness(0.f);
 			return;
 		}
 
