@@ -21,7 +21,7 @@ set(SOURCE_DIR .)
 
 target_sources(
     4ms-ProducerPack
-    PRIVATE ${SOURCE_DIR}/src/DJFilter.cpp # Note: this file contains init(rack::Plugin*
+    PRIVATE ${SOURCE_DIR}/src/DJFilter.cpp
             ${SOURCE_DIR}/src/Boost.cpp
             ${SOURCE_DIR}/src/Spatializer.cpp
             ${SOURCE_DIR}/src/StereoWidth.cpp
@@ -40,13 +40,16 @@ target_sources(
 # Add includes and compile options for source repo
 target_include_directories(4ms-ProducerPack PRIVATE ${SOURCE_DIR}/src)
 
-# Call this to link and create the plugin file
+if("${INSTALL_DIR}" STREQUAL "")
+    set(INSTALL_DIR ${CMAKE_CURRENT_LIST_DIR}/metamodule-plugins)
+endif()
+
 # cmake-format: off
 create_plugin(
     SOURCE_LIB      4ms-ProducerPack
     PLUGIN_NAME     4ms-ProducerPack
     PLUGIN_JSON     ${CMAKE_CURRENT_LIST_DIR}/plugin.json
     SOURCE_ASSETS   ${CMAKE_CURRENT_LIST_DIR}/assets
-    DESTINATION     ${CMAKE_CURRENT_LIST_DIR}/metamodule-plugins
+    DESTINATION     ${INSTALL_DIR}
 )
 # cmake-format: on
