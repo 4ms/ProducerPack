@@ -146,23 +146,26 @@ struct DJFilter : Module {
 		float dryL = inL;
 		float dryR = inR;
 
-		// Apply cascaded SVFs
+		float inL_stage = inL;
+		float inR_stage = inR;
+		
 		for (int i = 0; i < stages; ++i) {
-			DJFilter::SVF &svfL = this->svfL[i];
-			DJFilter::SVF &svfR = this->svfR[i];
-
-			// Left
-			svfL.high = inL - svfL.low - damp * svfL.band;
-			svfL.band += finalFreq * svfL.high;
-			svfL.low += finalFreq * svfL.band;
-			inL = svfL.low;
-
-			// Right
-			svfR.high = inR - svfR.low - damp * svfR.band;
-			svfR.band += finalFreq * svfR.high;
-			svfR.low += finalFreq * svfR.band;
-			inR = svfR.low;
+			SVF &sL = svfL[i];
+			SVF &sR = svfR[i];
+		
+			// Left channel
+			sL.high = inL_stage - sL.low - damp * sL.band;
+			sL.band += finalFreq * sL.high;
+			sL.low += finalFreq * sL.band;
+			inL_stage = sL.high;    // <-- cascade HIGH output
+		
+			// Right channel
+			sR.high = inR_stage - sR.low - damp * sR.band;
+			sR.band += finalFreq * sR.high;
+			sR.low += finalFreq * sR.band;
+			inR_stage = sR.high;    // <-- cascade HIGH output
 		}
+		
 
 		// Mix logic
 		const float fadeWidth = 0.02f;
@@ -190,11 +193,12 @@ struct DJFilter : Module {
 		}
 
 		// Output mixing
-		DJFilter::SVF &svfLOut = svfL[stages - 1];
-		DJFilter::SVF &svfROut = svfR[stages - 1];
-
-		float outL = svfLOut.low * lowMix + dryL * dryMix + svfLOut.high * highMix;
-		float outR = svfROut.low * lowMix + dryR * dryMix + svfROut.high * highMix;
+		SVF &sL = svfL[stages - 1];
+		SVF &sR = svfR[stages - 1];
+		
+		float outL = sL.low * lowMix + dryL * dryMix + sL.high * highMix;
+		float outR = sR.low * lowMix + dryR * dryMix + sR.high * highMix;
+		
 
 		outputs[OUT_L_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f));
 		outputs[OUT_R_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f));
