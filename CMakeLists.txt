@@ -12,7 +12,7 @@ endif()
 
 include(${METAMODULE_SDK_DIR}/plugin.cmake)
 
-project(4ms-ProducerPack VERSION 0.1 DESCRIPTION "4ms-ProducerPack for MetaModule" LANGUAGES C CXX ASM)
+project(4ms-ProducerPack VERSION 0.2 DESCRIPTION "4ms-ProducerPack for MetaModule" LANGUAGES C CXX ASM)
 
 add_library(4ms-ProducerPack STATIC)
 
