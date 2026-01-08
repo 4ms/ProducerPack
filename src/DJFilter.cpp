@@ -121,11 +121,18 @@ struct DJFilter : Module {
 
 		int stages = std::clamp((int)params[SLOPE_PARAM].getValue(), 1, 4);
 
-		// Cutoff frequency calculation (log scale)
 		float cutoffHz;
 
 		if (morph != lastMorph || args.sampleRate != lastSampleRate) {
 			lastMorph = morph;
+
+			if (args.sampleRate != lastSampleRate) {
+				for (int i = 0; i < 4; ++i) {
+					svfL[i] = {};
+					svfR[i] = {};
+				}
+			}
+
 			lastSampleRate = args.sampleRate;
 
 			if (morph < 0.5f) {
@@ -136,7 +143,26 @@ struct DJFilter : Module {
 				cutoffHz = Pow2(rescale(t, 0.f, 1.f, log2_300, log2_7000));
 			}
 
-			finalFreq = 2.f * Sin(M_PI * cutoffHz / args.sampleRate);
+			float nyquist = 0.5f * args.sampleRate;
+			float safeCutoff = std::min(cutoffHz, nyquist * 0.49f);
+
+			finalFreq = 2.f * Sin(M_PI * safeCutoff / args.sampleRate);
+
+			// CRITICAL: SVF stability clamp (cascade-aware)
+			float maxF = (stages >= 4) ? 0.55f :
+			             (stages == 3) ? 0.65f :
+			             (stages == 2) ? 0.75f :
+			                             0.95f;
+
+			finalFreq = std::min(finalFreq, maxF);
+
+			if (!std::isfinite(finalFreq) || finalFreq <= 0.f) {
+				finalFreq = 0.f;
+				for (int i = 0; i < 4; ++i) {
+					svfL[i] = {};
+					svfR[i] = {};
+				}
+			}
 		}
 
 		float q = rescale(resonanceParam, 0.f, 1.f, 0.707f, 3.f);
