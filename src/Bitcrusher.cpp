@@ -151,6 +151,9 @@ struct Bitcrusher : Module {
 		paramQuantities[SAMPLERATE_PARAM]->module = this;
 		paramQuantities[SAMPLERATE_PARAM]->paramId = SAMPLERATE_PARAM;
 
+		configBypass(AUDIOLEFTIN_INPUT, AUDIOLEFTOUT_OUTPUT);
+		configBypass(AUDIORIGHTIN_INPUT, AUDIORIGHTOUT_OUTPUT);
+
 		filterL.reset();
 		filterR.reset();
 	}

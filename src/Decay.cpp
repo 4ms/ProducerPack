@@ -15,6 +15,8 @@ struct Decay : Module {
 		configInput(AUDIOIN_INPUT, "Audio");
 		configOutput(DECAYOUT_OUTPUT, "Envelope");
 		configOutput(AUDIOOUT_OUTPUT, "Audio");
+
+		configBypass(AUDIOIN_INPUT, AUDIOOUT_OUTPUT);
 	}
 
 	// --- Cached member variables ---

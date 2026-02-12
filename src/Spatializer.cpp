@@ -55,6 +55,9 @@ struct Spatializer : Module {
 		configOutput(SENDR_OUTPUT, "Send Right");
 		configOutput(OUTL_OUTPUT, "Audio Left");
 		configOutput(OUTR_OUTPUT, "Audio Right");
+
+		configBypass(INL_INPUT, OUTL_OUTPUT);
+		configBypass(INR_INPUT, OUTR_OUTPUT);
 	}
 	static const int maxDelaySamples = 2880;
 	float delayBufferL[maxDelaySamples] = {};

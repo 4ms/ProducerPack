@@ -238,6 +238,9 @@ struct SeventiesEQ : Module {
 		configLight(EQLED_LIGHT_RED, "EQ");
 		configLight(OUTLED_LIGHT_GREEN, "Output");
 		configLight(OUTLED_LIGHT_RED, "Output");
+
+		configBypass(INL_INPUT, OUTL_OUTPUT);
+		configBypass(INR_INPUT, OUTR_OUTPUT);
 	}
 
 	float freqSelectToFreq(int sel, bool isMid) {

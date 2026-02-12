@@ -18,6 +18,9 @@ struct SeventiesComp : Module {
 		configInput(AUDIO_R_INPUT, "Audio Right");
 		configOutput(AUDIO_L_OUTPUT, "Audio Left");
 		configOutput(AUDIO_R_OUTPUT, "Audio Right");
+
+		configBypass(AUDIO_L_INPUT, AUDIO_L_OUTPUT);
+		configBypass(AUDIO_R_INPUT, AUDIO_R_OUTPUT);
 	}
 
 	struct Pow10TableRange {
