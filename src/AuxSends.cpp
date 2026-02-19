@@ -95,6 +95,9 @@ struct AuxSends : Module {
 		configOutput(CSENDRIGHTOUT_OUTPUT, "Send C Right");
 		configOutput(AUDIOLEFTOUT_OUTPUT, "Audio Left");
 		configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
+
+		configBypass(AUDIOLEFTIN_INPUT, AUDIOLEFTOUT_OUTPUT);
+		configBypass(AUDIOLEFTIN_INPUT, AUDIORIGHTOUT_OUTPUT);
 	}
 
 	void process(const ProcessArgs &args) override {

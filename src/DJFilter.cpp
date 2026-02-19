@@ -74,6 +74,9 @@ struct DJFilter : Module {
 
 		configOutput(OUT_L_OUTPUT, "Audio Left");
 		configOutput(OUT_R_OUTPUT, "Audio Right");
+
+		configBypass(INL_INPUT, OUT_L_OUTPUT);
+		configBypass(INR_INPUT, OUT_R_OUTPUT);
 	}
 
 	struct SVF {

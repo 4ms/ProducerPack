@@ -232,6 +232,9 @@ struct SeventiesEQ : Module {
 		configOutput(OUTL_OUTPUT, "Output Left");
 		configOutput(OUTR_OUTPUT, "Output Right");
 
+		configBypass(INL_INPUT, OUTL_OUTPUT);
+		configBypass(INR_INPUT, OUTR_OUTPUT);
+
 		configLight(GAINLED_LIGHT_GREEN, "Gain");
 		configLight(GAINLED_LIGHT_RED, "Gain");
 		configLight(EQLED_LIGHT_GREEN, "EQ");

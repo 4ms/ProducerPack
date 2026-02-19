@@ -146,6 +146,9 @@ struct Bitcrusher : Module {
 		configOutput(AUDIOLEFTOUT_OUTPUT, "Audio Left");
 		configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
 
+		configBypass(AUDIOLEFTIN_INPUT, AUDIOLEFTOUT_OUTPUT);
+		configBypass(AUDIORIGHTIN_INPUT, AUDIORIGHTOUT_OUTPUT);
+
 		paramQuantities[SAMPLERATE_PARAM] =
 			new InvertedRangeParamQuantity(sampleRateMinHz, sampleRateMaxHz, "Clock Frequency");
 		paramQuantities[SAMPLERATE_PARAM]->module = this;

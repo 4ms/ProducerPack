@@ -16,6 +16,9 @@ struct StereoWidth : Module {
 		configInput(INR_INPUT, "Audio Right");
 		configOutput(OUTL_OUTPUT, "Audio Left");
 		configOutput(OUTR_OUTPUT, "Audio Right");
+
+		configBypass(INL_INPUT, OUTL_OUTPUT);
+		configBypass(INR_INPUT, OUTR_OUTPUT);
 	}
 	void process(const ProcessArgs &args) override {
 		// --- Input voltages ---

@@ -15,6 +15,9 @@ struct Boost : Module {
 		configInput(RIGHTIN_INPUT, "Audio Right");
 		configOutput(LEFTOUT_OUTPUT, "Audio Left");
 		configOutput(RIGHTOUT_OUTPUT, "Audio Right");
+
+		configBypass(LEFTIN_INPUT, LEFTOUT_OUTPUT);
+		configBypass(RIGHTIN_INPUT, RIGHTOUT_OUTPUT);
 	}
 
 	// Cached values
