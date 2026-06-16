@@ -101,106 +101,137 @@ struct AuxSends : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
-		// --- Read raw audio input ---
-		float rawInL = inputs[AUDIOLEFTIN_INPUT].getVoltage();
-		float rawInR = inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : rawInL;
+		// --- Channel count: max of main audio and all return inputs ---
+		const bool rMainConn  = inputs[AUDIORIGHTIN_INPUT].isConnected();
+		const bool aRetLConn  = inputs[ARETURNLEFTIN_INPUT].isConnected();
+		const bool aRetRConn  = inputs[ARETURNRIGHTIN_INPUT].isConnected();
+		const bool bRetLConn  = inputs[BRETURNLEFTIN_INPUT].isConnected();
+		const bool bRetRConn  = inputs[BRETURNRIGHTIN_INPUT].isConnected();
+		const bool cRetLConn  = inputs[CRETURNLEFTIN_INPUT].isConnected();
+		const bool cRetRConn  = inputs[CRETURNRIGHTIN_INPUT].isConnected();
 
-		// --- Dry level ---
-		float dryCV = std::clamp(inputs[DRYLEVELCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f;
-		float dryLevel = std::clamp(params[DRYLEVEL_PARAM].getValue() + dryCV, 0.f, 1.f);
-		float inL = rawInL * dryLevel;
-		float inR = rawInR * dryLevel;
+		const int nMainL = inputs[AUDIOLEFTIN_INPUT].getChannels();
+		const int nMainR = rMainConn ? inputs[AUDIORIGHTIN_INPUT].getChannels() : nMainL;
+		int n = std::max(nMainL, nMainR);
+		if (aRetLConn) n = std::max(n, inputs[ARETURNLEFTIN_INPUT].getChannels());
+		if (aRetRConn) n = std::max(n, inputs[ARETURNRIGHTIN_INPUT].getChannels());
+		if (bRetLConn) n = std::max(n, inputs[BRETURNLEFTIN_INPUT].getChannels());
+		if (bRetRConn) n = std::max(n, inputs[BRETURNRIGHTIN_INPUT].getChannels());
+		if (cRetLConn) n = std::max(n, inputs[CRETURNLEFTIN_INPUT].getChannels());
+		if (cRetRConn) n = std::max(n, inputs[CRETURNRIGHTIN_INPUT].getChannels());
 
-		float outL = inL;
-		float outR = inR;
+		outputs[ASENDLEFTOUT_OUTPUT].setChannels(n);
+		outputs[ASENDRIGHTOUT_OUTPUT].setChannels(n);
+		outputs[BSENDLEFTOUT_OUTPUT].setChannels(n);
+		outputs[BSENDRIGHTOUT_OUTPUT].setChannels(n);
+		outputs[CSENDLEFTOUT_OUTPUT].setChannels(n);
+		outputs[CSENDRIGHTOUT_OUTPUT].setChannels(n);
+		outputs[AUDIOLEFTOUT_OUTPUT].setChannels(n);
+		outputs[AUDIORIGHTOUT_OUTPUT].setChannels(n);
 
-		// --- Shared CV helpers (cached values) ---
+		// --- Mono CVs: precomputed once, shared across all poly channels ---
 		auto computeCVKnobSum = [](Input &in, Param &param) {
-			auto cv = in.getVoltage() / 5.f;
-			return std::clamp(param.getValue() + cv, 0.f, 1.f);
+			return std::clamp(param.getValue() + in.getVoltage() / 5.f, 0.f, 1.f);
 		};
 
-		// === SEND A ===
-		if (outputs[ASENDLEFTOUT_OUTPUT].isConnected() || outputs[ASENDRIGHTOUT_OUTPUT].isConnected()) {
-			float sendA = computeCVKnobSum(inputs[ASENDCVIN_INPUT], params[ASEND_PARAM]);
-			bool pre = params[PREPOST1_PARAM].getValue() > 0.5f;
-			float sendL = (pre ? rawInL : inL) * sendA;
-			float sendR = (pre ? rawInR : inR) * sendA;
-			outputs[ASENDLEFTOUT_OUTPUT].setVoltage(sendL);
-			outputs[ASENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-			if (lightThrottle == 0)
-				lights[ASENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f,
-														   args.sampleTime * lightThrottleAmount);
+		float dryCV   = std::clamp(inputs[DRYLEVELCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f;
+		float dryLevel = std::clamp(params[DRYLEVEL_PARAM].getValue() + dryCV, 0.f, 1.f);
+
+		const bool aSendConn = outputs[ASENDLEFTOUT_OUTPUT].isConnected() || outputs[ASENDRIGHTOUT_OUTPUT].isConnected();
+		const bool bSendConn = outputs[BSENDLEFTOUT_OUTPUT].isConnected() || outputs[BSENDRIGHTOUT_OUTPUT].isConnected();
+		const bool cSendConn = outputs[CSENDLEFTOUT_OUTPUT].isConnected() || outputs[CSENDRIGHTOUT_OUTPUT].isConnected();
+
+		const float sendALevel = aSendConn ? computeCVKnobSum(inputs[ASENDCVIN_INPUT], params[ASEND_PARAM]) : 0.f;
+		const float sendBLevel = bSendConn ? computeCVKnobSum(inputs[BSENDCVIN_INPUT], params[BSEND_PARAM]) : 0.f;
+		const float sendCLevel = cSendConn ? computeCVKnobSum(inputs[CSENDCVIN_INPUT], params[CSEND_PARAM]) : 0.f;
+		const bool preA = params[PREPOST1_PARAM].getValue() > 0.5f;
+		const bool preB = params[PREPOST2_PARAM].getValue() > 0.5f;
+		const bool preC = params[PREPOST3_PARAM].getValue() > 0.5f;
+		const float gainRetA = aRetLConn ? computeCVKnobSum(inputs[ARETURNCVIN_INPUT], params[ARETURN_PARAM]) : 0.f;
+		const float gainRetB = bRetLConn ? computeCVKnobSum(inputs[BRETURNCVIN_INPUT], params[BRETURN_PARAM]) : 0.f;
+		const float gainRetC = cRetLConn ? computeCVKnobSum(inputs[CRETURNCVIN_INPUT], params[CRETURN_PARAM]) : 0.f;
+
+		// LED accumulators (max across poly channels, updated on throttle)
+		float maxSendA = 0.f, maxRetA = 0.f;
+		float maxSendB = 0.f, maxRetB = 0.f;
+		float maxSendC = 0.f, maxRetC = 0.f;
+
+		// --- Per poly channel ---
+		for (int c = 0; c < n; c++) {
+			float rawInL = inputs[AUDIOLEFTIN_INPUT].getPolyVoltage(c);
+			float rawInR = rMainConn ? inputs[AUDIORIGHTIN_INPUT].getPolyVoltage(c) : rawInL;
+			float inL = rawInL * dryLevel;
+			float inR = rawInR * dryLevel;
+			float outL = inL;
+			float outR = inR;
+
+			// === SEND A ===
+			if (aSendConn) {
+				float sendL = (preA ? rawInL : inL) * sendALevel;
+				float sendR = (preA ? rawInR : inR) * sendALevel;
+				outputs[ASENDLEFTOUT_OUTPUT].setVoltage(sendL, c);
+				outputs[ASENDRIGHTOUT_OUTPUT].setVoltage(sendR, c);
+				maxSendA = std::max(maxSendA, std::fabs(sendL + sendR));
+			}
+
+			// === RETURN A ===
+			if (aRetLConn) {
+				float returnL = inputs[ARETURNLEFTIN_INPUT].getPolyVoltage(c) * gainRetA;
+				float returnR = aRetRConn ? inputs[ARETURNRIGHTIN_INPUT].getPolyVoltage(c) * gainRetA : returnL;
+				outL += returnL;
+				outR += returnR;
+				maxRetA = std::max(maxRetA, std::fabs(returnL + returnR));
+			}
+
+			// === SEND B ===
+			if (bSendConn) {
+				float sendL = (preB ? rawInL : inL) * sendBLevel;
+				float sendR = (preB ? rawInR : inR) * sendBLevel;
+				outputs[BSENDLEFTOUT_OUTPUT].setVoltage(sendL, c);
+				outputs[BSENDRIGHTOUT_OUTPUT].setVoltage(sendR, c);
+				maxSendB = std::max(maxSendB, std::fabs(sendL + sendR));
+			}
+
+			// === RETURN B ===
+			if (bRetLConn) {
+				float returnL = inputs[BRETURNLEFTIN_INPUT].getPolyVoltage(c) * gainRetB;
+				float returnR = bRetRConn ? inputs[BRETURNRIGHTIN_INPUT].getPolyVoltage(c) * gainRetB : returnL;
+				outL += returnL;
+				outR += returnR;
+				maxRetB = std::max(maxRetB, std::fabs(returnL + returnR));
+			}
+
+			// === SEND C ===
+			if (cSendConn) {
+				float sendL = (preC ? rawInL : inL) * sendCLevel;
+				float sendR = (preC ? rawInR : inR) * sendCLevel;
+				outputs[CSENDLEFTOUT_OUTPUT].setVoltage(sendL, c);
+				outputs[CSENDRIGHTOUT_OUTPUT].setVoltage(sendR, c);
+				maxSendC = std::max(maxSendC, std::fabs(sendL + sendR));
+			}
+
+			// === RETURN C ===
+			if (cRetLConn) {
+				float returnL = inputs[CRETURNLEFTIN_INPUT].getPolyVoltage(c) * gainRetC;
+				float returnR = cRetRConn ? inputs[CRETURNRIGHTIN_INPUT].getPolyVoltage(c) * gainRetC : returnL;
+				outL += returnL;
+				outR += returnR;
+				maxRetC = std::max(maxRetC, std::fabs(returnL + returnR));
+			}
+
+			outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f), c);
+			outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f), c);
 		}
 
-		// === RETURN A ===
-		if (inputs[ARETURNLEFTIN_INPUT].isConnected()) {
-			float gain = computeCVKnobSum(inputs[ARETURNCVIN_INPUT], params[ARETURN_PARAM]);
-			float returnL = inputs[ARETURNLEFTIN_INPUT].getVoltage() * gain;
-			float returnR =
-				inputs[ARETURNRIGHTIN_INPUT].isConnected() ? inputs[ARETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
-			outL += returnL;
-			outR += returnR;
-			if (lightThrottle == 0)
-				lights[ARETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f,
-															 args.sampleTime * lightThrottleAmount);
+		// --- LEDs (throttled, max across all poly channels) ---
+		if (lightThrottle == 0) {
+			lights[ASENDLED_LIGHT].setBrightnessSmooth(maxSendA * 0.1f, args.sampleTime * lightThrottleAmount);
+			lights[ARETURNLED_LIGHT].setBrightnessSmooth(maxRetA * 0.1f, args.sampleTime * lightThrottleAmount);
+			lights[BSENDLED_LIGHT].setBrightnessSmooth(maxSendB * 0.1f, args.sampleTime * lightThrottleAmount);
+			lights[BRETURNLED_LIGHT].setBrightnessSmooth(maxRetB * 0.1f, args.sampleTime * lightThrottleAmount);
+			lights[CSENDLED_LIGHT].setBrightnessSmooth(maxSendC * 0.1f, args.sampleTime * lightThrottleAmount);
+			lights[CRETURNLED_LIGHT].setBrightnessSmooth(maxRetC * 0.1f, args.sampleTime * lightThrottleAmount);
 		}
-
-		// === SEND B ===
-		if (outputs[BSENDLEFTOUT_OUTPUT].isConnected() || outputs[BSENDRIGHTOUT_OUTPUT].isConnected()) {
-			float sendB = computeCVKnobSum(inputs[BSENDCVIN_INPUT], params[BSEND_PARAM]);
-			bool pre = params[PREPOST2_PARAM].getValue() > 0.5f;
-			float sendL = (pre ? rawInL : inL) * sendB;
-			float sendR = (pre ? rawInR : inR) * sendB;
-			outputs[BSENDLEFTOUT_OUTPUT].setVoltage(sendL);
-			outputs[BSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-			if (lightThrottle == 0)
-				lights[BSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f,
-														   args.sampleTime * lightThrottleAmount);
-		}
-
-		// === RETURN B ===
-		if (inputs[BRETURNLEFTIN_INPUT].isConnected()) {
-			float gain = computeCVKnobSum(inputs[BRETURNCVIN_INPUT], params[BRETURN_PARAM]);
-			float returnL = inputs[BRETURNLEFTIN_INPUT].getVoltage() * gain;
-			float returnR =
-				inputs[BRETURNRIGHTIN_INPUT].isConnected() ? inputs[BRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
-			outL += returnL;
-			outR += returnR;
-			if (lightThrottle == 0)
-				lights[BRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f,
-															 args.sampleTime * lightThrottleAmount);
-		}
-
-		// === SEND C ===
-		if (outputs[CSENDLEFTOUT_OUTPUT].isConnected() || outputs[CSENDRIGHTOUT_OUTPUT].isConnected()) {
-			float sendC = computeCVKnobSum(inputs[CSENDCVIN_INPUT], params[CSEND_PARAM]);
-			bool pre = params[PREPOST3_PARAM].getValue() > 0.5f;
-			float sendL = (pre ? rawInL : inL) * sendC;
-			float sendR = (pre ? rawInR : inR) * sendC;
-			outputs[CSENDLEFTOUT_OUTPUT].setVoltage(sendL);
-			outputs[CSENDRIGHTOUT_OUTPUT].setVoltage(sendR);
-			if (lightThrottle == 0)
-				lights[CSENDLED_LIGHT].setBrightnessSmooth(std::fabs(sendL + sendR) * 0.1f,
-														   args.sampleTime * lightThrottleAmount);
-		}
-
-		// === RETURN C ===
-		if (inputs[CRETURNLEFTIN_INPUT].isConnected()) {
-			float gain = computeCVKnobSum(inputs[CRETURNCVIN_INPUT], params[CRETURN_PARAM]);
-			float returnL = inputs[CRETURNLEFTIN_INPUT].getVoltage() * gain;
-			float returnR =
-				inputs[CRETURNRIGHTIN_INPUT].isConnected() ? inputs[CRETURNRIGHTIN_INPUT].getVoltage() * gain : returnL;
-			outL += returnL;
-			outR += returnR;
-			if (lightThrottle == 0)
-				lights[CRETURNLED_LIGHT].setBrightnessSmooth(std::fabs(returnL + returnR) * 0.1f,
-															 args.sampleTime * lightThrottleAmount);
-		}
-
-		// Final output
-		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f));
-		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f));
 
 		lightThrottle = (lightThrottle + 1) & (lightThrottleAmount - 1);
 	}
