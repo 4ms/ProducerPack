@@ -2,22 +2,25 @@
 #include "helpers/math_lut.hpp"
 #include <cmath>
 
-struct Highpass {
+struct HighpassChState {
 	float prevInput = 0.f;
 	float prevOutput = 0.f;
-
-	float process(float input, float alpha) {
-		float output = alpha * (prevOutput + input - prevInput);
-		prevInput = input;
-		prevOutput = output;
-		return output;
-	}
 };
+
+struct BiquadChState {
+	float x1 = 0.f, x2 = 0.f, y1 = 0.f, y2 = 0.f;
+};
+
+static inline float processHighpass(float input, float alpha, HighpassChState& s) {
+	float output = alpha * (s.prevOutput + input - s.prevInput);
+	s.prevInput = input;
+	s.prevOutput = output;
+	return output;
+}
 
 struct HighShelf {
 	float a0 = 1.f, a1 = 0.f, a2 = 0.f, b1 = 0.f, b2 = 0.f;
 	float a0_target = 1.f, a1_target = 0.f, a2_target = 0.f, b1_target = 0.f, b2_target = 0.f;
-	float x1 = 0.f, x2 = 0.f, y1 = 0.f, y2 = 0.f;
 	float smoothing = 0.01f;
 
 	void calcTargetCoeffs(float sampleRate, float freq, float gainDB) {
@@ -30,7 +33,6 @@ struct HighShelf {
 		float cosw0 = CosEQ(w0);
 		float sinw0 = SinEQ(w0);
 		float alpha = sinw0 / (2.f * 0.707f);
-
 		float sqrtA = sqrtf(A);
 
 		float b0 = A * ((A + 1.f) + (A - 1.f) * cosw0 + 2.f * sqrtA * alpha);
@@ -58,13 +60,12 @@ struct HighShelf {
 		b2 += smoothing * (b2_target - b2);
 	}
 
-	float process(float x0) {
-		smoothCoeffs();
-		float y0 = a0 * x0 + a1 * x1 + a2 * x2 - b1 * y1 - b2 * y2;
-		x2 = x1;
-		x1 = x0;
-		y2 = y1;
-		y1 = y0;
+	float processChannel(float x0, BiquadChState& s) const {
+		float y0 = a0 * x0 + a1 * s.x1 + a2 * s.x2 - b1 * s.y1 - b2 * s.y2;
+		s.x2 = s.x1;
+		s.x1 = x0;
+		s.y2 = s.y1;
+		s.y1 = y0;
 		return y0;
 	}
 };
@@ -72,7 +73,6 @@ struct HighShelf {
 struct MidPeakingEQ {
 	float a0 = 1.f, a1 = 0.f, a2 = 0.f, b1 = 0.f, b2 = 0.f;
 	float a0_target = 1.f, a1_target = 0.f, a2_target = 0.f, b1_target = 0.f, b2_target = 0.f;
-	float x1 = 0.f, x2 = 0.f, y1 = 0.f, y2 = 0.f;
 	float smoothing = 0.01f;
 
 	void calcTargetCoeffs(float sampleRate, float freq, float gainDB, float Q = 0.5f) {
@@ -111,13 +111,12 @@ struct MidPeakingEQ {
 		b2 += smoothing * (b2_target - b2);
 	}
 
-	float process(float x0) {
-		smoothCoeffs();
-		float y0 = a0 * x0 + a1 * x1 + a2 * x2 - b1 * y1 - b2 * y2;
-		x2 = x1;
-		x1 = x0;
-		y2 = y1;
-		y1 = y0;
+	float processChannel(float x0, BiquadChState& s) const {
+		float y0 = a0 * x0 + a1 * s.x1 + a2 * s.x2 - b1 * s.y1 - b2 * s.y2;
+		s.x2 = s.x1;
+		s.x1 = x0;
+		s.y2 = s.y1;
+		s.y1 = y0;
 		return y0;
 	}
 };
@@ -125,7 +124,6 @@ struct MidPeakingEQ {
 struct LowShelf {
 	float a0 = 1.f, a1 = 0.f, a2 = 0.f, b1 = 0.f, b2 = 0.f;
 	float a0_target = 1.f, a1_target = 0.f, a2_target = 0.f, b1_target = 0.f, b2_target = 0.f;
-	float x1 = 0.f, x2 = 0.f, y1 = 0.f, y2 = 0.f;
 	float smoothing = 0.01f;
 
 	void calcTargetCoeffs(float sampleRate, float freq, float gainDB) {
@@ -137,9 +135,7 @@ struct LowShelf {
 		float w0 = 2.f * M_PI * freq / sampleRate;
 		float cosw0 = CosEQ(w0);
 		float sinw0 = SinEQ(w0);
-
-		float alpha = sinw0 / 1.5f; // approx 6dB/oct broad Q for Neve 1073 style
-
+		float alpha = sinw0 / 1.5f;
 		float sqrtA = sqrtf(A);
 
 		float b0 = A * ((A + 1.f) - (A - 1.f) * cosw0 + 2.f * sqrtA * alpha);
@@ -167,13 +163,12 @@ struct LowShelf {
 		b2 += smoothing * (b2_target - b2);
 	}
 
-	float process(float x0) {
-		smoothCoeffs();
-		float y0 = a0 * x0 + a1 * x1 + a2 * x2 - b1 * y1 - b2 * y2;
-		x2 = x1;
-		x1 = x0;
-		y2 = y1;
-		y1 = y0;
+	float processChannel(float x0, BiquadChState& s) const {
+		float y0 = a0 * x0 + a1 * s.x1 + a2 * s.x2 - b1 * s.y1 - b2 * s.y2;
+		s.x2 = s.x1;
+		s.x1 = x0;
+		s.y2 = s.y1;
+		s.y1 = y0;
 		return y0;
 	}
 };
@@ -203,12 +198,20 @@ struct SeventiesEQ : Module {
 		LIGHTS_LEN
 	};
 
-	Highpass highpassL1, highpassL2, highpassL3;
-	Highpass highpassR1, highpassR2, highpassR3;
+	// EQ bands — coefficients only, shared across all channels
+	HighShelf highShelf;
+	MidPeakingEQ midBand;
+	LowShelf lowShelf;
 
-	HighShelf highShelfL, highShelfR;
-	MidPeakingEQ midBandL, midBandR;
-	LowShelf lowShelfL, lowShelfR;
+	// Per-channel filter state (left and right ports are independent)
+	HighpassChState hpStateL[PORT_MAX_CHANNELS][3];
+	HighpassChState hpStateR[PORT_MAX_CHANNELS][3];
+	BiquadChState highShelfStateL[PORT_MAX_CHANNELS];
+	BiquadChState highShelfStateR[PORT_MAX_CHANNELS];
+	BiquadChState midStateL[PORT_MAX_CHANNELS];
+	BiquadChState midStateR[PORT_MAX_CHANNELS];
+	BiquadChState lowShelfStateL[PORT_MAX_CHANNELS];
+	BiquadChState lowShelfStateR[PORT_MAX_CHANNELS];
 
 	SeventiesEQ() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -243,56 +246,18 @@ struct SeventiesEQ : Module {
 		configLight(OUTLED_LIGHT_RED, "Output");
 	}
 
-	float freqSelectToFreq(int sel, bool isMid) {
-		if (isMid) {
-			switch (sel) {
-				case 1:
-					return 360.f;
-				case 2:
-					return 700.f;
-				case 3:
-					return 1600.f;
-				case 4:
-					return 3200.f;
-				case 5:
-					return 4800.f;
-				case 6:
-					return 7200.f;
-				default:
-					return 0.f;
-			}
-		} else {
-			switch (sel) {
-				case 1:
-					return 35.f;
-				case 2:
-					return 60.f;
-				case 3:
-					return 110.f;
-				case 4:
-					return 220.f;
-				default:
-					return 0.f;
-			}
+	float highpassFreqSelectToFreq(int sel) {
+		switch (sel) {
+			case 1: return 50.f;
+			case 2: return 80.f;
+			case 3: return 160.f;
+			case 4: return 300.f;
+			default: return 0.f;
 		}
 	}
 
-	float highpassFreqSelectToFreq(int sel) {
-		switch (sel) {
-			case 1:
-				return 50.f;
-			case 2:
-				return 80.f;
-			case 3:
-				return 160.f;
-			case 4:
-				return 300.f;
-			default:
-				return 0.f;
-		}
-	}
 	// --- Member caches ---
-	float prevHpFreq = 0.f; // 0 forces first update
+	float prevHpFreq = 0.f;
 	float hpAlpha = 0.f;
 
 	float prevMidFreq = 0.f;
@@ -307,128 +272,124 @@ struct SeventiesEQ : Module {
 	static constexpr float lowFreqs[5] = {0.f, 35.f, 60.f, 110.f, 220.f};
 
 	void process(const ProcessArgs &args) override {
-		float inL = inputs[INL_INPUT].getVoltage();
-		float inR = inputs[INR_INPUT].isConnected() ? inputs[INR_INPUT].getVoltage() : inL;
+		const bool rConnected = inputs[INR_INPUT].isConnected();
+		const int nL = inputs[INL_INPUT].getChannels();
+		const int nR = rConnected ? inputs[INR_INPUT].getChannels() : nL;
+		const int n = std::max(nL, nR);
+
+		outputs[OUTL_OUTPUT].setChannels(n);
+		outputs[OUTR_OUTPUT].setChannels(n);
 
 		bool bypass = params[BYPASS_PARAM].getValue() > 0.5f;
-
 		if (bypass) {
-			// --- Bypass all processing ---
-			outputs[OUTL_OUTPUT].setVoltage(inL);
-			outputs[OUTR_OUTPUT].setVoltage(inR);
-
-			// Turn all lights off
-			for (int i = 0; i < LIGHTS_LEN; i++) { lights[i].setBrightness(0.f); }
+			for (int c = 0; c < n; c++) {
+				float il = inputs[INL_INPUT].getPolyVoltage(c);
+				float ir = rConnected ? inputs[INR_INPUT].getPolyVoltage(c) : il;
+				outputs[OUTL_OUTPUT].setVoltage(il, c);
+				outputs[OUTR_OUTPUT].setVoltage(ir, c);
+			}
+			for (int i = 0; i < LIGHTS_LEN; i++) lights[i].setBrightness(0.f);
 			return;
 		}
 
-		// --- Input Gain ---
 		float gain = params[GAIN_PARAM].getValue();
 		float outputVol = params[OUTPUTVOL_PARAM].getValue();
 		float inputGain = 1.f + 4.f * gain;
-		inL *= inputGain;
-		inR *= inputGain;
 
-		// --- Gain LEDs ---
-		float gainPostAmpLevel = std::max(std::fabs(inL), std::fabs(inR));
-		bool gainClipping = gainPostAmpLevel >= 5.f;
-		lights[GAINLED_LIGHT_GREEN].setBrightnessSmooth(gainClipping ? 0.f : gainPostAmpLevel / 5.f, args.sampleTime);
-		lights[GAINLED_LIGHT_RED].setBrightnessSmooth(gainClipping ? gainPostAmpLevel / 5.f : 0.f, args.sampleTime);
-
-		// --- Highpass processing ---
+		// --- Highpass alpha (recompute if selector changed) ---
 		int hpSel = (int)params[HIGHPASSFREQSELECT_PARAM].getValue();
 		float hpFreq = highpassFreqSelectToFreq(hpSel);
-
-		if (hpFreq > 0.f) {
-			if (hpFreq != prevHpFreq) {
-				float rc = 1.f / (2.f * M_PI * hpFreq);
-				float dt = 1.f / args.sampleRate;
-				hpAlpha = rc / (rc + dt);
-				prevHpFreq = hpFreq;
-			}
-
-			inL = highpassL1.process(inL, hpAlpha);
-			inL = highpassL2.process(inL, hpAlpha);
-			inL = highpassL3.process(inL, hpAlpha);
-			inR = highpassR1.process(inR, hpAlpha);
-			inR = highpassR2.process(inR, hpAlpha);
-			inR = highpassR3.process(inR, hpAlpha);
+		if (hpFreq > 0.f && hpFreq != prevHpFreq) {
+			float rc = 1.f / (2.f * M_PI * hpFreq);
+			float dt = 1.f / args.sampleRate;
+			hpAlpha = rc / (rc + dt);
+			prevHpFreq = hpFreq;
 		}
 
-		float eqOutL = inL;
-		float eqOutR = inR;
-
-		// --- Mid Band ---
+		// --- Mid band (update target coeffs + smooth once per frame) ---
 		int midSel = (int)params[MIDFREQSELECT_PARAM].getValue();
-		float midFreq = freqSelectToFreq(midSel, true);
+		float midFreq = midFreqs[midSel];
 		float midGainDB = params[MID_PARAM].getValue();
-
 		if (midFreq > 0.f && (midFreq != prevMidFreq || midGainDB != prevMidGain)) {
-			midBandL.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
-			midBandR.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
+			midBand.calcTargetCoeffs(args.sampleRate, midFreq, midGainDB, 0.5f);
 			prevMidFreq = midFreq;
 			prevMidGain = midGainDB;
 		}
+		if (midFreq > 0.f)
+			midBand.smoothCoeffs();
 
-		if (midFreq > 0.f) {
-			midBandL.smoothCoeffs();
-			midBandR.smoothCoeffs();
-			eqOutL = midBandL.process(eqOutL);
-			eqOutR = midBandR.process(eqOutR);
-		}
-
-		// --- High Shelf ---
+		// --- High shelf (smooth once per frame) ---
 		float highGainDB = params[HIGH_SHELF_PARAM].getValue();
-		float highShelfFreq = 10000.f;
-
 		if (highGainDB != prevHighGain) {
-			highShelfL.calcTargetCoeffs(args.sampleRate, highShelfFreq, highGainDB);
-			highShelfR.calcTargetCoeffs(args.sampleRate, highShelfFreq, highGainDB);
+			highShelf.calcTargetCoeffs(args.sampleRate, 10000.f, highGainDB);
 			prevHighGain = highGainDB;
 		}
+		highShelf.smoothCoeffs();
 
-		highShelfL.smoothCoeffs();
-		highShelfR.smoothCoeffs();
-		eqOutL = highShelfL.process(eqOutL);
-		eqOutR = highShelfR.process(eqOutR);
-
-		// --- Low Shelf ---
+		// --- Low shelf (smooth once per frame) ---
 		int lowSel = (int)params[LOWFREQSELECT_PARAM].getValue();
-		float lowFreq = freqSelectToFreq(lowSel, false);
+		float lowFreq = lowFreqs[lowSel];
 		float lowGainDB = params[LOW_SHELF_PARAM].getValue();
-
 		if (lowFreq > 0.f && (lowFreq != prevLowFreq || lowGainDB != prevLowGain)) {
-			lowShelfL.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
-			lowShelfR.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
+			lowShelf.calcTargetCoeffs(args.sampleRate, lowFreq, lowGainDB);
 			prevLowFreq = lowFreq;
 			prevLowGain = lowGainDB;
 		}
+		if (lowFreq > 0.f)
+			lowShelf.smoothCoeffs();
 
-		if (lowFreq > 0.f) {
-			lowShelfL.smoothCoeffs();
-			lowShelfR.smoothCoeffs();
-			eqOutL = lowShelfL.process(eqOutL);
-			eqOutR = lowShelfR.process(eqOutR);
+		float maxPostGain = 0.f, maxPostEQ = 0.f, maxOut = 0.f;
+
+		for (int c = 0; c < n; c++) {
+			float sigL = inputs[INL_INPUT].getPolyVoltage(c) * inputGain;
+			float sigR = (rConnected ? inputs[INR_INPUT].getPolyVoltage(c) : inputs[INL_INPUT].getPolyVoltage(c)) * inputGain;
+
+			maxPostGain = std::max(maxPostGain, std::max(std::fabs(sigL), std::fabs(sigR)));
+
+			if (hpFreq > 0.f) {
+				sigL = processHighpass(sigL, hpAlpha, hpStateL[c][0]);
+				sigL = processHighpass(sigL, hpAlpha, hpStateL[c][1]);
+				sigL = processHighpass(sigL, hpAlpha, hpStateL[c][2]);
+				sigR = processHighpass(sigR, hpAlpha, hpStateR[c][0]);
+				sigR = processHighpass(sigR, hpAlpha, hpStateR[c][1]);
+				sigR = processHighpass(sigR, hpAlpha, hpStateR[c][2]);
+			}
+
+			if (midFreq > 0.f) {
+				sigL = midBand.processChannel(sigL, midStateL[c]);
+				sigR = midBand.processChannel(sigR, midStateR[c]);
+			}
+
+			sigL = highShelf.processChannel(sigL, highShelfStateL[c]);
+			sigR = highShelf.processChannel(sigR, highShelfStateR[c]);
+
+			if (lowFreq > 0.f) {
+				sigL = lowShelf.processChannel(sigL, lowShelfStateL[c]);
+				sigR = lowShelf.processChannel(sigR, lowShelfStateR[c]);
+			}
+
+			maxPostEQ = std::max(maxPostEQ, std::max(std::fabs(sigL), std::fabs(sigR)));
+
+			float outL = std::clamp(sigL * outputVol, -10.f, 10.f);
+			float outR = std::clamp(sigR * outputVol, -10.f, 10.f);
+
+			maxOut = std::max(maxOut, std::max(std::fabs(outL), std::fabs(outR)));
+
+			outputs[OUTL_OUTPUT].setVoltage(outL, c);
+			outputs[OUTR_OUTPUT].setVoltage(outR, c);
 		}
 
-		// --- EQ LEDs ---
-		float eqLevel = std::max(std::fabs(eqOutL), std::fabs(eqOutR));
-		bool eqClipping = eqLevel >= 5.f;
-		lights[EQLED_LIGHT_GREEN].setBrightnessSmooth(eqClipping ? 0.f : eqLevel / 5.f, args.sampleTime);
-		lights[EQLED_LIGHT_RED].setBrightnessSmooth(eqClipping ? eqLevel / 5.f : 0.f, args.sampleTime);
+		bool gainClipping = maxPostGain >= 5.f;
+		lights[GAINLED_LIGHT_GREEN].setBrightnessSmooth(gainClipping ? 0.f : maxPostGain / 5.f, args.sampleTime);
+		lights[GAINLED_LIGHT_RED].setBrightnessSmooth(gainClipping ? maxPostGain / 5.f : 0.f, args.sampleTime);
 
-		// --- Output Volume ---
-		float outL = std::clamp(eqOutL * outputVol, -10.f, 10.f);
-		float outR = std::clamp(eqOutR * outputVol, -10.f, 10.f);
+		bool eqClipping = maxPostEQ >= 5.f;
+		lights[EQLED_LIGHT_GREEN].setBrightnessSmooth(eqClipping ? 0.f : maxPostEQ / 5.f, args.sampleTime);
+		lights[EQLED_LIGHT_RED].setBrightnessSmooth(eqClipping ? maxPostEQ / 5.f : 0.f, args.sampleTime);
 
-		float outLevel = std::max(std::fabs(outL), std::fabs(outR));
-		bool outClipping = outLevel >= 5.f;
-
-		outputs[OUTL_OUTPUT].setVoltage(outL);
-		outputs[OUTR_OUTPUT].setVoltage(outR);
-
-		lights[OUTLED_LIGHT_GREEN].setBrightnessSmooth(outClipping ? 0.f : outLevel / 5.f, args.sampleTime);
-		lights[OUTLED_LIGHT_RED].setBrightnessSmooth(outClipping ? outLevel / 5.f : 0.f, args.sampleTime);
+		bool outClipping = maxOut >= 5.f;
+		lights[OUTLED_LIGHT_GREEN].setBrightnessSmooth(outClipping ? 0.f : maxOut / 5.f, args.sampleTime);
+		lights[OUTLED_LIGHT_RED].setBrightnessSmooth(outClipping ? maxOut / 5.f : 0.f, args.sampleTime);
 	}
 };
 
