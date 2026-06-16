@@ -109,10 +109,11 @@ struct Bitcrusher : Module {
 	const float cutoffMaxHz = 15000.f;
 
 	float sampleHoldPhase = 0.f;
-	float leftSampleHold = 0.f;
-	float rightSampleHold = 0.f;
+	float leftSampleHold[PORT_MAX_CHANNELS] = {};
+	float rightSampleHold[PORT_MAX_CHANNELS] = {};
 
-	Biquad filterL, filterR;
+	Biquad filterLCh[PORT_MAX_CHANNELS];
+	Biquad filterRCh[PORT_MAX_CHANNELS];
 
 	// Cache last parameters to avoid redundant coefficient recalculation
 	float lastCutoff = -1.f;
@@ -154,8 +155,10 @@ struct Bitcrusher : Module {
 		paramQuantities[SAMPLERATE_PARAM]->module = this;
 		paramQuantities[SAMPLERATE_PARAM]->paramId = SAMPLERATE_PARAM;
 
-		filterL.reset();
-		filterR.reset();
+		for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
+			filterLCh[c].reset();
+			filterRCh[c].reset();
+		}
 	}
 
 	float getNormalizedParam(int paramId, int inputId) {
@@ -167,12 +170,14 @@ struct Bitcrusher : Module {
 
 	void updateFilterCoefficients(float cutoff, float resonance, float sampleRate, bool isLowpass) {
 		if (cutoff != lastCutoff || resonance != lastResonance || isLowpass != lastIsLowpass) {
-			if (isLowpass) {
-				filterL.setupLowpass(cutoff, resonance, sampleRate);
-				filterR.setupLowpass(cutoff, resonance, sampleRate);
-			} else {
-				filterL.setupHighpass(cutoff, resonance, sampleRate);
-				filterR.setupHighpass(cutoff, resonance, sampleRate);
+			for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
+				if (isLowpass) {
+					filterLCh[c].setupLowpass(cutoff, resonance, sampleRate);
+					filterRCh[c].setupLowpass(cutoff, resonance, sampleRate);
+				} else {
+					filterLCh[c].setupHighpass(cutoff, resonance, sampleRate);
+					filterRCh[c].setupHighpass(cutoff, resonance, sampleRate);
+				}
 			}
 			lastCutoff = cutoff;
 			lastResonance = resonance;
@@ -181,75 +186,75 @@ struct Bitcrusher : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
-		// Input voltages
-		const float leftIn = inputs[AUDIOLEFTIN_INPUT].getVoltage();
-		const float rightIn =
-			inputs[AUDIORIGHTIN_INPUT].isConnected() ? inputs[AUDIORIGHTIN_INPUT].getVoltage() : leftIn;
+		// --- Channel counts: R normalizes from L when disconnected ---
+		const bool rConnected = inputs[AUDIORIGHTIN_INPUT].isConnected();
+		const int nL = inputs[AUDIOLEFTIN_INPUT].getChannels();
+		const int nR = rConnected ? inputs[AUDIORIGHTIN_INPUT].getChannels() : nL;
+		const int n = std::max(nL, nR);
 
-		// Sample rate CV + param normalized
+		outputs[AUDIOLEFTOUT_OUTPUT].setChannels(n);
+		outputs[AUDIORIGHTOUT_OUTPUT].setChannels(n);
+
+		// --- Mono CVs: computed once, shared across all poly channels ---
 		const float srParam = params[SAMPLERATE_PARAM].getValue();
 		const float srCV = inputs[SAMPLERATECVIN_INPUT].isConnected() ?
 							   std::clamp(inputs[SAMPLERATECVIN_INPUT].getVoltage(), -5.f, 5.f) / 10.f :
 							   0.f;
 		const float normSampleRate = std::clamp(srParam + srCV, 0.f, 1.f);
-		const float invSampleRate = 1.f - normSampleRate;
-		const float sampleRateHz = sampleRateMinHz + invSampleRate * (sampleRateMaxHz - sampleRateMinHz);
+		const float sampleRateHz = sampleRateMinHz + (1.f - normSampleRate) * (sampleRateMaxHz - sampleRateMinHz);
 
-		// Sample & hold logic
+		// --- Sample & hold: shared clock, per-channel held values ---
 		const float holdInterval = args.sampleRate / sampleRateHz;
 		sampleHoldPhase += 1.f;
-		if (sampleHoldPhase >= holdInterval) {
+		const bool shouldSample = sampleHoldPhase >= holdInterval;
+		if (shouldSample)
 			sampleHoldPhase -= holdInterval;
-			leftSampleHold = leftIn;
-			rightSampleHold = rightIn;
-		}
 
-		// Bit depth CV
+		// --- Bit depth (mono CV) ---
 		const float bitCV = inputs[BITDEPTHCVIN_INPUT].isConnected() ?
 								clamp(inputs[BITDEPTHCVIN_INPUT].getVoltage(), -5.f, 5.f) / 5.f * 15.f :
 								0.f;
 		const int bitDepth = (int)clamp(15.f - (params[BITDEPTH_PARAM].getValue() + bitCV), 0.f, 15.f);
 
-		// Bitcrush logic (no lambda, fast edge cases)
 		auto bitcrush = [bitDepth](float in) {
 			if (bitDepth >= 15)
 				return in;
-			float norm = std::clamp((in + 5.f) * 0.1f, 0.f, 1.f); // (x + 5) / 10
+			float norm = std::clamp((in + 5.f) * 0.1f, 0.f, 1.f);
 			if (bitDepth <= 0)
 				return norm >= 0.5f ? 5.f : -5.f;
-
 			const float levels = static_cast<float>((1 << bitDepth) - 1);
-			const float quantized = std::round(norm * levels) / levels;
-			return quantized * 10.f - 5.f;
+			return std::round(norm * levels) / levels * 10.f - 5.f;
 		};
 
-		const float crushedL = bitcrush(leftSampleHold);
-		const float crushedR = bitcrush(rightSampleHold);
-
-		// Filter params with CV
+		// --- Filter coefficients (mono CV, updated once per frame) ---
 		const float cutoffNorm = getNormalizedParam(CUTOFF_PARAM, CUTOFFCVIN_INPUT);
 		const float resonance = getNormalizedParam(RESONANCE_PARAM, RESONANCECVIN_INPUT);
 		const float cutoff = cutoffMinHz + cutoffNorm * (cutoffMaxHz - cutoffMinHz);
 		const bool isLowpass = params[FILTERTYPE_PARAM].getValue() < 0.5f;
-
-		// Only update filters if necessary
 		updateFilterCoefficients(cutoff, resonance, args.sampleRate, isLowpass);
 
-		// Filter the crushed signal
-		const float filteredL = filterL.process(crushedL);
-		const float filteredR = filterR.process(crushedR);
-
-		// Dry/Wet and Volume (with CV)
+		// --- Dry/wet and volume (mono CVs) ---
 		const float dryWet = getNormalizedParam(DRY_WET_PARAM, DRY_WETCVIN_INPUT);
 		const float volume = getNormalizedParam(VOLUME_PARAM, VOLUMECVIN_INPUT);
 
-		// Mix dry/wet, apply volume and clamp
-		const float outL = std::clamp(rack::math::crossfade(leftIn, filteredL, dryWet) * volume, -5.f, 5.f);
-		const float outR = std::clamp(rack::math::crossfade(rightIn, filteredR, dryWet) * volume, -5.f, 5.f);
+		// --- Per poly channel ---
+		for (int c = 0; c < n; c++) {
+			float inL = inputs[AUDIOLEFTIN_INPUT].getPolyVoltage(c);
+			float inR = rConnected ? inputs[AUDIORIGHTIN_INPUT].getPolyVoltage(c) : inL;
 
-		// Outputs
-		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(outL);
-		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(outR);
+			if (shouldSample) {
+				leftSampleHold[c] = inL;
+				rightSampleHold[c] = inR;
+			}
+
+			const float filteredL = filterLCh[c].process(bitcrush(leftSampleHold[c]));
+			const float filteredR = filterRCh[c].process(bitcrush(rightSampleHold[c]));
+
+			outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(
+				std::clamp(rack::math::crossfade(inL, filteredL, dryWet) * volume, -5.f, 5.f), c);
+			outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(
+				std::clamp(rack::math::crossfade(inR, filteredR, dryWet) * volume, -5.f, 5.f), c);
+		}
 	}
 };
 

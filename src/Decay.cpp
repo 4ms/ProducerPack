@@ -18,8 +18,8 @@ struct Decay : Module {
 	}
 
 	// --- Cached member variables ---
-	float envelope = 0.f;
-	float lastTrig = 0.f;
+	float envelope[PORT_MAX_CHANNELS] = {};
+	float lastTrig[PORT_MAX_CHANNELS] = {};
 
 	float decayCoeff = 1.f;
 	float maxDecayMs = 200.f;
@@ -32,43 +32,32 @@ struct Decay : Module {
 	bool updateDecay = true;
 
 	void process(const ProcessArgs &args) override {
-		// --- Inputs ---
-		const float trig = inputs[TRIGIN_INPUT].getVoltage();
+		// --- Mono CVs: decay time is shared across all channels ---
 		const bool decayCvConnected = inputs[DECAYCVIN_INPUT].isConnected();
 		const float decayCV = decayCvConnected ? inputs[DECAYCVIN_INPUT].getVoltage() * 0.2f : 0.f;
 		const float decayParam = params[DECAY_PARAM].getValue();
 		const int rangeSelection = (int)params[RANGE_PARAM].getValue();
 
-		// --- Detect RANGE_PARAM change ---
 		if (rangeSelection != cachedRangeSelection) {
 			switch (rangeSelection) {
-				case 0:
-					maxDecayMs = 30.f;
-					break;
-				case 1:
-					maxDecayMs = 200.f;
-					break;
-				case 2:
-					maxDecayMs = 5000.f;
-					break;
+				case 0: maxDecayMs = 30.f; break;
+				case 1: maxDecayMs = 200.f; break;
+				case 2: maxDecayMs = 5000.f; break;
 			}
 			cachedRangeSelection = rangeSelection;
 			updateDecay = true;
 		}
 
-		// --- Detect decayParam or decayCV change ---
 		if (decayParam != cachedDecayParam || decayCV != cachedDecayCV) {
 			cachedDecayParam = decayParam;
 			cachedDecayCV = decayCV;
 			const float newDecayControl = std::clamp(decayParam + decayCV, 0.f, 1.f);
-
 			if (newDecayControl != cachedDecayControl) {
 				cachedDecayControl = newDecayControl;
 				updateDecay = true;
 			}
 		}
 
-		// --- Recompute decay coefficient only when needed ---
 		if (updateDecay) {
 			float decayTimeSec = cachedDecayControl * maxDecayMs * 0.001f;
 			if (decayTimeSec < 0.001f)
@@ -77,28 +66,36 @@ struct Decay : Module {
 			updateDecay = false;
 		}
 
-		// --- Trigger detection ---
-		const bool trigRising = (trig >= 1.f && lastTrig < 1.f);
-		lastTrig = trig;
+		// --- Channel count: max of trig and audio inputs ---
+		const int nTrig = inputs[TRIGIN_INPUT].getChannels();
+		const int nAudio = inputs[AUDIOIN_INPUT].getChannels();
+		const int n = std::max(nTrig, nAudio);
 
-		// --- Envelope processing ---
-		if (trigRising) {
-			envelope = 5.f;
-		} else {
-			envelope *= decayCoeff;
-			if (envelope < 0.001f)
-				envelope = 0.f;
+		outputs[DECAYOUT_OUTPUT].setChannels(n);
+		outputs[AUDIOOUT_OUTPUT].setChannels(n);
+
+		float maxEnv = 0.f;
+
+		for (int c = 0; c < n; c++) {
+			const float trig = inputs[TRIGIN_INPUT].getPolyVoltage(c);
+			const bool trigRising = (trig >= 1.f && lastTrig[c] < 1.f);
+			lastTrig[c] = trig;
+
+			if (trigRising) {
+				envelope[c] = 5.f;
+			} else {
+				envelope[c] *= decayCoeff;
+				if (envelope[c] < 0.001f)
+					envelope[c] = 0.f;
+			}
+
+			outputs[DECAYOUT_OUTPUT].setVoltage(envelope[c], c);
+			outputs[AUDIOOUT_OUTPUT].setVoltage(inputs[AUDIOIN_INPUT].getPolyVoltage(c) * (envelope[c] * 0.2f), c);
+
+			maxEnv = std::max(maxEnv, envelope[c]);
 		}
 
-		outputs[DECAYOUT_OUTPUT].setVoltage(envelope);
-
-		// --- Audio with envelope ---
-		const float audioIn = inputs[AUDIOIN_INPUT].getVoltage();
-		const float audioOut = audioIn * (envelope * 0.2f);
-		outputs[AUDIOOUT_OUTPUT].setVoltage(audioOut);
-
-		// --- LED ---
-		lights[LED_LIGHT].setBrightnessSmooth(envelope, args.sampleTime);
+		lights[LED_LIGHT].setBrightnessSmooth(maxEnv, args.sampleTime);
 	}
 };
 
