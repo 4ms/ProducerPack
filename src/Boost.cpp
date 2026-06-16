@@ -27,28 +27,18 @@ struct Boost : Module {
 	float preVolumeGain = 1.f;
 
 	void process(const ProcessArgs &args) override {
-		// Read parameter values
 		const float gainParam = params[GAIN_PARAM].getValue();
 		const float volume = params[VOLUME_PARAM].getValue();
 		const int rangeSelection = (int)params[RANGE_PARAM].getValue();
 
-		// Update only if parameters have changed
 		if (gainParam != cachedGainParam || rangeSelection != cachedRangeSelection) {
 			float gainMultiplier = 1.f;
 			switch (rangeSelection) {
-				case 1:
-					gainMultiplier = 5.f;
-					break;
-				case 2:
-					gainMultiplier = 100.f;
-					break;
+				case 1: gainMultiplier = 5.f; break;
+				case 2: gainMultiplier = 100.f; break;
 			}
-
-			if (rangeSelection == 0)
-				preVolumeGain = gainParam * gainMultiplier;
-			else
-				preVolumeGain = 1.f + gainParam * (gainMultiplier - 1.f);
-
+			preVolumeGain = (rangeSelection == 0) ? gainParam * gainMultiplier
+												  : 1.f + gainParam * (gainMultiplier - 1.f);
 			cachedGainParam = gainParam;
 			cachedRangeSelection = rangeSelection;
 		}
@@ -56,45 +46,36 @@ struct Boost : Module {
 		if (volume != cachedVolume)
 			cachedVolume = volume;
 
-		const bool leftConnected = inputs[LEFTIN_INPUT].isConnected();
 		const bool rightConnected = inputs[RIGHTIN_INPUT].isConnected();
+		const int nL = inputs[LEFTIN_INPUT].getChannels();
+		const int nR = rightConnected ? inputs[RIGHTIN_INPUT].getChannels() : nL;
+		const int n = std::max(nL, nR);
 
-		float outL = 0.f, outR = 0.f;
-		bool clippingR = false;
+		outputs[LEFTOUT_OUTPUT].setChannels(n);
+		outputs[RIGHTOUT_OUTPUT].setChannels(n);
 
-		if (leftConnected) {
-			const float inL = inputs[LEFTIN_INPUT].getVoltage();
-			const float boostedL = inL * preVolumeGain;
-			const float clippedL = std::clamp(boostedL, -5.f, 5.f);
-			outL = clippedL * cachedVolume;
-			outputs[LEFTOUT_OUTPUT].setVoltage(outL);
+		bool anyClipping = false;
+		float maxOutR = 0.f;
 
-			if (!rightConnected) {
-				const float boostedR = inL * preVolumeGain;
-				clippingR = (boostedR < -5.f || boostedR > 5.f);
-				const float clippedR = std::clamp(boostedR, -5.f, 5.f);
-				outR = clippedR * cachedVolume;
-				outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
-			}
-		} else {
-			outputs[LEFTOUT_OUTPUT].setVoltage(0.f);
-			if (!rightConnected)
-				outputs[RIGHTOUT_OUTPUT].setVoltage(0.f);
-		}
+		for (int c = 0; c < n; c++) {
+			const float inL = inputs[LEFTIN_INPUT].getPolyVoltage(c);
+			const float inR = rightConnected ? inputs[RIGHTIN_INPUT].getPolyVoltage(c) : inL;
 
-		if (rightConnected) {
-			const float inR = inputs[RIGHTIN_INPUT].getVoltage();
+			const float outL = std::clamp(inL * preVolumeGain, -5.f, 5.f) * cachedVolume;
 			const float boostedR = inR * preVolumeGain;
-			clippingR = (boostedR < -5.f || boostedR > 5.f);
-			const float clippedR = std::clamp(boostedR, -5.f, 5.f);
-			outR = clippedR * cachedVolume;
-			outputs[RIGHTOUT_OUTPUT].setVoltage(outR);
+			const float outR = std::clamp(boostedR, -5.f, 5.f) * cachedVolume;
+
+			if (boostedR < -5.f || boostedR > 5.f)
+				anyClipping = true;
+			maxOutR = std::max(maxOutR, std::fabs(outR));
+
+			outputs[LEFTOUT_OUTPUT].setVoltage(outL, c);
+			outputs[RIGHTOUT_OUTPUT].setVoltage(outR, c);
 		}
 
-		// LED lights
-		const float brightnessR = std::clamp(fabsf(outR) * 0.2f, 0.f, 1.f);
-		lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(clippingR ? brightnessR : 0.f, args.sampleTime);
-		lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(clippingR ? 0.f : brightnessR, args.sampleTime);
+		const float brightnessR = std::clamp(maxOutR * 0.2f, 0.f, 1.f);
+		lights[RIGHTLEDRED_LIGHT].setBrightnessSmooth(anyClipping ? brightnessR : 0.f, args.sampleTime);
+		lights[RIGHTLEDGREEN_LIGHT].setBrightnessSmooth(anyClipping ? 0.f : brightnessR, args.sampleTime);
 	}
 };
 
