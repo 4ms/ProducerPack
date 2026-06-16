@@ -60,8 +60,8 @@ struct Spatializer : Module {
 		configBypass(INR_INPUT, OUTR_OUTPUT);
 	}
 	static const int maxDelaySamples = 2880;
-	float delayBufferL[maxDelaySamples] = {};
-	float delayBufferR[maxDelaySamples] = {};
+	float delayBufferL[PORT_MAX_CHANNELS][maxDelaySamples] = {};
+	float delayBufferR[PORT_MAX_CHANNELS][maxDelaySamples] = {};
 	int delayIndex = 0;
 
 	float slewedTime = 0.f;
@@ -84,114 +84,123 @@ struct Spatializer : Module {
 
 	void process(const ProcessArgs &args) override {
 		const float sampleRate = args.sampleRate;
-	
-		// --- Inputs ---
-		const float inL = inputs[INL_INPUT].getVoltage();
+
+		// --- Channel counts: INR normalizes from INL when disconnected ---
 		const bool stereoIn = inputs[INR_INPUT].isConnected();
-		const float inR = stereoIn ? inputs[INR_INPUT].getVoltage() : inL;
-	
-		// --- Update params/CVs ---
+		const int nL = inputs[INL_INPUT].getChannels();
+		const int nR = stereoIn ? inputs[INR_INPUT].getChannels() : nL;
+		const int n = std::max(nL, nR);
+
+		outputs[SENDL_OUTPUT].setChannels(n);
+		outputs[SENDM_OUTPUT].setChannels(n);
+		outputs[SENDR_OUTPUT].setChannels(n);
+		outputs[OUTL_OUTPUT].setChannels(n);
+		outputs[OUTR_OUTPUT].setChannels(n);
+
+		// --- Update params/CVs (mono CVs, shared across all channels) ---
 		float targetTime = params[TIME_PARAM].getValue() + inputs[TIMECV_INPUT].getVoltage() * 0.1f;
 		targetTime = std::clamp(targetTime, 0.f, 1.f);
-	
+
 		if (targetTime != cachedTime || params[RANGE_PARAM].getValue() != cachedRange) {
 			cachedTime = targetTime;
 			cachedRange = params[RANGE_PARAM].getValue();
 			useMilliseconds = cachedRange < 0.5f;
-	
+
 			if (useMilliseconds)
 				delaySamples = std::clamp(
 					(int)(rescale(slewedTime, 0.f, 1.f, 1.f, 30.f) * sampleRate * 0.001f), 1, maxDelaySamples - 1);
 			else
 				delaySamples = std::clamp((int)(rescale(slewedTime, 0.f, 1.f, 1.f, 50.f)), 1, maxDelaySamples - 1);
 		}
-	
+
 		float newWidth =
 			std::clamp(params[WIDTH_PARAM].getValue() + inputs[WIDTHCV_INPUT].getVoltage() * 0.1f, 0.f, 1.f);
 		if (newWidth != cachedWidth) {
 			cachedWidth = newWidth;
 			width = cachedWidth;
 		}
-	
-		// --- M/S knob ---
+
 		mix = std::clamp(params[MIDSIDE_PARAM].getValue() + inputs[MIDSIDECV_INPUT].getVoltage() * 0.1f, 0.f, 1.f);
-	
-		// --- Slew time ---
+
+		// --- Slew time (shared) ---
 		slewedTime += (targetTime - slewedTime) * timeSlewRate;
-	
-		// --- Delay ---
-		delayBufferL[delayIndex] = inL;
-		delayBufferR[delayIndex] = stereoIn ? inR : inL;
-	
+
+		// --- Write all channels into delay buffers, then advance the shared index ---
+		for (int c = 0; c < n; c++) {
+			float inL = inputs[INL_INPUT].getPolyVoltage(c);
+			delayBufferL[c][delayIndex] = inL;
+			delayBufferR[c][delayIndex] = stereoIn ? inputs[INR_INPUT].getPolyVoltage(c) : inL;
+		}
+
 		int readIndex = delayIndex - delaySamples;
 		if (readIndex < 0)
 			readIndex += maxDelaySamples;
 		delayIndex = (delayIndex + 1) % maxDelaySamples;
-	
-		const float delayedL = delayBufferL[readIndex];
-		const float delayedR = -delayBufferR[readIndex];
-	
-		// --- Spatial panning ---
-		float wetL, wetR;
-		if (stereoIn) {
-			const float panWidth = (width <= 0.5f) ? (width * 2.f) : 1.f;
-			const float center = 0.5f * (1.f - panWidth);
-			wetL = delayedL * (center + panWidth) + delayedR * center;
-			wetR = delayedR * (center + panWidth) + delayedL * center;
-		} else {
-			const float centerAmt = 1.f - width;
-			const float sideAmt = width;
-			const float blend = 0.5f * centerAmt + sideAmt;
-			wetL = delayedL * blend;
-			wetR = delayedR * blend;
-		}
-	
-		// --- Sends: pure patch points ---
-		outputs[SENDL_OUTPUT].setVoltage(wetL);
-		outputs[SENDR_OUTPUT].setVoltage(wetR);
-		outputs[SENDM_OUTPUT].setVoltage((inL + inR) * 0.5f);
-	
-// --- Returns: patch points override defaults ---
-const float returnL = inputs[RETURNL_INPUT].isConnected() ? inputs[RETURNL_INPUT].getVoltage() : wetL;
-const float returnR = inputs[RETURNR_INPUT].isConnected() ? inputs[RETURNR_INPUT].getVoltage() : wetR;
-const float defaultMid = (inL + inR) * 0.5f;  // dry sum
-const float returnM = inputs[RETURNM_INPUT].isConnected() ? inputs[RETURNM_INPUT].getVoltage() : defaultMid;
 
-// --- Main outputs: M/S crossfader applied to returns ---
-float outL, outR;
-if (!stereoIn) {
-    // MONO MODE: mid is sum of inputs or patched mid, sides are wet or patched returns
-    const float midMono = returnM;     // sum of inputs overridden by RETURNM
-    const float sideL = returnL;       // wet or RETURNL
-    const float sideR = returnR;       // wet or RETURNR
-    outL = crossfade(midMono, sideL, mix);
-    outR = crossfade(midMono, sideR, mix);
-} else {
-    // STEREO MODE: mix mid/side of returns
-    const float mid = returnM;  
-    const float side = (returnL - returnR) * 0.5f;
-    const float newMid = crossfade(mid, 0.f, mix);
-    const float newSide = crossfade(0.f, side, mix);
-    outL = newMid + newSide;
-    outR = newMid - newSide;
-}
-	
-		outputs[OUTL_OUTPUT].setVoltage(outL);
-		outputs[OUTR_OUTPUT].setVoltage(outR);
-	
-		// --- LED metering ---
+		// --- Per-channel spatial processing ---
+		const bool returnLConn = inputs[RETURNL_INPUT].isConnected();
+		const bool returnMConn = inputs[RETURNM_INPUT].isConnected();
+		const bool returnRConn = inputs[RETURNR_INPUT].isConnected();
+
+		float maxOutL = 0.f, maxOutR = 0.f, maxOutM = 0.f;
+
+		for (int c = 0; c < n; c++) {
+			const float inL = inputs[INL_INPUT].getPolyVoltage(c);
+			const float inR = stereoIn ? inputs[INR_INPUT].getPolyVoltage(c) : inL;
+
+			const float delayedL = delayBufferL[c][readIndex];
+			const float delayedR = -delayBufferR[c][readIndex];
+
+			// --- Spatial panning ---
+			float wetL, wetR;
+			if (stereoIn) {
+				const float panWidth = (width <= 0.5f) ? (width * 2.f) : 1.f;
+				const float center = 0.5f * (1.f - panWidth);
+				wetL = delayedL * (center + panWidth) + delayedR * center;
+				wetR = delayedR * (center + panWidth) + delayedL * center;
+			} else {
+				const float blend = 0.5f * (1.f - width) + width;
+				wetL = delayedL * blend;
+				wetR = delayedR * blend;
+			}
+
+			outputs[SENDL_OUTPUT].setVoltage(wetL, c);
+			outputs[SENDM_OUTPUT].setVoltage((inL + inR) * 0.5f, c);
+			outputs[SENDR_OUTPUT].setVoltage(wetR, c);
+
+			// --- Returns: patch points override defaults ---
+			const float returnL = returnLConn ? inputs[RETURNL_INPUT].getPolyVoltage(c) : wetL;
+			const float returnR = returnRConn ? inputs[RETURNR_INPUT].getPolyVoltage(c) : wetR;
+			const float returnM = returnMConn ? inputs[RETURNM_INPUT].getPolyVoltage(c) : (inL + inR) * 0.5f;
+
+			// --- Main outputs: M/S crossfader applied to returns ---
+			float outL, outR;
+			if (!stereoIn) {
+				outL = crossfade(returnM, returnL, mix);
+				outR = crossfade(returnM, returnR, mix);
+			} else {
+				const float side = (returnL - returnR) * 0.5f;
+				outL = crossfade(returnM, 0.f, mix) + crossfade(0.f, side, mix);
+				outR = crossfade(returnM, 0.f, mix) - crossfade(0.f, side, mix);
+			}
+
+			outputs[OUTL_OUTPUT].setVoltage(outL, c);
+			outputs[OUTR_OUTPUT].setVoltage(outR, c);
+
+			maxOutL = std::max(maxOutL, std::fabs(outL));
+			maxOutR = std::max(maxOutR, std::fabs(outR));
+			maxOutM = std::max(maxOutM, std::fabs((outL + outR) * 0.5f));
+		}
+
+		// --- LED metering (max across all channels) ---
 		const float ledScale = 0.2f;
-		const float leftSignal = fabsf(outL) * ledScale;
-		const float rightSignal = fabsf(outR) * ledScale;
-		const float midSignalLevel = fabsf((outL + outR) * 0.5f) * ledScale;
-	
 		const float midLedBrightness = (1.f - mix) * 2.f;
 		const float sideLedBrightness = mix * 2.f;
-	
-		lights[LEDM_LIGHT].setBrightnessSmooth(midSignalLevel * midLedBrightness, args.sampleTime);
-		lights[LEDL_LIGHT].setBrightnessSmooth(leftSignal * sideLedBrightness, args.sampleTime);
-		lights[LEDR_LIGHT].setBrightnessSmooth(rightSignal * sideLedBrightness, args.sampleTime);
-	}	
+
+		lights[LEDM_LIGHT].setBrightnessSmooth(maxOutM * ledScale * midLedBrightness, args.sampleTime);
+		lights[LEDL_LIGHT].setBrightnessSmooth(maxOutL * ledScale * sideLedBrightness, args.sampleTime);
+		lights[LEDR_LIGHT].setBrightnessSmooth(maxOutR * ledScale * sideLedBrightness, args.sampleTime);
+	}
 };
 
 struct SpatializerWidget : ModuleWidget {
