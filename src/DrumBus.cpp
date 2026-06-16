@@ -105,66 +105,68 @@ struct DrumBus : Module {
 	bool chEnabled[8] = {};
 
 	void process(const ProcessArgs &args) override {
-		float leftMix = 0.f;
-		float rightMix = 0.f;
-
-		// --- Master volume ---
-		const float masterVol = params[MASTERVOL_PARAM].getValue();
-		if (masterVol <= 0.f) {
-			outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(0.f);
-			outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(0.f);
-			return;
-		}
-		cachedMasterVol = masterVol;
-
-		// --- Process each channel ---
+		// --- Update channel gains and find max poly count across all inputs ---
+		int n = 0;
 		for (int ch = 0; ch < 8; ++ch) {
-			const int baseParam = CH1VOL_PARAM + ch * 3;
 			const int inputId = CH1IN_INPUT + ch;
-
 			if (!inputs[inputId].isConnected())
 				continue;
 
+			n = std::max(n, inputs[inputId].getChannels());
+
+			const int baseParam = CH1VOL_PARAM + ch * 3;
 			const float vol = params[baseParam].getValue();
 			const float pan = params[baseParam + 1].getValue();
 			const float mute = params[baseParam + 2].getValue();
 
-			bool changed = false;
 			if (vol != cachedVol[ch] || pan != cachedPan[ch] || mute != cachedMute[ch]) {
 				cachedVol[ch] = vol;
 				cachedPan[ch] = pan;
 				cachedMute[ch] = mute;
-				changed = true;
-			}
 
-			// --- Update gains only if params changed ---
-			if (changed) {
 				if (mute > 0.5f || vol <= 0.f) {
 					chEnabled[ch] = false;
 				} else {
 					chEnabled[ch] = true;
-					const float panNorm = pan * 0.01f + 0.5f; // -50 → 0, +50 → 1
+					const float panNorm = pan * 0.01f + 0.5f;
 					const float panAngle = panNorm * (float)M_PI_2;
 					chLeftGain[ch] = Cos(panAngle);
 					chRightGain[ch] = Sin(panAngle);
 				}
 			}
-
-			if (!chEnabled[ch])
-				continue;
-
-			const float in = inputs[inputId].getVoltage();
-			const float scaledIn = in * cachedVol[ch];
-			leftMix += scaledIn * chLeftGain[ch];
-			rightMix += scaledIn * chRightGain[ch];
 		}
 
-		// --- Apply master volume ---
-		leftMix *= cachedMasterVol;
-		rightMix *= cachedMasterVol;
+		outputs[AUDIOLEFTOUT_OUTPUT].setChannels(n);
+		outputs[AUDIORIGHTOUT_OUTPUT].setChannels(n);
 
-		outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(std::clamp(leftMix, -10.f, 10.f));
-		outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(std::clamp(rightMix, -10.f, 10.f));
+		// --- Master volume ---
+		const float masterVol = params[MASTERVOL_PARAM].getValue();
+		if (masterVol <= 0.f) {
+			for (int c = 0; c < n; c++) {
+				outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(0.f, c);
+				outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(0.f, c);
+			}
+			return;
+		}
+		cachedMasterVol = masterVol;
+
+		// --- Outer loop: poly voice index; inner loop: mixer channels ---
+		for (int c = 0; c < n; c++) {
+			float leftMix = 0.f, rightMix = 0.f;
+
+			for (int ch = 0; ch < 8; ++ch) {
+				if (!inputs[CH1IN_INPUT + ch].isConnected() || !chEnabled[ch])
+					continue;
+
+				const float in = inputs[CH1IN_INPUT + ch].getPolyVoltage(c);
+				const float scaledIn = in * cachedVol[ch];
+				leftMix += scaledIn * chLeftGain[ch];
+				rightMix += scaledIn * chRightGain[ch];
+			}
+
+			outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(std::clamp(leftMix * cachedMasterVol, -10.f, 10.f), c);
+			outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(std::clamp(rightMix * cachedMasterVol, -10.f, 10.f), c);
+		}
 	}
 };
 
