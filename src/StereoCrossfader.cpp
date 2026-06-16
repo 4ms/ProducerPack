@@ -22,40 +22,55 @@ struct StereoCrossfader : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
-		// --- Read CV input ---
+		// --- Mix CV (mono — single position controls all channels) ---
 		float mixCV = inputs[MIXCV_INPUT].getVoltage();
 
-		// --- Update mix param only if changed ---
 		float newMixParam = params[MIX_PARAM].getValue();
 		if (newMixParam != cachedMixParam || mixCV != cachedMixCV) {
 			cachedMixParam = newMixParam;
 			cachedMixCV = mixCV;
 
 			float offset = rescale(cachedMixParam, 0.f, 1.f, -5.f, 5.f);
-			float sum = offset + cachedMixCV;
-			float clamped = std::clamp(sum, -5.f, 5.f);
+			float clamped = std::clamp(offset + cachedMixCV, -5.f, 5.f);
 			mix = rescale(clamped, -5.f, 5.f, 0.f, 1.f);
 
-			// Need to recompute gains when mix changes
 			updateMixShapeDependent();
 		}
 
-		// --- Update shape param only if changed ---
 		float newShape = params[SHAPE_PARAM].getValue();
 		if (newShape != cachedShape) {
 			cachedShape = newShape;
 			updateMixShapeDependent();
 		}
 
-		// --- Inputs ---
-		float aL = inputs[INAL_INPUT].getVoltage();
-		float aR = inputs[INAR_INPUT].isConnected() ? inputs[INAR_INPUT].getVoltage() : aL;
-		float bL = inputs[INBL_INPUT].getVoltage();
-		float bR = inputs[INBR_INPUT].isConnected() ? inputs[INBR_INPUT].getVoltage() : bL;
+		// --- Channel counts: AR normalizes from AL, BR normalizes from BL ---
+		bool arConnected = inputs[INAR_INPUT].isConnected();
+		bool brConnected = inputs[INBR_INPUT].isConnected();
 
-		// --- Outputs ---
-		outputs[OUTL_OUTPUT].setVoltage(gainA * aL + gainB * bL);
-		outputs[OUTR_OUTPUT].setVoltage(gainA * aR + gainB * bR);
+		int nAL = inputs[INAL_INPUT].getChannels();
+		int nAR = arConnected ? inputs[INAR_INPUT].getChannels() : nAL;
+		int nBL = inputs[INBL_INPUT].getChannels();
+		int nBR = brConnected ? inputs[INBR_INPUT].getChannels() : nBL;
+
+		int nL = std::max(nAL, nBL);
+		int nR = std::max(nAR, nBR);
+
+		outputs[OUTL_OUTPUT].setChannels(nL);
+		outputs[OUTR_OUTPUT].setChannels(nR);
+
+		// --- Left channels ---
+		for (int c = 0; c < nL; c++) {
+			float aL = inputs[INAL_INPUT].getPolyVoltage(c);
+			float bL = inputs[INBL_INPUT].getPolyVoltage(c);
+			outputs[OUTL_OUTPUT].setVoltage(gainA * aL + gainB * bL, c);
+		}
+
+		// --- Right channels (AR normalizes from AL per-channel, BR from BL) ---
+		for (int c = 0; c < nR; c++) {
+			float aR = arConnected ? inputs[INAR_INPUT].getPolyVoltage(c) : inputs[INAL_INPUT].getPolyVoltage(c);
+			float bR = brConnected ? inputs[INBR_INPUT].getPolyVoltage(c) : inputs[INBL_INPUT].getPolyVoltage(c);
+			outputs[OUTR_OUTPUT].setVoltage(gainA * aR + gainB * bR, c);
+		}
 	}
 
 	// Called when either shape or mix changes
