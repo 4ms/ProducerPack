@@ -94,7 +94,8 @@ struct DJFilter : Module {
 		}
 	};
 
-	SVF svfL[4], svfR[4];
+	SVF svfL[PORT_MAX_CHANNELS][4];
+	SVF svfR[PORT_MAX_CHANNELS][4];
 
 	const float log2_20 = Log2(20.f);
 	const float log2_300 = Log2(300.f);
@@ -108,14 +109,18 @@ struct DJFilter : Module {
 	float finalFreq = 300.f;
 
 	void process(const ProcessArgs &args) override {
+		// --- Channel counts: R normalizes from L when disconnected ---
+		const bool rConnected = inputs[INR_INPUT].isConnected();
+		const int nL = inputs[INL_INPUT].getChannels();
+		const int nR = rConnected ? inputs[INR_INPUT].getChannels() : nL;
+		const int n = std::max(nL, nR);
 
-		// Cache inputs
-		float inL = inputs[INL_INPUT].getVoltage();
-		float inR = inputs[INR_INPUT].isConnected() ? inputs[INR_INPUT].getVoltage() : inL;
+		outputs[OUT_L_OUTPUT].setChannels(n);
+		outputs[OUT_R_OUTPUT].setChannels(n);
 
-		// Parameters + CV (cutoff and resonance)
+		// --- Mono CVs: cutoff, resonance, slope shared across all channels ---
 		float cutoffVal = params[CUTOFF_PARAM].getValue();
-		float cutoffCV = inputs[CUTOFFCV_INPUT].isConnected() ? inputs[CUTOFFCV_INPUT].getVoltage() * 0.1f : 0.f; // /10
+		float cutoffCV = inputs[CUTOFFCV_INPUT].isConnected() ? inputs[CUTOFFCV_INPUT].getVoltage() * 0.1f : 0.f;
 		float morph = std::clamp(cutoffVal + cutoffCV, 0.f, 1.f);
 
 		float resVal = params[RESONANCE_PARAM].getValue();
@@ -124,20 +129,19 @@ struct DJFilter : Module {
 
 		int stages = std::clamp((int)params[SLOPE_PARAM].getValue(), 1, 4);
 
-		float cutoffHz;
-
 		if (morph != lastMorph || args.sampleRate != lastSampleRate) {
 			lastMorph = morph;
 
 			if (args.sampleRate != lastSampleRate) {
-				for (int i = 0; i < 4; ++i) {
-					svfL[i] = {};
-					svfR[i] = {};
-				}
+				for (int c = 0; c < PORT_MAX_CHANNELS; ++c)
+					for (int i = 0; i < 4; ++i) {
+						svfL[c][i] = {};
+						svfR[c][i] = {};
+					}
+				lastSampleRate = args.sampleRate;
 			}
 
-			lastSampleRate = args.sampleRate;
-
+			float cutoffHz;
 			if (morph < 0.5f) {
 				float t = morph * 2.f;
 				cutoffHz = Pow2(rescale(t, 0.f, 1.f, log2_20, log2_7000));
@@ -146,65 +150,34 @@ struct DJFilter : Module {
 				cutoffHz = Pow2(rescale(t, 0.f, 1.f, log2_300, log2_7000));
 			}
 
-			float nyquist = 0.5f * args.sampleRate;
-			float safeCutoff = std::min(cutoffHz, nyquist * 0.49f);
-
+			float safeCutoff = std::min(cutoffHz, 0.5f * args.sampleRate * 0.49f);
 			finalFreq = 2.f * Sin(M_PI * safeCutoff / args.sampleRate);
 
 			// CRITICAL: SVF stability clamp (cascade-aware)
 			float maxF = (stages >= 4) ? 0.55f :
 			             (stages == 3) ? 0.65f :
-			             (stages == 2) ? 0.75f :
-			                             0.95f;
-
+			             (stages == 2) ? 0.75f : 0.95f;
 			finalFreq = std::min(finalFreq, maxF);
 
 			if (!std::isfinite(finalFreq) || finalFreq <= 0.f) {
 				finalFreq = 0.f;
-				for (int i = 0; i < 4; ++i) {
-					svfL[i] = {};
-					svfR[i] = {};
-				}
+				for (int c = 0; c < PORT_MAX_CHANNELS; ++c)
+					for (int i = 0; i < 4; ++i) {
+						svfL[c][i] = {};
+						svfR[c][i] = {};
+					}
 			}
 		}
 
 		float q = rescale(resonanceParam, 0.f, 1.f, 0.707f, 3.f);
 		float damp = 1.f / q;
 
-		// Dry input saved for mix
-		float dryL = inL;
-		float dryR = inR;
-
-		float inL_stage = inL;
-		float inR_stage = inR;
-		
-		for (int i = 0; i < stages; ++i) {
-			SVF &sL = svfL[i];
-			SVF &sR = svfR[i];
-		
-			// Left channel
-			sL.high = inL_stage - sL.low - damp * sL.band;
-			sL.band += finalFreq * sL.high;
-			sL.low += finalFreq * sL.band;
-			inL_stage = sL.high;    // <-- cascade HIGH output
-		
-			// Right channel
-			sR.high = inR_stage - sR.low - damp * sR.band;
-			sR.band += finalFreq * sR.high;
-			sR.low += finalFreq * sR.band;
-			inR_stage = sR.high;    // <-- cascade HIGH output
-		}
-		
-
-		// Mix logic
+		// --- Mix amounts (depend only on morph, computed once) ---
 		const float fadeWidth = 0.02f;
 		const float dryStart = 0.45f;
 		const float dryEnd = 0.55f;
 
-		float lowMix = 0.f;
-		float dryMix = 0.f;
-		float highMix = 0.f;
-
+		float lowMix = 0.f, dryMix = 0.f, highMix = 0.f;
 		if (morph <= dryStart - fadeWidth) {
 			lowMix = 1.f;
 		} else if (morph < dryStart + fadeWidth) {
@@ -221,16 +194,38 @@ struct DJFilter : Module {
 			highMix = 1.f;
 		}
 
-		// Output mixing
-		SVF &sL = svfL[stages - 1];
-		SVF &sR = svfR[stages - 1];
-		
-		float outL = sL.low * lowMix + dryL * dryMix + sL.high * highMix;
-		float outR = sR.low * lowMix + dryR * dryMix + sR.high * highMix;
-		
+		// --- Per poly channel ---
+		for (int c = 0; c < n; c++) {
+			float inL = inputs[INL_INPUT].getPolyVoltage(c);
+			float inR = rConnected ? inputs[INR_INPUT].getPolyVoltage(c) : inL;
 
-		outputs[OUT_L_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f));
-		outputs[OUT_R_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f));
+			float inL_stage = inL;
+			float inR_stage = inR;
+
+			for (int i = 0; i < stages; ++i) {
+				SVF &sL = svfL[c][i];
+				SVF &sR = svfR[c][i];
+
+				sL.high = inL_stage - sL.low - damp * sL.band;
+				sL.band += finalFreq * sL.high;
+				sL.low += finalFreq * sL.band;
+				inL_stage = sL.high;
+
+				sR.high = inR_stage - sR.low - damp * sR.band;
+				sR.band += finalFreq * sR.high;
+				sR.low += finalFreq * sR.band;
+				inR_stage = sR.high;
+			}
+
+			SVF &sL = svfL[c][stages - 1];
+			SVF &sR = svfR[c][stages - 1];
+
+			float outL = sL.low * lowMix + inL * dryMix + sL.high * highMix;
+			float outR = sR.low * lowMix + inR * dryMix + sR.high * highMix;
+
+			outputs[OUT_L_OUTPUT].setVoltage(clamp(outL, -10.f, 10.f), c);
+			outputs[OUT_R_OUTPUT].setVoltage(clamp(outR, -10.f, 10.f), c);
+		}
 	}
 };
 
