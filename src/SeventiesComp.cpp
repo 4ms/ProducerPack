@@ -32,13 +32,22 @@ struct SeventiesComp : Module {
 		Mapping::LookupTable_t<64, float>::generate<Pow10TableRange>([](float x) { return std::pow(10.f, x); });
 
 	void process(const ProcessArgs &args) override {
-		const float inL = inputs[AUDIO_L_INPUT].getVoltage();
-		const float inR = inputs[AUDIO_R_INPUT].isConnected() ? inputs[AUDIO_R_INPUT].getVoltage() : inL;
+		const bool rConnected = inputs[AUDIO_R_INPUT].isConnected();
+		const int nL = inputs[AUDIO_L_INPUT].getChannels();
+		const int nR = rConnected ? inputs[AUDIO_R_INPUT].getChannels() : nL;
+		const int n = std::max(nL, nR);
+
+		outputs[AUDIO_L_OUTPUT].setChannels(n);
+		outputs[AUDIO_R_OUTPUT].setChannels(n);
 
 		const bool bypass = params[BYPASS_PARAM].getValue() > 0.5f;
 		if (bypass) {
-			outputs[AUDIO_L_OUTPUT].setVoltage(inL);
-			outputs[AUDIO_R_OUTPUT].setVoltage(inR);
+			for (int c = 0; c < n; c++) {
+				float il = inputs[AUDIO_L_INPUT].getPolyVoltage(c);
+				float ir = rConnected ? inputs[AUDIO_R_INPUT].getPolyVoltage(c) : il;
+				outputs[AUDIO_L_OUTPUT].setVoltage(il, c);
+				outputs[AUDIO_R_OUTPUT].setVoltage(ir, c);
+			}
 			lights[CLIPLED_LIGHT].setBrightness(0.f);
 			return;
 		}
@@ -65,42 +74,49 @@ struct SeventiesComp : Module {
 			ratio = isLimiter ? 10.f : 3.f;
 		}
 
-		// --- Envelope follower ---
-		const float inputMono = 0.5f * (inL + inR);
-		const float rectified = std::fabs(inputMono);
-
 		const float coeffAtk = attackCoeff(args.sampleRate);
 		const float coeffRelFast = releaseFastCoeff(args.sampleRate);
 		const float coeffRelSlow = releaseSlowCoeff(args.sampleRate);
-		const float releaseCoeff = (env > 0.1f) ? coeffRelFast : coeffRelSlow;
 
-		env = (rectified > env) ? coeffAtk * env + (1.f - coeffAtk) * rectified :
-								  releaseCoeff * env + (1.f - releaseCoeff) * rectified;
+		bool anyClipping = false;
 
-		// --- Gain reduction ---
-		float gainReduction = 1.f;
-		if (env > threshold) {
-			const float over = env - threshold;
-			gainReduction = 1.f / (1.f + over * (ratio - 1.f));
+		for (int c = 0; c < n; c++) {
+			float inL = inputs[AUDIO_L_INPUT].getPolyVoltage(c);
+			float inR = rConnected ? inputs[AUDIO_R_INPUT].getPolyVoltage(c) : inL;
+
+			// --- Envelope follower (per channel pair, sidechain is stereo average) ---
+			const float rectified = std::fabs(0.5f * (inL + inR));
+			const float releaseCoeff = (env[c] > 0.1f) ? coeffRelFast : coeffRelSlow;
+			env[c] = (rectified > env[c]) ? coeffAtk * env[c] + (1.f - coeffAtk) * rectified
+										  : releaseCoeff * env[c] + (1.f - releaseCoeff) * rectified;
+
+			// --- Gain reduction ---
+			float gainReduction = 1.f;
+			if (env[c] > threshold) {
+				const float over = env[c] - threshold;
+				gainReduction = 1.f / (1.f + over * (ratio - 1.f));
+			}
+
+			// --- Apply gain & dry/wet ---
+			float outL = inL * (1.f - dryWet) + inL * gainReduction * gain * dryWet;
+			float outR = inR * (1.f - dryWet) + inR * gainReduction * gain * dryWet;
+
+			outL = std::clamp(outL, -10.f, 10.f);
+			outR = std::clamp(outR, -10.f, 10.f);
+
+			outputs[AUDIO_L_OUTPUT].setVoltage(outL, c);
+			outputs[AUDIO_R_OUTPUT].setVoltage(outR, c);
+
+			if (std::fabs(outL) >= 9.9f || std::fabs(outR) >= 9.9f)
+				anyClipping = true;
 		}
 
-		// --- Apply gain & dry/wet ---
-		float outL = inL * (1.f - dryWet) + inL * gainReduction * gain * dryWet;
-		float outR = inR * (1.f - dryWet) + inR * gainReduction * gain * dryWet;
-
-		outL = std::clamp(outL, -10.f, 10.f);
-		outR = std::clamp(outR, -10.f, 10.f);
-
-		outputs[AUDIO_L_OUTPUT].setVoltage(outL);
-		outputs[AUDIO_R_OUTPUT].setVoltage(outR);
-
-		const bool clipping = (std::fabs(outL) >= 9.9f || std::fabs(outR) >= 9.9f);
-		lights[CLIPLED_LIGHT].setBrightnessSmooth(clipping ? 1.f : 0.f, args.sampleTime);
+		lights[CLIPLED_LIGHT].setBrightnessSmooth(anyClipping ? 1.f : 0.f, args.sampleTime);
 	}
 
 private:
 	// --- Member variables for caching ---
-	float env = 0.f;
+	float env[PORT_MAX_CHANNELS] = {};
 
 	float prevPeakReduction = 0.f;
 	float prevGain = 0.f;
