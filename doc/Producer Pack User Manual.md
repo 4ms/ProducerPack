@@ -12,7 +12,7 @@ Use this document to understand the behavior, controls, and design inspirations 
 
 ## Polyphonic (Poly) Jacks
 
-All audio jacks in the Producer Pack are polyphonic. A single poly cable can carry up to **16 independent channels** simultaneously, allowing you to process all voices of a polyphonic synthesizer through a single module instance.
+All audio jacks in the Producer Pack are polyphonic. A single poly cable can carry up to **16 independent channels** simultaneously in VCV Rack. On **MetaModule, polyphony is limited to 4 voices**.
 
 ### How channel count is determined
 
