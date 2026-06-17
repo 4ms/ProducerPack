@@ -9,6 +9,28 @@ Use this document to understand the behavior, controls, and design inspirations 
 **All CV inputs are bipolar and clamped to 10vpp. Each knob functions as a 10vpp offset. Unless otherwise noted,   gate inputs are conditioned to have rising edge trigger detection and ignore pulse width.**
 
 ---
+
+## Polyphonic (Poly) Jacks
+
+All audio jacks in the Producer Pack are polyphonic. A single poly cable can carry up to **16 independent channels** simultaneously, allowing you to process all voices of a polyphonic synthesizer through a single module instance.
+
+### How channel count is determined
+
+Each module sets its output channel count to the **maximum number of channels found across all connected audio inputs**. For example, if you plug a 4-voice poly cable into the left input and an 8-voice poly cable into the right input, all outputs will carry 8 channels.
+
+### CV inputs are mono
+
+CV inputs (cutoff, resonance, decay, width, etc.) are always **single-channel**. The same CV value is applied uniformly to all polyphonic voices. There is no per-voice CV modulation.
+
+### Right-channel normalization
+
+When a module's right audio input is unconnected, the left input signal is used for both channels — this normalization applies independently to each polyphonic voice.
+
+### DrumBus poly behavior
+
+DrumBus treats polyphony across its 8 mixer channels: the output channel count is the maximum number of channels among all connected channel inputs. For each poly voice, all 8 mixer channels are summed together before being written to that voice in the output. This means each poly voice gets its own independent stereo mix of all channels.
+
+---
 ![70sComp](https://github.com/4ms/ProducerPack/blob/main/doc/70sComp.png) 
 
 ## 70sComp - Stereo Optical Compressor 
