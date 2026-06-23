@@ -97,7 +97,7 @@ struct AuxSends : Module {
 		configOutput(AUDIORIGHTOUT_OUTPUT, "Audio Right");
 
 		configBypass(AUDIOLEFTIN_INPUT, AUDIOLEFTOUT_OUTPUT);
-		configBypass(AUDIOLEFTIN_INPUT, AUDIORIGHTOUT_OUTPUT);
+		configBypass(AUDIORIGHTIN_INPUT, AUDIORIGHTOUT_OUTPUT);
 	}
 
 	void process(const ProcessArgs &args) override {
