@@ -1,6 +1,6 @@
 # Changelog 
 
-## v2.2.0
+## v2.0.2
 
 - Add Bypass to most modules
 
