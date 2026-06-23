@@ -19,6 +19,8 @@ struct StereoCrossfader : Module {
 		configOutput(OUTL_OUTPUT, "Audio Left");
 		configOutput(OUTR_OUTPUT, "Audio Right");
 
+		configBypass(INAL_INPUT, OUTL_OUTPUT);
+		configBypass(INAR_INPUT, OUTR_OUTPUT);
 	}
 
 	void process(const ProcessArgs &args) override {
