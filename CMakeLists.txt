@@ -12,15 +12,15 @@ endif()
 
 include(${METAMODULE_SDK_DIR}/plugin.cmake)
 
-project(4ms-ProducerPack VERSION 0.2 DESCRIPTION "4ms-ProducerPack for MetaModule" LANGUAGES C CXX ASM)
+project(ProducerPack VERSION 0.2 DESCRIPTION "4ms-ProducerPack for MetaModule" LANGUAGES C CXX ASM)
 
-add_library(4ms-ProducerPack STATIC)
+add_library(ProducerPack STATIC)
 
 # Add sources from the Rack source repo
 set(SOURCE_DIR .)
 
 target_sources(
-    4ms-ProducerPack
+    ProducerPack
     PRIVATE ${SOURCE_DIR}/src/DJFilter.cpp
             ${SOURCE_DIR}/src/Boost.cpp
             ${SOURCE_DIR}/src/Spatializer.cpp
@@ -38,7 +38,7 @@ target_sources(
 )
 
 # Add includes and compile options for source repo
-target_include_directories(4ms-ProducerPack PRIVATE ${SOURCE_DIR}/src)
+target_include_directories(ProducerPack PRIVATE ${SOURCE_DIR}/src)
 
 if("${INSTALL_DIR}" STREQUAL "")
     set(INSTALL_DIR ${CMAKE_CURRENT_LIST_DIR}/metamodule-plugins)
@@ -46,7 +46,7 @@ endif()
 
 # cmake-format: off
 create_plugin(
-    SOURCE_LIB      4ms-ProducerPack
+    SOURCE_LIB      ProducerPack
     PLUGIN_NAME     4ms-ProducerPack
     PLUGIN_JSON     ${CMAKE_CURRENT_LIST_DIR}/plugin.json
     SOURCE_ASSETS   ${CMAKE_CURRENT_LIST_DIR}/assets
