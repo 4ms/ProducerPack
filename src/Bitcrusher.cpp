@@ -17,12 +17,17 @@ struct InvertedRangeParamQuantity : rack::engine::ParamQuantity {
 	}
 };
 
+// Per-channel filter state. Coefficients are identical across poly channels
+// (cutoff/resonance/type are mono), so they live in the shared Biquad below
+// while each channel keeps its own delay memory here.
+struct BiquadState {
+	float x1 = 0.f, x2 = 0.f;
+	float y1 = 0.f, y2 = 0.f;
+};
+
 struct Biquad {
 	float b0 = 1.f, b1 = 0.f, b2 = 0.f;
 	float a1 = 0.f, a2 = 0.f;
-
-	float x1 = 0.f, x2 = 0.f;
-	float y1 = 0.f, y2 = 0.f;
 
 	void setupLowpass(float cutoff, float resonance, float sampleRate) {
 		float w0 = 2.f * M_PI * cutoff / sampleRate;
@@ -64,17 +69,13 @@ struct Biquad {
 		a2 /= a0;
 	}
 
-	float process(float in) {
-		float out = b0 * in + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
-		x2 = x1;
-		x1 = in;
-		y2 = y1;
-		y1 = out;
+	float processChannel(float in, BiquadState &s) const {
+		float out = b0 * in + b1 * s.x1 + b2 * s.x2 - a1 * s.y1 - a2 * s.y2;
+		s.x2 = s.x1;
+		s.x1 = in;
+		s.y2 = s.y1;
+		s.y1 = out;
 		return out;
-	}
-
-	void reset() {
-		x1 = x2 = y1 = y2 = 0.f;
 	}
 };
 
@@ -112,8 +113,10 @@ struct Bitcrusher : Module {
 	float leftSampleHold[PORT_MAX_CHANNELS] = {};
 	float rightSampleHold[PORT_MAX_CHANNELS] = {};
 
-	Biquad filterLCh[PORT_MAX_CHANNELS];
-	Biquad filterRCh[PORT_MAX_CHANNELS];
+	// Shared coefficients (computed once per frame), per-channel filter state.
+	Biquad filterCoeffs;
+	BiquadState filterStateL[PORT_MAX_CHANNELS];
+	BiquadState filterStateR[PORT_MAX_CHANNELS];
 
 	// Cache last parameters to avoid redundant coefficient recalculation
 	float lastCutoff = -1.f;
@@ -154,11 +157,6 @@ struct Bitcrusher : Module {
 			new InvertedRangeParamQuantity(sampleRateMinHz, sampleRateMaxHz, "Clock Frequency");
 		paramQuantities[SAMPLERATE_PARAM]->module = this;
 		paramQuantities[SAMPLERATE_PARAM]->paramId = SAMPLERATE_PARAM;
-
-		for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
-			filterLCh[c].reset();
-			filterRCh[c].reset();
-		}
 	}
 
 	float getNormalizedParam(int paramId, int inputId) {
@@ -170,15 +168,10 @@ struct Bitcrusher : Module {
 
 	void updateFilterCoefficients(float cutoff, float resonance, float sampleRate, bool isLowpass) {
 		if (cutoff != lastCutoff || resonance != lastResonance || isLowpass != lastIsLowpass) {
-			for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
-				if (isLowpass) {
-					filterLCh[c].setupLowpass(cutoff, resonance, sampleRate);
-					filterRCh[c].setupLowpass(cutoff, resonance, sampleRate);
-				} else {
-					filterLCh[c].setupHighpass(cutoff, resonance, sampleRate);
-					filterRCh[c].setupHighpass(cutoff, resonance, sampleRate);
-				}
-			}
+			if (isLowpass)
+				filterCoeffs.setupLowpass(cutoff, resonance, sampleRate);
+			else
+				filterCoeffs.setupHighpass(cutoff, resonance, sampleRate);
 			lastCutoff = cutoff;
 			lastResonance = resonance;
 			lastIsLowpass = isLowpass;
@@ -247,8 +240,8 @@ struct Bitcrusher : Module {
 				rightSampleHold[c] = inR;
 			}
 
-			const float filteredL = filterLCh[c].process(bitcrush(leftSampleHold[c]));
-			const float filteredR = filterRCh[c].process(bitcrush(rightSampleHold[c]));
+			const float filteredL = filterCoeffs.processChannel(bitcrush(leftSampleHold[c]), filterStateL[c]);
+			const float filteredR = filterCoeffs.processChannel(bitcrush(rightSampleHold[c]), filterStateR[c]);
 
 			outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(
 				std::clamp(rack::math::crossfade(inL, filteredL, dryWet) * volume, -5.f, 5.f), c);
