@@ -4,11 +4,7 @@
 
 struct InvertedRangeParamQuantity : rack::engine::ParamQuantity {
 	float displayMin, displayMax;
-	InvertedRangeParamQuantity(float min, float max, std::string paramName)
-		: displayMin(min)
-		, displayMax(max) {
-		name = paramName;
-	}
+
 	float getDisplayValue() override {
 		return displayMax - getValue() * (displayMax - displayMin);
 	}
@@ -125,7 +121,11 @@ struct Bitcrusher : Module {
 
 	Bitcrusher() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(SAMPLERATE_PARAM, 0.f, 1.f, 0.f, "Clock Frequency");
+
+		auto sr_pq = configParam<InvertedRangeParamQuantity>(SAMPLERATE_PARAM, 0.f, 1.f, 0.f, "Clock Frequency");
+		sr_pq->displayMin = sampleRateMinHz;
+		sr_pq->displayMax = sampleRateMaxHz;
+
 		configSwitch(BITDEPTH_PARAM,
 					 0.f,
 					 15.f,
@@ -152,11 +152,6 @@ struct Bitcrusher : Module {
 
 		configBypass(AUDIOLEFTIN_INPUT, AUDIOLEFTOUT_OUTPUT);
 		configBypass(AUDIORIGHTIN_INPUT, AUDIORIGHTOUT_OUTPUT);
-
-		paramQuantities[SAMPLERATE_PARAM] =
-			new InvertedRangeParamQuantity(sampleRateMinHz, sampleRateMaxHz, "Clock Frequency");
-		paramQuantities[SAMPLERATE_PARAM]->module = this;
-		paramQuantities[SAMPLERATE_PARAM]->paramId = SAMPLERATE_PARAM;
 	}
 
 	float getNormalizedParam(int paramId, int inputId) {
