@@ -56,13 +56,7 @@ struct DJFilter : Module {
 	DJFilter() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
-		configParam(CUTOFF_PARAM, 0.f, 1.f, 0.5f, "");
-
-		auto *cutoffQ = new DJFilterCutoffQuantity();
-		cutoffQ->module = this;
-		cutoffQ->paramId = CUTOFF_PARAM;
-		cutoffQ->setValue(0.5f); // <-- Explicitly set default value
-		paramQuantities[CUTOFF_PARAM] = cutoffQ;
+		configParam<DJFilterCutoffQuantity>(CUTOFF_PARAM, 0.f, 1.f, 0.5f, "");
 
 		configParam(RESONANCE_PARAM, 0.f, 1.f, 0.f, "Resonance", "%", 0.f, 100.f);
 		configSwitch(SLOPE_PARAM, 1.f, 4.f, 1.f, "Slope", {"6db/Oct", "12db/Oct", "18db/Oct", "24db/Oct"});
