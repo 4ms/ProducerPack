@@ -2,17 +2,6 @@
 #include "helpers/math_lut.hpp"
 #include <cmath>
 
-struct InvertedRangeParamQuantity : rack::engine::ParamQuantity {
-	float displayMin, displayMax;
-
-	float getDisplayValue() override {
-		return displayMax - getValue() * (displayMax - displayMin);
-	}
-	std::string getDisplayValueString() override {
-		return rack::string::f("%.1f Hz", getDisplayValue());
-	}
-};
-
 // Per-channel filter state. Coefficients are identical across poly channels
 // (cutoff/resonance/type are mono), so they live in the shared Biquad below
 // while each channel keeps its own delay memory here.
@@ -122,9 +111,7 @@ struct Bitcrusher : Module {
 	Bitcrusher() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
-		auto sr_pq = configParam<InvertedRangeParamQuantity>(SAMPLERATE_PARAM, 0.f, 1.f, 0.f, "Clock Frequency");
-		sr_pq->displayMin = sampleRateMinHz;
-		sr_pq->displayMax = sampleRateMaxHz;
+		configParam(SAMPLERATE_PARAM, 0.f, 1.f, 0.f, "Clock Frequency", " Hz", 0, (sampleRateMinHz - sampleRateMaxHz), sampleRateMaxHz);
 
 		configSwitch(BITDEPTH_PARAM,
 					 0.f,
