@@ -1,5 +1,9 @@
 # Changelog 
 
+## v2.0.3
+
+- Fix small memory leak in BitCrusher and DJFilter
+
 ## v2.0.2
 
 - Add Bypass to most modules
