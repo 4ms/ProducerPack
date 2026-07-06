@@ -13,17 +13,46 @@ struct DJFilter : Module {
 		std::string getDisplayValueString() override {
 			float morph = getValue(); // knob value only, no CV
 
-			if (morph <= 0.45f) {
-				float t = morph / 0.5f;
-				float cutoffHz = Pow2(rescale(t, 0.f, 1.f, Log2(20.f), Log2(2000.f)));
-				return string::f("Cutoff: %.2fhz", cutoffHz);
-			} else if (morph < 0.55f) {
+			// Must match the dry/lowMix/highMix crossfade region in process():
+			// bypass (pure dry, no filtering) only happens once the fade to
+			// dryMix == 1 completes, at dryStart + fadeWidth .. dryEnd - fadeWidth.
+			const float fadeWidth = 0.02f;
+			const float dryStart = 0.45f;
+			const float dryEnd = 0.55f;
+
+			if (morph >= dryStart + fadeWidth && morph <= dryEnd - fadeWidth) {
 				return "Cutoff: BYPASS";
-			} else {
-				float t = (morph - 0.5f) / 0.5f;
-				float cutoffHz = Pow2(rescale(t, 0.f, 1.f, Log2(300.f), Log2(7000.f)));
-				return string::f("Cutoff: %.2fhz", cutoffHz);
 			}
+
+			float cutoffHz;
+			if (morph < 0.5f) {
+				float t = morph * 2.f;
+				cutoffHz = Pow2(rescale(t, 0.f, 1.f, Log2(20.f), Log2(7000.f)));
+			} else {
+				float t = (morph - 0.5f) * 2.f;
+				cutoffHz = Pow2(rescale(t, 0.f, 1.f, Log2(300.f), Log2(7000.f)));
+			}
+
+			// The SVF coefficient derived from cutoffHz is clamped for stability
+			// (see the "CRITICAL: SVF stability clamp" in process()), which caps
+			// the frequency actually applied well below cutoffHz at steeper
+			// slopes. Mirror that clamp here so the tooltip matches the audio.
+			float sampleRate = APP->engine->getSampleRate();
+			float safeCutoff = std::min(cutoffHz, 0.5f * sampleRate * 0.49f);
+			float f = 2.f * std::sin(M_PI * safeCutoff / sampleRate);
+
+			int stages = 1;
+			if (module) {
+				stages = std::clamp((int)module->params[SLOPE_PARAM].getValue(), 1, 4);
+			}
+			float maxF = (stages >= 4) ? 0.55f :
+			             (stages == 3) ? 0.65f :
+			             (stages == 2) ? 0.75f : 0.95f;
+			f = std::min(f, maxF);
+
+			float actualHz = (sampleRate / float(M_PI)) * std::asin(f / 2.f);
+
+			return string::f("Cutoff: %.2fhz", actualHz);
 		}
 
 		std::string getLabel() override {
