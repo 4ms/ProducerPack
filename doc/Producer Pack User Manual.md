@@ -196,9 +196,9 @@ A decay envelope generator with CV control, and built in VCA for modulating the 
 A stereo multimode filter based on the filter from Pioneer DJ mixers. The filter has adjustable cutoff, resonance, and selectable slope. The filter sweeps continuously from lowpass to highpass with bypass in the middle (no filtering). 
 
 - **Cutoff**: Controls the filter cutoff frequency with a unique morphing range:  
-  • From 20 Hz to 2000 Hz  
+  • Lowpass: from 20 Hz to 7000 Hz  
   • Bypass zone at midpoint  
-  • From 300 Hz to 7000 Hz  
+  • Highpass: from 300 Hz to 7000 Hz  
   Default position is bypass.
 
 - **Resonance**: Adjusts the filter resonance (Q factor).  
