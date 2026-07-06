@@ -7,6 +7,9 @@
    inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
    width="60.529999mm"
    height="128.5mm"
+   inkscape:export-filename="TapeDelay.png"
+   inkscape:export-xdpi="47.43969"
+   inkscape:export-ydpi="47.43969"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -702,7 +705,7 @@
      inkscape:groupmode="layer"
      id="layer1"
      inkscape:label="components"
-     style="display:inline">
+     style="display:none">
     <circle
        style="fill:#ff0000;stroke-width:0.2;stroke-linecap:square;stroke-dasharray:0.2, 0.600001;paint-order:markers fill stroke"
        id="path121"

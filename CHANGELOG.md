@@ -1,11 +1,8 @@
 # Changelog 
 
-## v2.0.4
-
-- Add TapeDelay module
-
 ## v2.0.3
 
+- Add TapeDelay module
 - Fix small memory leak in BitCrusher and DJFilter
 
 ## v2.0.2

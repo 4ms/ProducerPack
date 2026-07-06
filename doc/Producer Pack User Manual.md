@@ -335,3 +335,53 @@ Adjusts the curve of the crossfade:
 - 100% = curved fade (logarithmic style)  
 - Allows smoother or sharper transitions between A and B.
 
+---
+![TapeDelay](https://github.com/4ms/ProducerPack/blob/main/doc/TapeDelay.png) 
+
+# TapeDelay – Stereo Tape-Style Delay
+
+A stereo delay modeled after the character of an analog tape echo. The delay time glides like a tape motor changing speed rather than jumping instantly, feedback overloads and saturates like an overdriven tape loop instead of clipping cleanly, and a filter sits in the signal path so repeats can progressively darken or brighten. Includes tempo sync via an external clock input.
+
+- **Time**: Sets the delay time.  
+  Range: **20 ms to 2000 ms** (exponential)  
+  When **Ext. Clock** is patched, this knob instead selects a musical division of the incoming clock (see **Ext. Clock** below) instead of an absolute time.  
+  Changes glide rather than jump: lengthening the delay is a slower, bounded glide (so the read pointer never clicks), while shortening glides much faster. In tempo-synced mode, changes snap instantly instead of gliding, so the delay always stays locked to the beat.  
+  CV Input: Time CV
+
+- **Feedback**: Controls how much of the delayed signal is fed back into the delay line.  
+  Range: **0 % to 100 %** (knob), driving up to **115 %** internally — feedback can be pushed into self-oscillation and will overload/saturate like an overdriven tape loop rather than clipping harshly.  
+  CV Input: Feedback CV
+
+- **Dry/Wet**: Mixes between the clean input and the delayed signal.  
+  Follows a reverse-exponential response curve: rises quickly at first, then flattens out approaching full wet.  
+  CV Input: Dry/Wet CV
+
+- **Filter**: The same morphing lowpass → bypass → highpass filter as **DJFilter**, with resonance and slope fixed (a small fixed amount of resonance, 6 dB/Oct slope).  
+  Range: Lowpass **500 Hz to 7000 Hz** → bypass at center → Highpass **300 Hz to 1000 Hz**  
+  Default position is bypass.  
+  Colors the entire wet signal, not just the feedback path — every repeat, including the first one, passes through the filter.  
+  CV Input: Filter CV
+
+- **Instability**: Adds tape-style wow and flutter (an organic, non-repeating pitch wobble) to the delay time.  
+  Range: **0 % to 100 %**  
+  Totally off at 0%, easing in smoothly over the first 5% of the knob's travel. Both the depth and the speed of the wobble grow together as the knob is turned up.  
+  CV Input: Instability CV
+
+- **Width**: Crossfades the wet signal from centered/mono to a fully alternating ping-pong pattern.  
+  Range: **0 % (centered/mono) to 100 % (full ping-pong — hard-panned left/right, alternating every repeat)**  
+  CV Input: Width CV
+
+- **Ext. Clock (input)**: Patch a clock here to tempo-sync the delay. Each incoming pulse is treated as a quarter note. Once a stable clock period is detected, **Time** switches from absolute milliseconds to selecting a musical division of the clock, ordered fastest to longest:  
+  **1/16, 1/16T, 1/16D, 1/8, 1/8T, 1/8D, 1/4, 1/4T, 1/4D, 1/2, 1/2T, 1/2D, 1/1, 1/1T, 1/1D**  
+  (T = triplet, D = dotted)
+
+- **Audio Left / Right (inputs)**: Stereo inputs. Unlike other Producer Pack modules, normalization works in both directions here — if only one side is patched, that signal is used for both channels.
+
+- **Audio Left / Right (outputs)**: Final stereo output.
+
+## Notes
+
+- A faint, constant noise floor and a touch of even-harmonic saturation are blended into the wet signal to emulate the character of real analog tape.
+- The filter lives in the same path as the feedback, so repeats progressively darken or brighten as they recirculate through it.
+- The Ext. Clock input is used purely for tempo detection — it does not pass audio, and Time reverts to milliseconds if it's unpatched.
+
