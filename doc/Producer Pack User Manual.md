@@ -336,7 +336,7 @@ Adjusts the curve of the crossfade:
 - Allows smoother or sharper transitions between A and B.
 
 ---
-<img src="https://github.com/4ms/ProducerPack/blob/TapeDelay/doc/TapeDelay.png" height="600">
+<img src="https://github.com/4ms/ProducerPack/blob/TapeDelay/doc/TapeDelay.png" height="500">
 
 
 # TapeDelay – Stereo Tape-Style Delay
