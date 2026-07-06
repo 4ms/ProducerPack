@@ -40,11 +40,15 @@ struct TapeDelay : Module {
 	// a soft-clip drive point plus a touch of even-harmonic asymmetry (real analog
 	// circuits are rarely perfectly symmetric) and a tiny noise floor that accumulates
 	// through the feedback loop like real tape hiss building up on repeated copies.
-	static constexpr float tapeDriveThreshold = 4.f;
+	static constexpr float tapeDriveThreshold = 7.f;
 	static constexpr float tapeAsymmetry = 0.06f;
-	// Feedback saturation point: lowered so the repeats start overloading/distorting
-	// earlier (a hotter, dirtier feedback loop) instead of staying clean until +/-5V.
-	static constexpr float feedbackDriveThreshold = 2.5f;
+	// Feedback saturation ceiling. This must be well above typical signal levels so
+	// raising Feedback actually makes the repeats louder across most of the knob's
+	// range -- tanh asymptotically approaches this value no matter how hard it's
+	// driven, so too low a threshold makes the loop hit its ceiling almost immediately
+	// instead of building up. Real overload/saturation still kicks in hard near the
+	// top of the range (self-oscillation), just at a much higher, louder plateau.
+	static constexpr float feedbackDriveThreshold = 6.f;
 	// Basic white noise floor blended into the wet signal, always present (not tied
 	// to feedback), like tape hiss. One shared draw per sample (not per poly channel)
 	// for low CPU cost.
