@@ -138,7 +138,7 @@ A stereo bitcrusher effect with sample rate reduction, bit depth control, select
 - **Dry/Wet**: Mixes between the clean input signal and the processed bitcrushed output.  
 
 - **Cutoff**: Sets the cutoff frequency of the filter applied after bitcrushing.  
-  Range: **20 Hz to 8,000 Hz**
+  Range: **20 Hz to 15,000 Hz**
 
 - **Resonance**: Adjusts the emphasis or Q factor of the filter around the cutoff frequency. Higher values = more resonant.  
 

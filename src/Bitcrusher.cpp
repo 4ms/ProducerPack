@@ -120,7 +120,7 @@ struct Bitcrusher : Module {
 					 "Bit Depth",
 					 {"16", "15", "14", "13", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1"});
 		configParam(DRY_WET_PARAM, 0.f, 1.f, 1.f, "Dry/Wet", "%", 0.f, 100.f);
-		configParam(CUTOFF_PARAM, 0.f, 1.f, 1.f, "Cutoff", "hz", 750.f, 20.f);
+		configParam(CUTOFF_PARAM, 0.f, 1.f, 1.f, "Cutoff", "hz", 0.f, cutoffMaxHz - cutoffMinHz, cutoffMinHz);
 		configParam(RESONANCE_PARAM, 0.f, 1.f, 0.f, "Resonance", "%", 0.f, 100.f);
 		configSwitch(FILTERTYPE_PARAM, 0.f, 1.f, 0.f, "Filter Type", {"Lowpass", "Highpass"});
 		configParam(VOLUME_PARAM, 0.f, 1.f, 1.f, "Volume", "%", 0.f, 100.f);
