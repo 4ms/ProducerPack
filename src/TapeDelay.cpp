@@ -338,7 +338,10 @@ struct TapeDelay : Module {
 		const float normFeedback = getNormalizedParam(FEEDBACK_PARAM, FEEDBACKCVIN_INPUT);
 		const float feedbackGain = normFeedback * maxFeedbackGain;
 
-		const float dryWet = getNormalizedParam(DRYWET_PARAM, DRYWETCVIN_INPUT);
+		// Reverse exponential taper: knob/CV response ramps in fast at first, then
+		// flattens out approaching full wet, instead of a flat linear response.
+		const float dryWetLinear = getNormalizedParam(DRYWET_PARAM, DRYWETCVIN_INPUT);
+		const float dryWet = 1.f - (1.f - dryWetLinear) * (1.f - dryWetLinear);
 		const float normInstability = getNormalizedParam(INSTABILITY_PARAM, INSTABILITYCVIN_INPUT);
 		const float widthAmount = getNormalizedParam(WIDTH_PARAM, WIDTHCVIN_INPUT);
 
