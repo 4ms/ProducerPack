@@ -48,7 +48,7 @@ struct TapeDelay : Module {
 	// Basic white noise floor blended into the wet signal, always present (not tied
 	// to feedback), like tape hiss. One shared draw per sample (not per poly channel)
 	// for low CPU cost.
-	static constexpr float wetNoiseAmount = 0.01f;
+	static constexpr float wetNoiseAmount = 0.005f;
 	// The read pointer's effective playback speed is (1 - rate the delay time is
 	// changing per sample). Bounding the *speed ratio* (not the raw rate) is what keeps
 	// this feeling like tape continuously repitching -- never literally stopping or
@@ -365,12 +365,15 @@ struct TapeDelay : Module {
 		const float delaySamplesTarget =
 			std::clamp(delayBaseSamples + wobbleMs * 0.001f * sampleRate, 1.f, (float)(bufferSize - 2));
 
-		// Glide the delay time like tape speeding up/slowing down, not an instant jump:
-		// lengthening is capped to avoid the read pointer ever reversing (which clicks),
-		// while shortening -- which can never reverse -- is allowed to glide much faster.
-		if (smoothedDelaySamples < 0.f) {
+		const bool tempoSynced = clockConnected && clockPeriodSamples > 0.f;
+		if (smoothedDelaySamples < 0.f || tempoSynced) {
+			// Tempo sync: snap straight to the target so division/tempo changes stay
+			// locked to the beat instead of gliding/repitching like free-running mode.
 			smoothedDelaySamples = delaySamplesTarget;
 		} else {
+			// Free-running: glide the delay time like tape speeding up/slowing down,
+			// not an instant jump. Lengthening is capped to avoid the read pointer ever
+			// reversing (which clicks); shortening can never reverse, so it glides faster.
 			float diff = delaySamplesTarget - smoothedDelaySamples;
 			diff = diff > 0.f ? std::min(diff, delayGlideMaxIncreasePerSample) :
 			                     std::max(diff, -delayGlideMaxDecreasePerSample);
