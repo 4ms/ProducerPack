@@ -1,6 +1,5 @@
 #include "plugin.hpp"
 #include <cmath>
-#include <vector>
 
 struct TapeDelay : Module {
 	enum ParamId {
@@ -37,6 +36,19 @@ struct TapeDelay : Module {
 	static constexpr float flutterRateMaxHz = 40.f;
 	static constexpr float instabilityFadeZone = 0.05f;
 	static constexpr float maxFeedbackGain = 1.15f;
+	// Tape-style dirt on the record path (dry input + feedback, before it's stored):
+	// a soft-clip drive point plus a touch of even-harmonic asymmetry (real analog
+	// circuits are rarely perfectly symmetric) and a tiny noise floor that accumulates
+	// through the feedback loop like real tape hiss building up on repeated copies.
+	static constexpr float tapeDriveThreshold = 4.f;
+	static constexpr float tapeAsymmetry = 0.06f;
+	// Feedback saturation point: lowered so the repeats start overloading/distorting
+	// earlier (a hotter, dirtier feedback loop) instead of staying clean until +/-5V.
+	static constexpr float feedbackDriveThreshold = 2.5f;
+	// Basic white noise floor blended into the wet signal, always present (not tied
+	// to feedback), like tape hiss. One shared draw per sample (not per poly channel)
+	// for low CPU cost.
+	static constexpr float wetNoiseAmount = 0.01f;
 	// The read pointer's effective playback speed is (1 - rate the delay time is
 	// changing per sample). Bounding the *speed ratio* (not the raw rate) is what keeps
 	// this feeling like tape continuously repitching -- never literally stopping or
@@ -172,8 +184,14 @@ struct TapeDelay : Module {
 
 	// Mono trunk delay line per poly channel: the module always sums to mono internally
 	// so Width can continuously crossfade the tap between centered and hard-panned.
-	std::vector<float> bufferL[PORT_MAX_CHANNELS];
-	int bufferSize = 0;
+	// Fixed-size (not std::vector) and sized for a 96kHz worst case, matching this
+	// repo's convention (e.g. Spatializer's delayBufferL/R) -- MetaModule's real-time
+	// callback must never allocate memory, so the buffer can't be grown at runtime.
+	static constexpr float maxSupportedSampleRate = 96000.f;
+	static const int maxDelaySamples =
+		(int)((maxTimeMs + maxWowDepthMs + maxFlutterDepthMs + 10.f) * 0.001f * maxSupportedSampleRate) + 4;
+	float bufferL[PORT_MAX_CHANNELS][maxDelaySamples] = {};
+	int bufferSize = maxDelaySamples;
 	int writeIndex = 0;
 	float lastSampleRate = 0.f;
 
@@ -233,7 +251,7 @@ struct TapeDelay : Module {
 		return std::clamp(paramValue + inputCV, 0.f, 1.f);
 	}
 
-	static float readDelay(const std::vector<float> &buf, int bufSize, int writeIdx, float delaySamples) {
+	static float readDelay(const float *buf, int bufSize, int writeIdx, float delaySamples) {
 		delaySamples = std::clamp(delaySamples, 0.f, (float)(bufSize - 2));
 		float readPos = writeIdx - delaySamples;
 		while (readPos < 0.f)
@@ -260,12 +278,14 @@ struct TapeDelay : Module {
 	void process(const ProcessArgs &args) override {
 		const float sampleRate = args.sampleRate;
 
-		// --- (Re)allocate delay buffers to fit the max possible modulated delay time ---
+		// --- Clear delay buffers/filter state on sample rate change (fixed-size array,
+		// no reallocation -- just wipes stale content so old-rate audio doesn't play
+		// back at the wrong pitch) ---
 		if (sampleRate != lastSampleRate) {
 			lastSampleRate = sampleRate;
-			bufferSize = (int)((maxTimeMs + maxWowDepthMs + maxFlutterDepthMs + 10.f) * 0.001f * sampleRate) + 4;
 			for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
-				bufferL[c].assign(bufferSize, 0.f);
+				for (int i = 0; i < maxDelaySamples; i++)
+					bufferL[c][i] = 0.f;
 				filtStateL[c] = SVF();
 			}
 			writeIndex = 0;
@@ -417,6 +437,10 @@ struct TapeDelay : Module {
 		const float maxPanStep = 1.f / (panCrossfadeSec * sampleRate);
 		panPosition += std::clamp(panTarget - panPosition, -maxPanStep, maxPanStep);
 
+		// Basic white noise floor for the wet signal: one draw per sample, shared
+		// across all poly channels (not per-channel) to keep it cheap.
+		const float wetNoise = (random::uniform() * 2.f - 1.f) * wetNoiseAmount;
+
 		// --- Per poly channel ---
 		for (int c = 0; c < n; c++) {
 			const float inL = lConnected ? inputs[AUDIOLEFTIN_INPUT].getPolyVoltage(c) :
@@ -429,25 +453,31 @@ struct TapeDelay : Module {
 			const float monoIn = (inL + inR) * 0.5f;
 			const float delayedTrunk = readDelay(bufferL[c], bufferSize, writeIndex, delaySamples);
 
-			// Filter lives only in the feedback/regeneration path: the tapped delay
-			// signal used for the wet output is left unfiltered, so repeats
-			// darken/brighten progressively as they recirculate.
+			// Filter shapes the whole wet signal -- both the wet output tap and what
+			// gets fed back -- so every repeat sounds filtered, not just the ones that
+			// have been through the feedback loop.
 			const float regen =
 				applyFeedbackFilter(filtStateL[c], filterDamp, filterFreq, delayedTrunk, lowMix, bypassMix, highMix);
 
-			// Feedback is allowed above unity (self-oscillation); soft-clipping at +/-5V
-			// lets it overload/saturate like an overdriven tape loop instead of diverging.
-			const float fb = softClip(regen * feedbackGain, 5.f);
-			bufferL[c][writeIndex] = monoIn + fb;
+			// Feedback is allowed above unity (self-oscillation); soft-clipping lets it
+			// overload/saturate like an overdriven tape loop instead of diverging.
+			const float fb = softClip(regen * feedbackGain, feedbackDriveThreshold);
+
+			// Tape dirt on the record path: a touch of even-harmonic asymmetry,
+			// soft-clipped along with the signal so it compounds through the feedback
+			// loop like grime building up on repeated tape copies.
+			const float driven = monoIn + fb;
+			const float colored = driven + tapeAsymmetry * driven * driven;
+			bufferL[c][writeIndex] = softClip(colored, tapeDriveThreshold);
 
 			// Width crossfades the tap from centered/mono (both channels get the full
 			// signal) to fully alternating left/right (ping-pong).
-			const float monoWetL = delayedTrunk;
-			const float monoWetR = delayedTrunk;
-			const float pannedWetL = delayedTrunk * (1.f - panPosition);
-			const float pannedWetR = delayedTrunk * panPosition;
-			const float wetL = rack::math::crossfade(monoWetL, pannedWetL, widthAmount);
-			const float wetR = rack::math::crossfade(monoWetR, pannedWetR, widthAmount);
+			const float monoWetL = regen;
+			const float monoWetR = regen;
+			const float pannedWetL = regen * (1.f - panPosition);
+			const float pannedWetR = regen * panPosition;
+			const float wetL = rack::math::crossfade(monoWetL, pannedWetL, widthAmount) + wetNoise;
+			const float wetR = rack::math::crossfade(monoWetR, pannedWetR, widthAmount) + wetNoise;
 
 			const float outL = rack::math::crossfade(inL, wetL, dryWet);
 			const float outR = rack::math::crossfade(inR, wetR, dryWet);
