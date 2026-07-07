@@ -1,5 +1,9 @@
 # Changelog 
 
+## v2.0.4
+
+- Fix label on DJFilter freq knob on MetaModule (now is -100% to 100%)
+
 ## v2.0.3
 
 - Fix small memory leak in BitCrusher and DJFilter
