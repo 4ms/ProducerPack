@@ -85,7 +85,14 @@ struct DJFilter : Module {
 	DJFilter() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
+#ifdef METAMODULE
+		// MetaModule's UI reads the raw name/unit/display* fields directly and does not
+		// invoke this ParamQuantity's virtual overrides, so give it native scaling instead
+		// of relying on getLabel()/getDisplayValueString(). Center (bypass) reads as 0%.
+		configParam(CUTOFF_PARAM, 0.f, 1.f, 0.5f, "Cutoff", "%", 0.f, 200.f, -100.f);
+#else
 		configParam<DJFilterCutoffQuantity>(CUTOFF_PARAM, 0.f, 1.f, 0.5f, "");
+#endif
 
 		configParam(RESONANCE_PARAM, 0.f, 1.f, 0.f, "Resonance", "%", 0.f, 100.f);
 		configSwitch(SLOPE_PARAM, 1.f, 4.f, 1.f, "Slope", {"6db/Oct", "12db/Oct", "18db/Oct", "24db/Oct"});
