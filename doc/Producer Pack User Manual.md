@@ -335,3 +335,40 @@ Adjusts the curve of the crossfade:
 - 100% = curved fade (logarithmic style)  
 - Allows smoother or sharper transitions between A and B.
 
+---
+<img src="https://github.com/4ms/ProducerPack/blob/TapeDelay/doc/TapeDelay.png" height="500">
+
+
+# TapeDelay – Stereo Tape-Style Delay
+
+A stereo delay modeled after the character of an analog tape echo. The delay time glides like a tape motor changing speed rather than jumping instantly, feedback overloads and saturates like an overdriven tape loop instead of clipping cleanly, and a filter sits in the signal path so repeats can progressively darken or brighten. Includes tempo sync via an external clock input.
+
+- **Time**: Sets the delay time.  
+  Range: **20 ms to 2000 ms** 
+  When **Ext. Clock** is patched, this knob instead selects a musical division of the incoming clock. 
+  
+- **Feedback**: Controls how much of the delayed signal is fed back into the delay line. Feedback can be pushed into self-oscillation and will overload/saturate like an overdriven tape loop rather than clipping harshly.  
+
+- **Dry/Wet**: Mixes between the clean input and the delayed signal.  
+
+- **Filter**: The same morphing lowpass → bypass → highpass filter as **DJFilter**, with resonance and slope fixed (a small fixed amount of resonance, 6 dB/Oct slope).  
+  Range: Lowpass **500 Hz to 7000 Hz** → bypass at center → Highpass **300 Hz to 1000 Hz**  
+  Default position is bypass.  
+  Colors the entire wet signal, not just the feedback path — every repeat, including the first one, passes through the filter.  
+
+- **Instability**: Adds tape-style wow and flutter to the delay time.  
+  Range: **0 % to 100 %**  
+  Both the depth and the speed of the wobble grow together as the knob is turned up.  
+
+- **Width**: Crossfades the wet signal from centered/mono to a fully alternating ping-pong pattern.  
+  Range: **0 % (centered/mono) to 100 % (full ping-pong — hard-panned left/right, alternating every repeat)**  
+
+- **Ext. Clock (input)**: Patch a clock here to tempo-sync the delay. Each incoming pulse is treated as a quarter note. Ordered fastest to longest:  
+  **1/16, 1/16T, 1/16D, 1/8, 1/8T, 1/8D, 1/4, 1/4T, 1/4D, 1/2, 1/2T, 1/2D, 1/1, 1/1T, 1/1D**  
+  (T = triplet, D = dotted)
+
+- **Audio Left / Right (inputs)**: Stereo inputs. Unlike other Producer Pack modules, normalization works in both directions here — if only one side is patched, that signal is used for both channels.
+
+- **Audio Left / Right (outputs)**: Final stereo output.
+
+

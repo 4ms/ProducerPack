@@ -132,6 +132,16 @@
         "Drum",
         "Utility"
       ]
+    },
+    {
+      "slug": "TapeDelay",
+      "name": "TapeDelay",
+      "description": "Tape-style stereo delay with feedback, instability, and filtering",
+      "tags": [
+        "Stereo",
+        "Effect",
+        "Delay"
+      ]
     }
   ]
 }

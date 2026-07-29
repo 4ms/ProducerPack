@@ -32,6 +32,7 @@ target_sources(
             ${SOURCE_DIR}/src/AuxSends.cpp
             ${SOURCE_DIR}/src/Bitcrusher.cpp
             ${SOURCE_DIR}/src/DrumBus.cpp
+            ${SOURCE_DIR}/src/TapeDelay.cpp
             ${SOURCE_DIR}/src/plugin.cpp
             ${SOURCE_DIR}/src/plugin.hpp
             ${SOURCE_DIR}/src/helpers/math_lut.cpp
