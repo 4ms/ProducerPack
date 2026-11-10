@@ -338,37 +338,44 @@ Adjusts the curve of the crossfade:
 ---
 <img src="https://github.com/4ms/ProducerPack/blob/TapeDelay/doc/TapeDelay.png" height="500">
 
+## TapeDelay - Stereo Tape-Style Delay
 
-# TapeDelay – Stereo Tape-Style Delay
+A delay inspired by old analog tape echoes. When you change the delay time, it bends in pitch and glides to the new time, like a tape machine speeding up or slowing down, instead of jumping. The repeats get a little darker and dirtier each time they come around, and if you push the feedback up they'll saturate and grow into the classic runaway tape echo sound. It also syncs to an external clock.
 
-A stereo delay modeled after the character of an analog tape echo. The delay time glides like a tape motor changing speed rather than jumping instantly, feedback overloads and saturates like an overdriven tape loop instead of clipping cleanly, and a filter sits in the signal path so repeats can progressively darken or brighten. Includes tempo sync via an external clock input.
+Like a real tape echo, there's always a faint bit of tape hiss on the delayed signal.
 
-- **Time**: Sets the delay time.  
-  Range: **20 ms to 2000 ms** 
-  When **Ext. Clock** is patched, this knob instead selects a musical division of the incoming clock. 
-  
-- **Feedback**: Controls how much of the delayed signal is fed back into the delay line. Feedback can be pushed into self-oscillation and will overload/saturate like an overdriven tape loop rather than clipping harshly.  
+- **Time**: Sets how long the delay is, from **20 ms to 2 seconds**.  
+  When **Ext. Clock** is patched, this knob picks a note value instead (see Ext. Clock below).
 
-- **Dry/Wet**: Mixes between the clean input and the delayed signal.  
+- **Feedback**: Sets how many times the echoes repeat. Low settings give you a few quick repeats, and higher settings let them keep going for a long time.  
+  Around **87%** the repeats stop fading away. Past that they start to build on themselves until the tape saturates, so you get that wild, self-oscillating tape echo effect without harsh digital clipping.  
+  Each repeat goes back through the filter and the tape saturation, so the echoes keep getting more colored the longer they go on. New sound coming in gets recorded cleanly and doesn't cut off the echoes that are already going.
 
-- **Filter**: The same morphing lowpass → bypass → highpass filter as **DJFilter**, with resonance and slope fixed (a small fixed amount of resonance, 6 dB/Oct slope).  
-  Range: Lowpass **500 Hz to 7000 Hz** → bypass at center → Highpass **300 Hz to 1000 Hz**  
-  Default position is bypass.  
-  Colors the entire wet signal, not just the feedback path — every repeat, including the first one, passes through the filter.  
+- **Dry/Wet**: Blends between your original signal and the echoes.
 
-- **Instability**: Adds tape-style wow and flutter to the delay time.  
-  Range: **0 % to 100 %**  
-  Both the depth and the speed of the wobble grow together as the knob is turned up.  
+- **Filter**: Shapes the tone of the echoes, using the same lowpass/highpass filter as **DJFilter**.  
+  Turn it left to make the echoes darker (lowpass, **500 Hz to 7000 Hz**), or right to make them thinner and brighter (highpass, **300 Hz to 1000 Hz**). At the center, the filter is off. The center is the default.  
+  Every echo goes through the filter, including the very first one.
 
-- **Width**: Crossfades the wet signal from centered/mono to a fully alternating ping-pong pattern.  
-  Range: **0 % (centered/mono) to 100 % (full ping-pong — hard-panned left/right, alternating every repeat)**  
+- **Instability**: Adds the wobble of a worn-out tape machine (wow and flutter). Turn it up for a slow, warbly drift that gets deeper and faster the further you go.  
+  Range: **0% to 100%**
 
-- **Ext. Clock (input)**: Patch a clock here to tempo-sync the delay. Each incoming pulse is treated as a quarter note. Ordered fastest to longest:  
+- **Width**: Spreads the echoes out in stereo.  
+  At **0%**, the echoes come out of both speakers equally.  
+  At **100%**, they bounce back and forth between the left and right speakers (ping-pong), starting on the left.  
+  Anywhere in between gives you a partial spread.  
+  The delay itself is mono, so your left and right inputs are blended together before they go into the delay. Your dry signal stays in stereo.
+
+- **Ext. Clock (input)**: Patch in a clock to sync the delay to your tempo. Each clock pulse counts as a quarter note, and the **Time** knob picks the note value. From shortest to longest:  
   **1/16, 1/16T, 1/16D, 1/8, 1/8T, 1/8D, 1/4, 1/4T, 1/4D, 1/2, 1/2T, 1/2D, 1/1, 1/1T, 1/1D**  
-  (T = triplet, D = dotted)
+  (T = triplet, D = dotted)  
+  When it's synced, the delay jumps straight to the new time instead of gliding, so it stays locked to the beat.  
+  The longest delay possible is about **4 seconds** (or about **2 seconds** if your system runs at 96 kHz). At slow tempos, the longest note values will be cut short to fit.
 
-- **Audio Left / Right (inputs)**: Stereo inputs. Unlike other Producer Pack modules, normalization works in both directions here — if only one side is patched, that signal is used for both channels.
+- **Audio Left / Right (inputs)**: Stereo inputs. If you only patch one side, that signal is used for both sides. Unlike the other Producer Pack modules, this works with either jack.
 
-- **Audio Left / Right (outputs)**: Final stereo output.
+- **Audio Left / Right (outputs)**: Stereo outputs.
 
-
+**On MetaModule:**
+- The **Time** knob always shows its value in milliseconds, even when Ext. Clock is patched and the knob is picking note values.
+- The **Filter** knob reads from **-100%** (darkest) to **+100%** (brightest), with **0%** meaning the filter is off.
