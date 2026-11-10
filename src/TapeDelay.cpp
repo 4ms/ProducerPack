@@ -198,6 +198,17 @@ struct TapeDelay : Module {
 	int bufferSize = maxDelaySamples;
 	int writeIndex = 0;
 	float lastSampleRate = 0.f;
+	// High-water mark of poly channels that have been written to since the last clear.
+	// On a sample rate change only these channels need wiping (the rest are still
+	// zero), so the clear is ~0.8MB for a mono/stereo patch instead of the full
+	// ~12.6MB -- which on MetaModule would otherwise stall the audio callback.
+	int channelsUsed = 0;
+
+	// Cached per-block-invariant values, recomputed only when their inputs change.
+	float lastNormTime = -1.f;
+	float cachedTimeMs = 0.f;
+	float lastPanSampleRate = 0.f;
+	float maxPanStep = 0.f;
 
 	SVF filtStateL[PORT_MAX_CHANNELS];
 
@@ -210,8 +221,8 @@ struct TapeDelay : Module {
 		float nextValue = 0.f;
 		float phase = 1.f; // forces an immediate re-target on the first step
 
-		float step(float rateHz, float sampleRate) {
-			phase += rateHz / sampleRate;
+		float step(float rateHz, float sampleTime) {
+			phase += rateHz * sampleTime;
 			if (phase >= 1.f) {
 				phase -= 1.f;
 				prevValue = nextValue;
@@ -255,20 +266,52 @@ struct TapeDelay : Module {
 		return std::clamp(paramValue + inputCV, 0.f, 1.f);
 	}
 
-	static float readDelay(const float *buf, int bufSize, int writeIdx, float delaySamples) {
-		delaySamples = std::clamp(delaySamples, 0.f, (float)(bufSize - 2));
-		float readPos = writeIdx - delaySamples;
-		while (readPos < 0.f)
-			readPos += bufSize;
+	// Read position for a fractional delay, shared by every poly channel (they all use
+	// the same delay time), so it's computed once per sample instead of per channel.
+	// Integer and fractional parts are split *before* subtracting from writeIndex: a
+	// single float readPos near the top of the ~197k-sample buffer only has ~1/64 sample
+	// resolution, which quantizes the interpolation and adds zipper noise under wow/flutter.
+	struct ReadTap {
+		int idx0;
+		int idx1;
+		float frac;
+	};
 
-		int idx0 = (int)readPos;
-		float frac = readPos - idx0;
-		int idx1 = (idx0 + 1) % bufSize;
-		return buf[idx0] * (1.f - frac) + buf[idx1] * frac;
+	static ReadTap makeReadTap(int bufSize, int writeIdx, float delaySamples) {
+		delaySamples = std::clamp(delaySamples, 1.f, (float)(bufSize - 2));
+		const int whole = (int)delaySamples;
+		const float fracPart = delaySamples - whole;
+		// readPos = (writeIdx - whole - 1) + (1 - fracPart)
+		int idx0 = writeIdx - whole - 1;
+		if (idx0 < 0)
+			idx0 += bufSize;
+		int idx1 = idx0 + 1;
+		if (idx1 >= bufSize)
+			idx1 -= bufSize;
+		return {idx0, idx1, 1.f - fracPart};
 	}
 
-	static float softClip(float x, float threshold) {
-		return threshold * std::tanh(x / threshold);
+	static float readDelay(const float *buf, const ReadTap &tap) {
+		return buf[tap.idx0] + (buf[tap.idx1] - buf[tap.idx0]) * tap.frac;
+	}
+
+	// Pade [7/6] rational approximation of tanh: one divide instead of a libm tanh
+	// call (which is slow on MetaModule's Cortex-A7). Error < 2e-6 for |x| < 3 and the
+	// curve meets +/-1 smoothly at the clamp point, so it's inaudible as a saturator.
+	static float fastTanh(float x) {
+		constexpr float clampX = 4.97f;
+		if (x > clampX)
+			return 1.f;
+		if (x < -clampX)
+			return -1.f;
+		const float x2 = x * x;
+		const float num = x * (135135.f + x2 * (17325.f + x2 * (378.f + x2)));
+		const float den = 135135.f + x2 * (62370.f + x2 * (3150.f + x2 * 28.f));
+		return num / den;
+	}
+
+	static float softClip(float x, float threshold, float invThreshold) {
+		return threshold * fastTanh(x * invThreshold);
 	}
 
 	static float applyFeedbackFilter(SVF &f, float damp, float freq, float delayed, float lowMix, float bypassMix,
@@ -281,17 +324,19 @@ struct TapeDelay : Module {
 
 	void process(const ProcessArgs &args) override {
 		const float sampleRate = args.sampleRate;
+		const float sampleTime = args.sampleTime;
 
 		// --- Clear delay buffers/filter state on sample rate change (fixed-size array,
 		// no reallocation -- just wipes stale content so old-rate audio doesn't play
-		// back at the wrong pitch) ---
+		// back at the wrong pitch). Only channels that have actually been written are
+		// cleared; on the very first call nothing has been written yet, so it's free. ---
 		if (sampleRate != lastSampleRate) {
 			lastSampleRate = sampleRate;
-			for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
-				for (int i = 0; i < maxDelaySamples; i++)
-					bufferL[c][i] = 0.f;
+			for (int c = 0; c < channelsUsed; c++)
+				std::fill_n(bufferL[c], maxDelaySamples, 0.f);
+			for (int c = 0; c < PORT_MAX_CHANNELS; c++)
 				filtStateL[c] = SVF();
-			}
+			channelsUsed = 0;
 			writeIndex = 0;
 			smoothedDelaySamples = -1.f;
 		}
@@ -304,6 +349,7 @@ struct TapeDelay : Module {
 		const int nR = rConnected ? inputs[AUDIORIGHTIN_INPUT].getChannels() :
 		                            (lConnected ? inputs[AUDIOLEFTIN_INPUT].getChannels() : 0);
 		const int n = std::max(nL, nR);
+		channelsUsed = std::max(channelsUsed, n);
 
 		outputs[AUDIOLEFTOUT_OUTPUT].setChannels(n);
 		outputs[AUDIORIGHTOUT_OUTPUT].setChannels(n);
@@ -335,8 +381,12 @@ struct TapeDelay : Module {
 		if (clockConnected && clockPeriodSamples > 0.f) {
 			delayBaseSamples = clockPeriodSamples * clockDivisions[clockDivisionIndex(normTime)].ratio;
 		} else {
-			const float timeMs = minTimeMs * std::pow(maxTimeMs / minTimeMs, normTime);
-			delayBaseSamples = timeMs * 0.001f * sampleRate;
+			// std::pow is expensive on MetaModule; only recompute when the knob/CV moves.
+			if (normTime != lastNormTime) {
+				lastNormTime = normTime;
+				cachedTimeMs = minTimeMs * std::pow(maxTimeMs / minTimeMs, normTime);
+			}
+			delayBaseSamples = cachedTimeMs * 0.001f * sampleRate;
 		}
 
 		const float normFeedback = getNormalizedParam(FEEDBACK_PARAM, FEEDBACKCVIN_INPUT);
@@ -365,8 +415,8 @@ struct TapeDelay : Module {
 		// Both depth and rate grow with the Instability knob, like a more worn-out tape transport.
 		const float wowRateHz = rescale(instabilityShaped, 0.f, 1.f, wowRateMinHz, wowRateMaxHz);
 		const float flutterRateHz = rescale(instabilityShaped, 0.f, 1.f, flutterRateMinHz, flutterRateMaxHz);
-		const float wowValue = wowNoise.step(wowRateHz, sampleRate);
-		const float flutterValue = flutterNoise.step(flutterRateHz, sampleRate);
+		const float wowValue = wowNoise.step(wowRateHz, sampleTime);
+		const float flutterValue = flutterNoise.step(flutterRateHz, sampleTime);
 
 		const float wobbleMs = instabilityShaped * (maxWowDepthMs * wowValue + maxFlutterDepthMs * flutterValue);
 		const float delaySamplesTarget =
@@ -444,12 +494,23 @@ struct TapeDelay : Module {
 		// Crossfade the pan position toward the current side instead of switching
 		// instantly, so the flip doesn't click.
 		const float panTarget = panSide ? 1.f : 0.f;
-		const float maxPanStep = 1.f / (panCrossfadeSec * sampleRate);
+		if (sampleRate != lastPanSampleRate) {
+			lastPanSampleRate = sampleRate;
+			maxPanStep = 1.f / (panCrossfadeSec * sampleRate);
+		}
 		panPosition += std::clamp(panTarget - panPosition, -maxPanStep, maxPanStep);
 
 		// Basic white noise floor for the wet signal: one draw per sample, shared
 		// across all poly channels (not per-channel) to keep it cheap.
 		const float wetNoise = (random::uniform() * 2.f - 1.f) * wetNoiseAmount;
+
+		// Same delay time for every poly channel, so resolve the read indices once.
+		const ReadTap tap = makeReadTap(bufferSize, writeIndex, delaySamples);
+
+		constexpr float invFeedbackDrive = 1.f / feedbackDriveThreshold;
+		constexpr float invTapeDrive = 1.f / tapeDriveThreshold;
+		constexpr float outputClip = 10.f;
+		constexpr float invOutputClip = 1.f / outputClip;
 
 		// --- Per poly channel ---
 		for (int c = 0; c < n; c++) {
@@ -461,7 +522,7 @@ struct TapeDelay : Module {
 			// Single mono trunk line: the module always sums to mono internally so Width
 			// can continuously crossfade the tap between centered and hard-panned.
 			const float monoIn = (inL + inR) * 0.5f;
-			const float delayedTrunk = readDelay(bufferL[c], bufferSize, writeIndex, delaySamples);
+			const float delayedTrunk = readDelay(bufferL[c], tap);
 
 			// Filter shapes the whole wet signal -- both the wet output tap and what
 			// gets fed back -- so every repeat sounds filtered, not just the ones that
@@ -471,14 +532,14 @@ struct TapeDelay : Module {
 
 			// Feedback is allowed above unity (self-oscillation); soft-clipping lets it
 			// overload/saturate like an overdriven tape loop instead of diverging.
-			const float fb = softClip(regen * feedbackGain, feedbackDriveThreshold);
+			const float fb = softClip(regen * feedbackGain, feedbackDriveThreshold, invFeedbackDrive);
 
 			// Tape dirt on the record path: a touch of even-harmonic asymmetry,
 			// soft-clipped along with the signal so it compounds through the feedback
 			// loop like grime building up on repeated tape copies.
 			const float driven = monoIn + fb;
 			const float colored = driven + tapeAsymmetry * driven * driven;
-			bufferL[c][writeIndex] = softClip(colored, tapeDriveThreshold);
+			bufferL[c][writeIndex] = softClip(colored, tapeDriveThreshold, invTapeDrive);
 
 			// Width crossfades the tap from centered/mono (both channels get the full
 			// signal) to fully alternating left/right (ping-pong).
@@ -492,11 +553,12 @@ struct TapeDelay : Module {
 			const float outL = rack::math::crossfade(inL, wetL, dryWet);
 			const float outR = rack::math::crossfade(inR, wetR, dryWet);
 
-			outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(softClip(outL, 10.f), c);
-			outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(softClip(outR, 10.f), c);
+			outputs[AUDIOLEFTOUT_OUTPUT].setVoltage(softClip(outL, outputClip, invOutputClip), c);
+			outputs[AUDIORIGHTOUT_OUTPUT].setVoltage(softClip(outR, outputClip, invOutputClip), c);
 		}
 
-		writeIndex = (writeIndex + 1) % bufferSize;
+		if (++writeIndex >= bufferSize)
+			writeIndex = 0;
 	}
 };
 
