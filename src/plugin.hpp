@@ -20,6 +20,7 @@ extern Model* modelAuxSends;
 extern Model* modelBitcrusher;
 extern Model* modelDrumBus;
 extern Model* modelTapeDelay;
+extern Model* modelAutoPan;
 
 struct Knob9mm : RoundKnob {
 	Knob9mm() {

@@ -142,6 +142,17 @@
         "Effect",
         "Delay"
       ]
+    },
+    {
+      "slug": "AutoPan",
+      "name": "AutoPan",
+      "description": "Stereo auto-panner and tremolo with selectable LFO shapes and clock sync",
+      "tags": [
+        "Panning",
+        "Tremolo",
+        "Stereo",
+        "Effect"
+      ]
     }
   ]
 }

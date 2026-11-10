@@ -2,6 +2,7 @@
 
 ## v2.0.5
 
+- Add AutoPan module
 - TapeDelay: reduced CPU load on MetaModule, and removed an audio dropout when the module is first loaded
 - Fix labels on TapeDelay Time and Filter knobs on MetaModule (Filter now is -100% to 100%)
 - TapeDelay: new input no longer cuts off the repeats. The input is recorded clean, and the filter, saturation and tape coloration happen only in the feedback loop

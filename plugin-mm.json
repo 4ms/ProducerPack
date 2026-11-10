@@ -53,6 +53,10 @@
 		{
 			"slug": "TapeDelay",
 			"name": "TapeDelay"
+		},
+		{
+			"slug": "AutoPan",
+			"name": "AutoPan"
 		}
 	]
 }
