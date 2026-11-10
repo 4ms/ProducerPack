@@ -1,5 +1,10 @@
 # Changelog 
 
+## v2.0.5
+
+- TapeDelay: reduced CPU load on MetaModule, and removed an audio dropout when the module is first loaded
+- Fix labels on TapeDelay Time and Filter knobs on MetaModule (Filter now is -100% to 100%)
+
 ## v2.0.4
 
 - Fix label on DJFilter freq knob on MetaModule (now is -100% to 100%)

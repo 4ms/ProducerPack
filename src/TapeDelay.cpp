@@ -155,10 +155,25 @@ struct TapeDelay : Module {
 	TapeDelay() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
+#ifdef METAMODULE
+		// MetaModule's UI reads the raw name/unit/display* fields directly and does not
+		// invoke a ParamQuantity's virtual overrides (same fix as DJFilter's cutoff), so
+		// give these knobs native scaling instead of relying on getDisplayValueString().
+		// Time: same exponential mapping as process(), minTimeMs * (max/min)^norm.
+		// (When Ext. Clock is patched the knob picks a clock division instead; the
+		// native display can't follow that, so it still shows the free-running ms value.)
+		configParam(TIME_PARAM, 0.f, 1.f, 0.5f, "Time", "ms", maxTimeMs / minTimeMs, minTimeMs);
+#else
 		configParam<TimeParamQuantity>(TIME_PARAM, 0.f, 1.f, 0.5f, "Time");
+#endif
 		configParam(FEEDBACK_PARAM, 0.f, 1.f, 0.f, "Feedback", "%", 0.f, 100.f);
 		configParam(DRYWET_PARAM, 0.f, 1.f, 0.5f, "Dry/Wet", "%", 0.f, 100.f);
+#ifdef METAMODULE
+		// Filter: lowpass (-100%) -> bypass (0%, center) -> highpass (+100%), as DJFilter.
+		configParam(FILTER_PARAM, 0.f, 1.f, 0.5f, "Filter", "%", 0.f, 200.f, -100.f);
+#else
 		configParam<TapeDelayFilterQuantity>(FILTER_PARAM, 0.f, 1.f, 0.5f, "");
+#endif
 		configParam(INSTABILITY_PARAM, 0.f, 1.f, 0.f, "Instability", "%", 0.f, 100.f);
 		configParam(WIDTH_PARAM, 0.f, 1.f, 0.f, "Width", "%", 0.f, 100.f);
 
