@@ -36,12 +36,15 @@ struct TapeDelay : Module {
 	static constexpr float flutterRateMaxHz = 40.f;
 	static constexpr float instabilityFadeZone = 0.05f;
 	static constexpr float maxFeedbackGain = 1.15f;
-	// Tape-style dirt on the record path (dry input + feedback, before it's stored):
-	// a soft-clip drive point plus a touch of even-harmonic asymmetry (real analog
-	// circuits are rarely perfectly symmetric) and a tiny noise floor that accumulates
-	// through the feedback loop like real tape hiss building up on repeated copies.
-	static constexpr float tapeDriveThreshold = 7.f;
+	// Tape-style dirt in the feedback loop: a touch of even-harmonic asymmetry (real
+	// analog circuits are rarely perfectly symmetric), applied with the feedback soft
+	// clip so it compounds on every repeat like grime building up on repeated copies.
+	// The dry input is recorded clean -- it never shares a saturator with the repeats,
+	// so new input can't crush what's already recirculating.
 	static constexpr float tapeAsymmetry = 0.06f;
+	// AC coupling in the feedback loop (like an analog delay's coupling caps): the
+	// asymmetry generates DC, which would otherwise build up around the loop.
+	static constexpr float feedbackDcBlockHz = 10.f;
 	// Feedback saturation ceiling. This must be well above typical signal levels so
 	// raising Feedback actually makes the repeats louder across most of the knob's
 	// range -- tanh asymptotically approaches this value no matter how hard it's
@@ -68,8 +71,6 @@ struct TapeDelay : Module {
 	static constexpr float delayGlideMaxDecreasePerSample = maxTapeSpeedRatio - 1.f;
 	static constexpr float filterLowpassMinHz = 500.f;
 	static constexpr float filterHighpassMaxHz = 1000.f;
-	// Small linear crossfade so the alternating hard-pan flip doesn't click.
-	static constexpr float panCrossfadeSec = 0.01f;
 
 	// When Ext. Clock is patched, the Time knob (and its CV) instead selects one of
 	// these musical divisions/multiplications of the incoming clock period.
@@ -201,31 +202,44 @@ struct TapeDelay : Module {
 		float high = 0.f;
 	};
 
-	// Mono trunk delay line per poly channel: the module always sums to mono internally
-	// so Width can continuously crossfade the tap between centered and hard-panned.
+	// Two cross-fed tape lines per poly channel, like a stereo ping-pong tape echo:
+	// line A records the (mono-summed) input plus line B's feedback; line B records
+	// only line A's feedback. So repeats alternate A, B, A, B... on their own -- no
+	// gain modulation (an earlier hard-pan flip-flop chopped sustained repeats and
+	// clicked). A + B is the same signal a single mono loop would produce, so Width
+	// crossfades from that centered sum (0) to A-left / B-right ping-pong (1).
 	// Fixed-size (not std::vector) and sized for a 96kHz worst case, matching this
 	// repo's convention (e.g. Spatializer's delayBufferL/R) -- MetaModule's real-time
 	// callback must never allocate memory, so the buffer can't be grown at runtime.
 	static constexpr float maxSupportedSampleRate = 96000.f;
 	static const int maxDelaySamples =
 		(int)((maxTimeMs + maxWowDepthMs + maxFlutterDepthMs + 10.f) * 0.001f * maxSupportedSampleRate) + 4;
-	float bufferL[PORT_MAX_CHANNELS][maxDelaySamples] = {};
+	float bufferA[PORT_MAX_CHANNELS][maxDelaySamples] = {};
+	float bufferB[PORT_MAX_CHANNELS][maxDelaySamples] = {};
 	int bufferSize = maxDelaySamples;
 	int writeIndex = 0;
 	float lastSampleRate = 0.f;
 	// High-water mark of poly channels that have been written to since the last clear.
 	// On a sample rate change only these channels need wiping (the rest are still
-	// zero), so the clear is ~0.8MB for a mono/stereo patch instead of the full
-	// ~12.6MB -- which on MetaModule would otherwise stall the audio callback.
+	// zero), so the clear is ~1.6MB for a mono/stereo patch instead of the full
+	// ~25MB -- which on MetaModule would otherwise stall the audio callback.
 	int channelsUsed = 0;
 
 	// Cached per-block-invariant values, recomputed only when their inputs change.
 	float lastNormTime = -1.f;
 	float cachedTimeMs = 0.f;
-	float lastPanSampleRate = 0.f;
-	float maxPanStep = 0.f;
 
-	SVF filtStateL[PORT_MAX_CHANNELS];
+	SVF filtStateA[PORT_MAX_CHANNELS];
+	SVF filtStateB[PORT_MAX_CHANNELS];
+
+	// One-pole DC blocker state for each line's feedback path, per poly channel.
+	struct DcBlock {
+		float x1 = 0.f;
+		float y1 = 0.f;
+	};
+	DcBlock fbDcStateA[PORT_MAX_CHANNELS];
+	DcBlock fbDcStateB[PORT_MAX_CHANNELS];
+	float dcBlockCoeff = 0.f;
 
 	// Continuously interpolated random "value noise": glides between random keyframes
 	// using smootherstep (zero 1st & 2nd derivative at each keyframe), so there's no
@@ -268,12 +282,6 @@ struct TapeDelay : Module {
 	float filterFreq = 0.f;
 
 	float smoothedDelaySamples = -1.f;
-
-	// Alternates once per delay cycle; Width crossfades how much this actually pans
-	// the tap, from always-centered (mono) to fully alternating left/right (ping-pong).
-	bool panSide = false;
-	float panElapsed = 0.f;
-	float panPosition = 0.f; // 0 = left, 1 = right, crossfades between on each flip
 
 	float getNormalizedParam(int paramId, int inputId) {
 		float paramValue = params[paramId].getValue();
@@ -337,6 +345,20 @@ struct TapeDelay : Module {
 		return f.low * lowMix + delayed * bypassMix + f.high * highMix;
 	}
 
+	// Feedback path for one line: gain -> soft clip -> tape dirt -> AC coupling.
+	// Feedback is allowed above unity (self-oscillation); the soft clip lets it
+	// overload/saturate like an overdriven tape loop instead of diverging. Asymmetry is
+	// applied to the already-clipped (bounded) signal, and DC is blocked last, so
+	// nothing that re-enters the loop carries an offset.
+	float feedbackStage(float regen, float gain, float invDrive, DcBlock &dc) const {
+		const float sat = softClip(regen * gain, feedbackDriveThreshold, invDrive);
+		const float colored = sat + tapeAsymmetry * sat * sat;
+		const float out = colored - dc.x1 + dcBlockCoeff * dc.y1;
+		dc.x1 = colored;
+		dc.y1 = out;
+		return out;
+	}
+
 	void process(const ProcessArgs &args) override {
 		const float sampleRate = args.sampleRate;
 		const float sampleTime = args.sampleTime;
@@ -347,10 +369,17 @@ struct TapeDelay : Module {
 		// cleared; on the very first call nothing has been written yet, so it's free. ---
 		if (sampleRate != lastSampleRate) {
 			lastSampleRate = sampleRate;
-			for (int c = 0; c < channelsUsed; c++)
-				std::fill_n(bufferL[c], maxDelaySamples, 0.f);
-			for (int c = 0; c < PORT_MAX_CHANNELS; c++)
-				filtStateL[c] = SVF();
+			for (int c = 0; c < channelsUsed; c++) {
+				std::fill_n(bufferA[c], maxDelaySamples, 0.f);
+				std::fill_n(bufferB[c], maxDelaySamples, 0.f);
+			}
+			for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
+				filtStateA[c] = SVF();
+				filtStateB[c] = SVF();
+				fbDcStateA[c] = DcBlock();
+				fbDcStateB[c] = DcBlock();
+			}
+			dcBlockCoeff = 1.f - 2.f * float(M_PI) * feedbackDcBlockHz * sampleTime;
 			channelsUsed = 0;
 			writeIndex = 0;
 			smoothedDelaySamples = -1.f;
@@ -497,24 +526,6 @@ struct TapeDelay : Module {
 			highMix = 1.f;
 		}
 
-		// --- Pan flip-flop: alternates once per delay cycle regardless of Width, so
-		// increasing Width mid-decay smoothly reveals an already-running alternation
-		// instead of starting it from scratch.
-		panElapsed += 1.f;
-		if (panElapsed >= delaySamples) {
-			panElapsed -= delaySamples;
-			panSide = !panSide;
-		}
-
-		// Crossfade the pan position toward the current side instead of switching
-		// instantly, so the flip doesn't click.
-		const float panTarget = panSide ? 1.f : 0.f;
-		if (sampleRate != lastPanSampleRate) {
-			lastPanSampleRate = sampleRate;
-			maxPanStep = 1.f / (panCrossfadeSec * sampleRate);
-		}
-		panPosition += std::clamp(panTarget - panPosition, -maxPanStep, maxPanStep);
-
 		// Basic white noise floor for the wet signal: one draw per sample, shared
 		// across all poly channels (not per-channel) to keep it cheap.
 		const float wetNoise = (random::uniform() * 2.f - 1.f) * wetNoiseAmount;
@@ -523,7 +534,6 @@ struct TapeDelay : Module {
 		const ReadTap tap = makeReadTap(bufferSize, writeIndex, delaySamples);
 
 		constexpr float invFeedbackDrive = 1.f / feedbackDriveThreshold;
-		constexpr float invTapeDrive = 1.f / tapeDriveThreshold;
 		constexpr float outputClip = 10.f;
 		constexpr float invOutputClip = 1.f / outputClip;
 
@@ -534,36 +544,31 @@ struct TapeDelay : Module {
 			const float inR = rConnected ? inputs[AUDIORIGHTIN_INPUT].getPolyVoltage(c) :
 			                                (lConnected ? inputs[AUDIOLEFTIN_INPUT].getPolyVoltage(c) : 0.f);
 
-			// Single mono trunk line: the module always sums to mono internally so Width
-			// can continuously crossfade the tap between centered and hard-panned.
+			// The input is summed to mono and recorded onto line A only.
 			const float monoIn = (inL + inR) * 0.5f;
-			const float delayedTrunk = readDelay(bufferL[c], tap);
 
 			// Filter shapes the whole wet signal -- both the wet output tap and what
 			// gets fed back -- so every repeat sounds filtered, not just the ones that
 			// have been through the feedback loop.
-			const float regen =
-				applyFeedbackFilter(filtStateL[c], filterDamp, filterFreq, delayedTrunk, lowMix, bypassMix, highMix);
+			const float regenA = applyFeedbackFilter(filtStateA[c], filterDamp, filterFreq, readDelay(bufferA[c], tap),
+			                                         lowMix, bypassMix, highMix);
+			const float regenB = applyFeedbackFilter(filtStateB[c], filterDamp, filterFreq, readDelay(bufferB[c], tap),
+			                                         lowMix, bypassMix, highMix);
 
-			// Feedback is allowed above unity (self-oscillation); soft-clipping lets it
-			// overload/saturate like an overdriven tape loop instead of diverging.
-			const float fb = softClip(regen * feedbackGain, feedbackDriveThreshold, invFeedbackDrive);
+			// Cross-feed: each line's repeat is recorded onto the other line.
+			const float fbIntoB = feedbackStage(regenA, feedbackGain, invFeedbackDrive, fbDcStateA[c]);
+			const float fbIntoA = feedbackStage(regenB, feedbackGain, invFeedbackDrive, fbDcStateB[c]);
 
-			// Tape dirt on the record path: a touch of even-harmonic asymmetry,
-			// soft-clipped along with the signal so it compounds through the feedback
-			// loop like grime building up on repeated tape copies.
-			const float driven = monoIn + fb;
-			const float colored = driven + tapeAsymmetry * driven * driven;
-			bufferL[c][writeIndex] = softClip(colored, tapeDriveThreshold, invTapeDrive);
+			// Record heads: clean input + B's feedback onto A; A's feedback onto B.
+			bufferA[c][writeIndex] = monoIn + fbIntoA;
+			bufferB[c][writeIndex] = fbIntoB;
 
-			// Width crossfades the tap from centered/mono (both channels get the full
-			// signal) to fully alternating left/right (ping-pong).
-			const float monoWetL = regen;
-			const float monoWetR = regen;
-			const float pannedWetL = regen * (1.f - panPosition);
-			const float pannedWetR = regen * panPosition;
-			const float wetL = rack::math::crossfade(monoWetL, pannedWetL, widthAmount) + wetNoise;
-			const float wetR = rack::math::crossfade(monoWetR, pannedWetR, widthAmount) + wetNoise;
+			// Width crossfades from centered (both outputs get A + B, i.e. every repeat)
+			// to ping-pong (A's repeats left, B's repeats right). Plain constant gains --
+			// nothing is modulated over time, so there's nothing to click.
+			const float crossAmount = 1.f - widthAmount;
+			const float wetL = regenA + crossAmount * regenB + wetNoise;
+			const float wetR = regenB + crossAmount * regenA + wetNoise;
 
 			const float outL = rack::math::crossfade(inL, wetL, dryWet);
 			const float outR = rack::math::crossfade(inR, wetR, dryWet);
