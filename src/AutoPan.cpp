@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "helpers/fast_math.hpp"
 
 
 // Free-running LFO frequency range (used when no external clock is patched)
@@ -168,6 +169,8 @@ struct AutoPan : Module {
 
 		configBypass(INL_INPUT, OUTL_OUTPUT);
 		configBypass(INR_INPUT, OUTR_OUTPUT);
+
+		lightDivider.setDivision(LIGHT_DIVISION);
 	}
 
 	// Per-sample-rate constants (std::exp is expensive on MetaModule, so these are
@@ -179,6 +182,21 @@ struct AutoPan : Module {
 	// Exponential VCA response constant for the Curve trimpot (see gainFromLfo).
 	static constexpr float VCA_EXPO_K = 7.f;
 	const float invExpoRange = 1.f / (std::exp(VCA_EXPO_K) - 1.f);
+
+	// Cached results of expensive math, recomputed only when their input changes
+	// (std::pow / std::log2 are slow on MetaModule's Cortex-A7).
+	float lastTimeKnob = -1.f;
+	float cachedBaseFreq = 0.f;
+	float lastTimeCv = 0.f;
+	float cachedTimeCvMult = 1.f; // 2^timeCv; exactly 1 while timeCv is 0
+	float lastDepthMag = -1.f;
+	float cachedDepth = 0.f;
+
+	// Panel LEDs don't need audio-rate updates: refresh them every LIGHT_DIVISION
+	// samples (still ~3kHz at 48kHz), passing the elapsed time so the smoothing
+	// timing is unchanged.
+	static constexpr int LIGHT_DIVISION = 16;
+	dsp::ClockDivider lightDivider;
 
 	// Stepped selector: Sine, Triangle, Saw, Square, Random — no crossfade
 	// between shapes, shapeVal picks one waveform outright.
@@ -229,9 +247,13 @@ struct AutoPan : Module {
 		//     sweep across all 5 shapes) ──
 		float shapeCv = inputs[SHAPECV_INPUT].getVoltage();
 		float shapeVal = clamp(float(shapeIndex) + shapeCv / 10.f * 4.f, 0.f, 4.f);
-		int shapeDisplayIdx = clamp((int)std::round(shapeVal), 0, 4);
-		for (int i = 0; i < 5; i++)
-			lights[SHAPELED_SINE_LIGHT + i].setBrightnessSmooth(i == shapeDisplayIdx ? 1.f : 0.f, args.sampleTime);
+		const bool updateLights = lightDivider.process();
+		const float lightTime = args.sampleTime * LIGHT_DIVISION;
+		if (updateLights) {
+			int shapeDisplayIdx = clamp((int)std::round(shapeVal), 0, 4);
+			for (int i = 0; i < 5; i++)
+				lights[SHAPELED_SINE_LIGHT + i].setBrightnessSmooth(i == shapeDisplayIdx ? 1.f : 0.f, lightTime);
+		}
 
 		// ── LFO frequency: free-running Hz knob, or ext-clock div/mult when patched ──
 		extClockMode = inputs[EXTCLOCK_INPUT].isConnected();
@@ -279,8 +301,16 @@ struct AutoPan : Module {
 			extClockPeriodValid = false;
 			extClockPulseCount = 0;
 			extClockTrig.reset();
-			float baseFreq = timeKnobToFreq(params[TIME_PARAM].getValue());
-			freq = clamp(baseFreq * std::pow(2.f, timeCv), TIME_FREQ_MIN, TIME_FREQ_MAX);
+			const float timeKnob = params[TIME_PARAM].getValue();
+			if (timeKnob != lastTimeKnob) {
+				lastTimeKnob = timeKnob;
+				cachedBaseFreq = timeKnobToFreq(timeKnob);
+			}
+			if (timeCv != lastTimeCv) {
+				lastTimeCv = timeCv;
+				cachedTimeCvMult = std::pow(2.f, timeCv);
+			}
+			freq = clamp(cachedBaseFreq * cachedTimeCvMult, TIME_FREQ_MIN, TIME_FREQ_MAX);
 		}
 
 		// Bias the draw toward the extremes (power curve on a bipolar uniform draw)
@@ -315,7 +345,11 @@ struct AutoPan : Module {
 		bool  negAmount = depthRaw < 0.f;
 		float depthMag = std::abs(depthRaw);
 		// Reverse-expo taper: fast rise near 0, flattens out approaching full depth
-		float depth = 1.f - std::pow(1.f - depthMag, 1.4f);
+		if (depthMag != lastDepthMag) {
+			lastDepthMag = depthMag;
+			cachedDepth = 1.f - std::pow(1.f - depthMag, 1.4f);
+		}
+		const float depth = cachedDepth;
 
 		float effectiveLfo = negAmount ? -lfo : lfo;
 
@@ -326,17 +360,19 @@ struct AutoPan : Module {
 		auto setTimeLed = [&](int lightId, float value) {
 			float scaled = value * depth;
 			if (tremoloState) {
-				lights[lightId + 0].setBrightnessSmooth(negAmount ? scaled : 0.f, args.sampleTime); // R (yellow = R+G)
-				lights[lightId + 1].setBrightnessSmooth(scaled, args.sampleTime);                    // G
-				lights[lightId + 2].setBrightnessSmooth(0.f, args.sampleTime);                       // B
+				lights[lightId + 0].setBrightnessSmooth(negAmount ? scaled : 0.f, lightTime); // R (yellow = R+G)
+				lights[lightId + 1].setBrightnessSmooth(scaled, lightTime);                    // G
+				lights[lightId + 2].setBrightnessSmooth(0.f, lightTime);                       // B
 			} else {
-				lights[lightId + 0].setBrightnessSmooth(negAmount ? scaled : 0.f, args.sampleTime);  // R
-				lights[lightId + 1].setBrightnessSmooth(0.f, args.sampleTime);                       // G
-				lights[lightId + 2].setBrightnessSmooth(negAmount ? 0.f : scaled, args.sampleTime);  // B
+				lights[lightId + 0].setBrightnessSmooth(negAmount ? scaled : 0.f, lightTime);  // R
+				lights[lightId + 1].setBrightnessSmooth(0.f, lightTime);                       // G
+				lights[lightId + 2].setBrightnessSmooth(negAmount ? 0.f : scaled, lightTime);  // B
 			}
 		};
 		float effectiveLfoNorm = effectiveLfo / 5.f;
-		if (tremoloState) {
+		if (!updateLights) {
+			// LEDs are refreshed at a divided rate (see LIGHT_DIVISION)
+		} else if (tremoloState) {
 			// Half-wave: only the positive portion of the LFO drives brightness,
 			// negative portion clips to 0. Sign-preserving, so Amount inversion
 			// (which flips effectiveLfo's sign) still changes which half is "on".
@@ -363,8 +399,12 @@ struct AutoPan : Module {
 		float curveAmt = params[CURVE_PARAM].getValue();
 		auto gainFromLfo = [&](float v) -> float {
 			float normV = (v + 5.f) * 0.1f; // 0..1, monotonic across the full ±5V sweep
-			float normVExpo = (std::exp(VCA_EXPO_K * normV) - 1.f) * invExpoRange;
-			float normVBlend = normV + curveAmt * (normVExpo - normV);
+			// At Curve = 0 the blend is exactly linear, so skip the two std::exp calls.
+			float normVBlend = normV;
+			if (curveAmt != 0.f) {
+				float normVExpo = (std::exp(VCA_EXPO_K * normV) - 1.f) * invExpoRange;
+				normVBlend = normV + curveAmt * (normVExpo - normV);
+			}
 			float shaped = normVBlend * 2.f - 1.f; // back to -1..1
 			return std::max(0.f, 1.f + depth * shaped);
 		};
@@ -410,9 +450,9 @@ struct AutoPan : Module {
 			float inL = inputs[INL_INPUT].getPolyVoltage(c);
 			float inR = stereoIn ? inputs[INR_INPUT].getPolyVoltage(c) : inL;
 
-			// ── Output, soft tanh clamp at ±10V ──
-			outputs[OUTL_OUTPUT].setVoltage(10.f * std::tanh(inL * outGainL / 10.f), c);
-			outputs[OUTR_OUTPUT].setVoltage(10.f * std::tanh(inR * outGainR / 10.f), c);
+			// ── Output, soft tanh clamp at ±10V (fast rational tanh, see fast_math.hpp) ──
+			outputs[OUTL_OUTPUT].setVoltage(10.f * fastTanh(inL * outGainL * 0.1f), c);
+			outputs[OUTR_OUTPUT].setVoltage(10.f * fastTanh(inR * outGainR * 0.1f), c);
 		}
 	}
 

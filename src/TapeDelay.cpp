@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "helpers/fast_math.hpp"
 #include <cmath>
 
 struct TapeDelay : Module {
@@ -318,21 +319,7 @@ struct TapeDelay : Module {
 		return buf[tap.idx0] + (buf[tap.idx1] - buf[tap.idx0]) * tap.frac;
 	}
 
-	// Pade [7/6] rational approximation of tanh: one divide instead of a libm tanh
-	// call (which is slow on MetaModule's Cortex-A7). Error < 2e-6 for |x| < 3 and the
-	// curve meets +/-1 smoothly at the clamp point, so it's inaudible as a saturator.
-	static float fastTanh(float x) {
-		constexpr float clampX = 4.97f;
-		if (x > clampX)
-			return 1.f;
-		if (x < -clampX)
-			return -1.f;
-		const float x2 = x * x;
-		const float num = x * (135135.f + x2 * (17325.f + x2 * (378.f + x2)));
-		const float den = 135135.f + x2 * (62370.f + x2 * (3150.f + x2 * 28.f));
-		return num / den;
-	}
-
+	// fastTanh() lives in helpers/fast_math.hpp (shared with AutoPan).
 	static float softClip(float x, float threshold, float invThreshold) {
 		return threshold * fastTanh(x * invThreshold);
 	}
