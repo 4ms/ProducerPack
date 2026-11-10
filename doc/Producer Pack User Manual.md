@@ -90,6 +90,47 @@ A classic analog-style 3-band stereo equalizer modeled after the Neve 1073.
   • **On** = signal bypasses EQ section
 
 ---
+![AutoPan](https://github.com/4ms/ProducerPack/blob/TapeDelay/doc/AutoPan.png) 
+
+## AutoPan - Stereo Auto-Panner and Tremolo
+
+A stereo auto-panner that moves your sound back and forth between the left and right outputs using a built-in LFO. With the push of a button it becomes a tremolo instead, pulsing the volume of both sides together. The LFO has five shapes and can sync to an external clock.
+
+- **Amount**: Sets how strongly the sound is panned (or pulsed in tremolo mode).  
+  Range: **-100 % to +100 %**, with no effect at the center.  
+  Turning it negative flips the direction, so the left and right sides swap.
+
+- **Time**: Sets the speed of the LFO.  
+  Range: **0.1 Hz to 60 Hz**  
+  When **Ext. Clock** is patched, this knob picks a division or multiplication of the clock instead:  
+  **/32, /16, /8, /7, /6, /5, /4, /3, /2, =, x2, x3, x4, x5, x6, x7, x8, x12, x16**
+
+- **Shape (button)**: Steps through the LFO shapes: **Sine, Triangle, Saw, Square, Random**. The lit LED shows which shape is selected. Random jumps to a new level twice per cycle.
+
+- **Curve**: Changes how the volume responds to the LFO, from smooth (**lin.**) to choppy (**exp.**). Turning it toward exp. makes the sound cut out harder and stay quiet longer on each swing.
+
+- **Tremolo (button)**: Switches between auto-pan and tremolo.
+
+- **L / R LEDs**: Show where the sound is at any moment. In auto-pan mode they light **blue** (or **red** when Amount is negative). In tremolo mode they light **green** (or **yellow** when Amount is negative).
+
+- **Amt. CV (input)**: Modulates Amount by control voltage.
+
+- **Time CV (input)**: Modulates the LFO speed by control voltage. When Ext. Clock is patched, it moves through the division and multiplication settings instead.
+
+- **Shape CV (input)**: Moves through the five LFO shapes by control voltage, starting from the shape selected with the button.
+
+- **Trem. CV (input)**: A trigger here switches between auto-pan and tremolo, just like the button.
+
+- **Ext. Clk. (input)**: Patch a clock here to sync the LFO to your tempo.
+
+- **In L / R (inputs)**: Stereo inputs. If only the left input is patched, it is used for both sides.
+
+- **Out L / R (outputs)**: Stereo outputs.
+
+**On MetaModule:**
+- The **Time** knob always shows its value in Hz, even when Ext. Clock is patched and the knob is picking a division or multiplication.
+
+---
 ![AuxSends](https://github.com/4ms/ProducerPack/blob/main/doc/AuxSends.png) 
 
 # AuxSends - Send/Return Mixer 
@@ -336,7 +377,7 @@ Adjusts the curve of the crossfade:
 - Allows smoother or sharper transitions between A and B.
 
 ---
-<img src="https://github.com/4ms/ProducerPack/blob/TapeDelay/doc/TapeDelay.png" height="500">
+![TapeDelay](https://github.com/4ms/ProducerPack/blob/TapeDelay/doc/TapeDelay.png) 
 
 ## TapeDelay - Stereo Tape-Style Delay
 
